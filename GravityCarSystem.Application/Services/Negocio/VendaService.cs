@@ -73,6 +73,14 @@ public class VendaService : IVendaService
             Veiculos = vendaVeiculos
         };
 
+        // Validação estrita: Total dos pagamentos + Trocas deve bater com o ValorLíquido
+        decimal totalTrocas = dto.Trocas.Sum(t => t.ValorAvaliacao);
+        decimal totalPagamentos = dto.Pagamentos.Sum(p => p.Valor);
+        decimal totalGeral = totalTrocas + totalPagamentos;
+
+        if (totalGeral != venda.ValorLiquido)
+            throw new InvalidOperationException($"O total dos pagamentos (Troca: {totalTrocas:C} + Outros: {totalPagamentos:C}) não confere com o valor da venda ({venda.ValorLiquido:C}). Diferença de {venda.ValorLiquido - totalGeral:C}.");
+
         // Lidar com Veículos na Troca
         foreach (var trocaDto in dto.Trocas)
         {
@@ -103,7 +111,7 @@ public class VendaService : IVendaService
         // Lidar com Pagamentos (Financiamento, Pix, etc)
         foreach (var pagDto in dto.Pagamentos)
         {
-            venda.Pagamentos.Add(new VendaPagamento
+            var pagamento = new VendaPagamento
             {
                 TipoPagamento = pagDto.TipoPagamento,
                 Valor = pagDto.Valor,
@@ -112,7 +120,24 @@ public class VendaService : IVendaService
                 ValorParcela = pagDto.ValorParcela,
                 TaxaJuros = pagDto.TaxaJuros,
                 DataVencimento = DateTime.Now
-            });
+            };
+            venda.Pagamentos.Add(pagamento);
+
+            // Integração com Fase 5 (Financeiro): Se for cheque, lança na custódia
+            if (pagDto.TipoPagamento == TipoPagamento.Cheque)
+            {
+                var cheque = new Cheque
+                {
+                    ClienteId = dto.ClienteId,
+                    VendaPagamento = pagamento,
+                    Valor = pagDto.Valor,
+                    Status = StatusCheque.Recebido,
+                    DataEmissao = DateTime.Now,
+                    DataBomPara = DateTime.Now.AddDays(30), // Default bom para 30 dias se n informado
+                    Observacao = $"Cheque oriundo da Venda {venda.NumeroVenda}"
+                };
+                _context.Cheques.Add(cheque);
+            }
 
             // Gerar Conta a Receber correspondente ao pagamento
             var contaReceber = new GravityCarSystem.Domain.Entities.Financeiro.ContaReceber

@@ -33,6 +33,15 @@ public class ClientesController : ControllerBase
         return Ok(cliente);
     }
 
+    [HttpGet("{id:guid}/detalhes")]
+    public async Task<IActionResult> ObterDetalhes(Guid id)
+    {
+        var cliente = await _clienteService.ObterDetalhesAsync(id);
+        if (cliente == null) return NotFound("Cliente não encontrado.");
+        
+        return Ok(cliente);
+    }
+
     [HttpPost]
     public async Task<IActionResult> Adicionar([FromBody] ClienteDto dto)
     {

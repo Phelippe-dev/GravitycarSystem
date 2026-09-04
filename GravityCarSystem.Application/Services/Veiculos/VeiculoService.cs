@@ -290,6 +290,28 @@ public class VeiculoService : IVeiculoService
             DataCusto = custoDto.DataCusto == default ? DateTime.Now : custoDto.DataCusto
         };
         _context.VeiculoCustos.Add(custo);
+
+        // INTEGRAÇÃO: Gerar Conta a Pagar
+        var fornecedorPadrao = await _context.Fornecedores.FirstOrDefaultAsync();
+        var categoriaPadrao = await _context.CategoriasFinanceiras.FirstOrDefaultAsync();
+
+        if (fornecedorPadrao != null && categoriaPadrao != null)
+        {
+            var contaPagar = new GravityCarSystem.Domain.Entities.Financeiro.ContaPagar
+            {
+                FornecedorId = fornecedorPadrao.Id,
+                CategoriaId = categoriaPadrao.Id,
+                Descricao = $"Custo de Veículo - {veiculo.Placa ?? veiculo.Modelo}: {custoDto.Descricao}",
+                ValorOriginal = custoDto.Valor,
+                Saldo = custoDto.Valor,
+                ValorPago = 0,
+                DataEmissao = DateTime.Now,
+                DataVencimento = DateTime.Now.AddDays(7), // Vencimento padrão para custos de veículo
+                Status = StatusConta.Aberto
+            };
+            _context.ContasPagar.Add(contaPagar);
+        }
+
         await _context.SaveChangesAsync();
 
         custoDto.Id = custo.Id;

@@ -149,4 +149,82 @@ public class ClienteService : IClienteService
             })
             .ToListAsync();
     }
+
+    public async Task<ClienteDetalhesDto?> ObterDetalhesAsync(Guid id)
+    {
+        var c = await _context.Clientes.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
+        if (c == null) return null;
+
+        var dto = new ClienteDetalhesDto
+        {
+            Id = c.Id,
+            Nome = c.NomeRazaoSocial,
+            CpfCnpj = c.CpfCnpj ?? string.Empty,
+            TipoPessoa = c.TipoPessoa.ToString(),
+            Email = c.Email ?? string.Empty,
+            Telefone = c.Telefone ?? string.Empty,
+            Celular = c.Celular,
+            Cep = c.Cep,
+            Logradouro = c.Logradouro,
+            Numero = c.Numero,
+            Complemento = c.Complemento,
+            Bairro = c.Bairro,
+            Cidade = c.Cidade,
+            Estado = c.Estado,
+            Observacao = c.Observacoes
+        };
+
+        // Obter Vendas Realizadas
+        var vendas = await _context.Vendas
+            .Where(v => v.ClienteId == id)
+            .Include(v => v.Veiculos)
+            .AsNoTracking()
+            .ToListAsync();
+
+        foreach (var v in vendas)
+        {
+            dto.VendasRealizadas.Add(new GravityCarSystem.Application.DTOs.Negocio.VendaDto
+            {
+                Id = v.Id,
+                ClienteId = v.ClienteId,
+                UsuarioId = v.UsuarioId,
+                NumeroVenda = v.NumeroVenda,
+                DataVenda = v.DataVenda,
+                ValorBruto = v.ValorBruto,
+                Desconto = v.Desconto,
+                ValorLiquido = v.ValorLiquido,
+                Status = v.Status,
+                Observacoes = v.Observacoes,
+                VeiculosIds = v.Veiculos.Select(ve => ve.VeiculoId).ToList()
+            });
+        }
+
+        // Obter Veículos na Troca
+        var trocas = await _context.Vendas
+            .Where(v => v.ClienteId == id)
+            .Include(v => v.Trocas)
+                .ThenInclude(t => t.Veiculo)
+            .SelectMany(v => v.Trocas)
+            .AsNoTracking()
+            .ToListAsync();
+
+        foreach (var t in trocas)
+        {
+            if (t.Veiculo != null)
+            {
+                dto.VeiculosNaTroca.Add(new GravityCarSystem.Application.DTOs.Negocio.VendaTrocaDto
+                {
+                    Marca = t.Veiculo.Marca,
+                    Modelo = t.Veiculo.Modelo,
+                    Versao = t.Veiculo.Versao,
+                    AnoFabricacao = t.Veiculo.AnoFabricacao ?? 0,
+                    AnoModelo = t.Veiculo.AnoModelo ?? 0,
+                    Placa = t.Veiculo.Placa ?? string.Empty,
+                    ValorAvaliacao = t.ValorAvaliacao
+                });
+            }
+        }
+
+        return dto;
+    }
 }

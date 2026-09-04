@@ -58,6 +58,13 @@ builder.Services.AddScoped<IAppDbContext>(provider => provider.GetRequiredServic
 builder.Services.AddScoped<GravityCarSystem.Application.Interfaces.IClienteService, GravityCarSystem.Application.Services.Cadastros.ClienteService>();
 builder.Services.AddScoped<GravityCarSystem.Application.Interfaces.IVeiculoService, GravityCarSystem.Application.Services.Veiculos.VeiculoService>();
 builder.Services.AddScoped<GravityCarSystem.Application.Interfaces.IVendaService, GravityCarSystem.Application.Services.Negocio.VendaService>();
+builder.Services.AddScoped<GravityCarSystem.Application.Interfaces.Financeiro.IContaPagarService, GravityCarSystem.Application.Services.Financeiro.ContaPagarService>();
+builder.Services.AddScoped<GravityCarSystem.Application.Interfaces.Financeiro.IContaReceberService, GravityCarSystem.Application.Services.Financeiro.ContaReceberService>();
+builder.Services.AddScoped<GravityCarSystem.Application.Interfaces.Relatorios.IRelatorioService, GravityCarSystem.Application.Services.Relatorios.RelatorioService>();
+builder.Services.AddScoped<GravityCarSystem.Application.Interfaces.Fiscal.INotaFiscalService, GravityCarSystem.Application.Services.Fiscal.NotaFiscalService>();
+builder.Services.AddScoped<GravityCarSystem.Application.Interfaces.Integracoes.ISenatranService, GravityCarSystem.Application.Services.Integracoes.SenatranMockService>();
+builder.Services.AddScoped<GravityCarSystem.Application.Interfaces.IAvaliacaoService, GravityCarSystem.Application.Services.Veiculos.AvaliacaoService>();
+builder.Services.AddScoped<GravityCarSystem.Application.Interfaces.IChequeService, GravityCarSystem.Application.Services.Negocio.ChequeService>();
 
 // Database Configuration
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");

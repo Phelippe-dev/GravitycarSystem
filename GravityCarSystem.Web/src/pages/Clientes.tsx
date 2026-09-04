@@ -2,10 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { fetchClientes, adicionarCliente } from '../api';
 import type { Cliente } from '../api';
 
+import { useNavigate } from 'react-router-dom';
+
 const Clientes: React.FC = () => {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState<Partial<Cliente>>({
     nome: '', cpfCnpj: '', email: '', telefone: ''
@@ -76,6 +79,7 @@ const Clientes: React.FC = () => {
                   <th>Cliente</th>
                   <th>Documento (CPF/CNPJ)</th>
                   <th>Contato</th>
+                  <th>Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -92,6 +96,11 @@ const Clientes: React.FC = () => {
                       </td>
                       <td>{c.cpfCnpj || '-'}</td>
                       <td>{c.telefone || c.email || '-'}</td>
+                      <td>
+                        <button className="btn btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={() => navigate(`/clientes/${c.id}`)}>
+                            Ver Perfil
+                        </button>
+                      </td>
                     </tr>
                   );
                 })}

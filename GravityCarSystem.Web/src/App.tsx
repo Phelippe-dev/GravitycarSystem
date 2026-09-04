@@ -1,5 +1,5 @@
 import React from 'react';
-import { Car, User, Settings, LogOut, DollarSign, LayoutDashboard, PlusCircle, Sun, Moon } from 'lucide-react';
+import { Car, User, LogOut, DollarSign, LayoutDashboard, PlusCircle, Sun, Moon, FileText, CreditCard } from 'lucide-react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import CadastroVeiculo from './pages/CadastroVeiculo';
@@ -10,6 +10,12 @@ import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import VeiculoDetalhesPage from './pages/VeiculoDetalhes';
+import ClienteDetalhesPage from './pages/ClienteDetalhes';
+import Relatorios from './pages/Relatorios';
+import Fiscal from './pages/Fiscal';
+import ContratoVenda from './pages/ContratoVenda';
+import AvaliacaoVeiculo from './pages/AvaliacaoVeiculo';
+import Cheques from './pages/Cheques';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -56,13 +62,29 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             <Car size={20} />
             Estoque
           </Link>
+          <Link to="/avaliacao" className={`nav-item ${location.pathname === '/avaliacao' ? 'active' : ''}`}>
+            <FileText size={20} />
+            Avaliação
+          </Link>
           <Link to="/vendas" className={`nav-item ${location.pathname === '/vendas' ? 'active' : ''}`}>
             <DollarSign size={20} />
             Vendas
           </Link>
+          <Link to="/financeiro/cheques" className={`nav-item ${location.pathname === '/financeiro/cheques' ? 'active' : ''}`}>
+            <CreditCard size={20} />
+            Cheques
+          </Link>
           <Link to="/clientes" className={`nav-item ${location.pathname === '/clientes' ? 'active' : ''}`}>
             <User size={20} />
             Clientes
+          </Link>
+          <Link to="/relatorios" className={`nav-item ${location.pathname === '/relatorios' ? 'active' : ''}`}>
+            <LayoutDashboard size={20} />
+            Relatórios
+          </Link>
+          <Link to="/fiscal" className={`nav-item ${location.pathname === '/fiscal' ? 'active' : ''}`}>
+            <FileText size={20} />
+            Fiscal
           </Link>
         </nav>
 
@@ -119,9 +141,15 @@ const App: React.FC = () => {
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/cadastro/veiculos" element={<CadastroVeiculo />} />
                   <Route path="/estoque" element={<Estoque />} />
+                  <Route path="/avaliacao" element={<AvaliacaoVeiculo />} />
                   <Route path="/vendas" element={<Vendas />} />
+                  <Route path="/financeiro/cheques" element={<Cheques />} />
                   <Route path="/clientes" element={<Clientes />} />
+                  <Route path="/clientes/:id" element={<ClienteDetalhesPage />} />
                   <Route path="/veiculos/:id" element={<VeiculoDetalhesPage />} />
+                  <Route path="/relatorios" element={<Relatorios />} />
+                  <Route path="/fiscal" element={<Fiscal />} />
+                  <Route path="/contrato/:id" element={<ContratoVenda />} />
                 </Routes>
               </Layout>
             </PrivateRoute>

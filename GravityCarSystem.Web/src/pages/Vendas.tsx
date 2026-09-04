@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchClientes, fetchVeiculos, realizarVenda } from '../api';
-import type { Cliente, Veiculo, VendaDto } from '../api';
-import { Car, User, DollarSign, Tag, CheckCircle, AlertTriangle } from 'lucide-react';
+import { fetchClientes, fetchVeiculos, realizarVenda, emitirNotaFiscalVenda } from '../api';
+import type { Cliente, Veiculo, VendaDto, VendaPagamentoDto, VendaTrocaDto } from '../api';
+import { Car, User, DollarSign, Tag, CheckCircle, AlertTriangle, CreditCard, PlusCircle, Trash2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const Vendas: React.FC = () => {
@@ -18,7 +18,19 @@ const Vendas: React.FC = () => {
   // Form State
   const [clienteId, setClienteId] = useState('');
   const [veiculoId, setVeiculoId] = useState('');
-  const [desconto, setDesconto] = useState(0);
+  const [desconto, setDesconto] = useState<number>(0);
+  const [emitirNfe, setEmitirNfe] = useState(false);
+
+  // Vendas 2.0 - Pagamentos Dinâmicos
+  const [pagamentos, setPagamentos] = useState<VendaPagamentoDto[]>([]);
+  const [novoPagamentoTipo, setNovoPagamentoTipo] = useState(1);
+  const [novoPagamentoValor, setNovoPagamentoValor] = useState('');
+
+  // Vendas 2.0 - Trocas Dinâmicas
+  const [trocas, setTrocas] = useState<VendaTrocaDto[]>([]);
+  const [novaTroca, setNovaTroca] = useState({
+      marca: '', modelo: '', placa: '', valorAvaliacao: ''
+  });
 
   useEffect(() => {
     carregarDados();
@@ -36,30 +48,86 @@ const Vendas: React.FC = () => {
   const valorBruto = veiculoSelecionado?.valorVenda || 0;
   const valorLiquido = valorBruto - desconto;
 
+  const totalTrocas = trocas.reduce((acc, curr) => acc + curr.valorAvaliacao, 0);
+  const totalPagamentos = pagamentos.reduce((acc, curr) => acc + curr.valor, 0);
+  const totalGeral = totalTrocas + totalPagamentos;
+  
+  const diferenca = valorLiquido - totalGeral;
+  const fechamentoValido = veiculoId && clienteId && (valorLiquido > 0) && (Math.abs(diferenca) < 0.01);
+
+  const addPagamento = () => {
+      const val = Number(novoPagamentoValor);
+      if (val > 0) {
+          setPagamentos([...pagamentos, { tipoPagamento: novoPagamentoTipo, valor: val }]);
+          setNovoPagamentoValor('');
+      }
+  };
+
+  const removePagamento = (index: number) => {
+      const copy = [...pagamentos];
+      copy.splice(index, 1);
+      setPagamentos(copy);
+  };
+
+  const addTroca = () => {
+      const val = Number(novaTroca.valorAvaliacao);
+      if (val > 0 && novaTroca.marca && novaTroca.modelo && novaTroca.placa) {
+          setTrocas([...trocas, {
+              marca: novaTroca.marca,
+              modelo: novaTroca.modelo,
+              versao: '',
+              anoFabricacao: 2015,
+              anoModelo: 2015,
+              placa: novaTroca.placa,
+              valorAvaliacao: val
+          }]);
+          setNovaTroca({ marca: '', modelo: '', placa: '', valorAvaliacao: '' });
+      }
+  };
+
+  const removeTroca = (index: number) => {
+      const copy = [...trocas];
+      copy.splice(index, 1);
+      setTrocas(copy);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
     setSuccessMsg('');
     
-    if (!clienteId || !veiculoId) {
-      setErrorMsg('Por favor, selecione um cliente e um veículo.');
+    if (!fechamentoValido) {
+      setErrorMsg('O total de pagamentos e trocas não confere com o valor da venda.');
       return;
     }
     
     setSaving(true);
     
-    // O backend agora pega o usuarioId do Token, mas mandamos vazio por compatibilidade com a tipagem
     const venda: VendaDto = {
       clienteId: clienteId,
-      usuarioId: '00000000-0000-0000-0000-000000000000', // Será ignorado pelo backend
+      usuarioId: '00000000-0000-0000-0000-000000000000', 
       veiculosIds: [veiculoId],
-      desconto: Number(desconto)
+      desconto: Number(desconto),
+      pagamentos: pagamentos,
+      trocas: trocas
     };
 
     try {
-      await realizarVenda(venda);
-      setSuccessMsg('Venda concluída! Gerando Contas a Receber...');
-      setTimeout(() => navigate('/'), 2000);
+      const vendaCriada = await realizarVenda(venda);
+      
+      if (emitirNfe && vendaCriada.id) {
+          setSuccessMsg('Venda concluída! Emitindo NF-e...');
+          await emitirNotaFiscalVenda(vendaCriada.id);
+      }
+
+      setSuccessMsg('Venda finalizada com sucesso! Redirecionando para o Contrato...');
+      setTimeout(() => {
+          if (vendaCriada.id) {
+              navigate(`/contrato/${vendaCriada.id}`);
+          } else {
+              navigate('/');
+          }
+      }, 1500);
     } catch (err: any) {
       setErrorMsg(`Erro: ${err.message}`);
       setSaving(false);
@@ -73,7 +141,7 @@ const Vendas: React.FC = () => {
       <header className="page-header" style={{ marginBottom: '40px' }}>
         <div>
           <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <DollarSign size={28} color="var(--color-success)" /> Checkout de Veículo
+            <DollarSign size={28} color="var(--color-success)" /> Terminal de Vendas 2.0
           </h1>
           <p style={{ color: 'var(--color-gray-400)', marginTop: '8px' }}>
             Operador Logado: <strong>{user?.nome}</strong>
@@ -95,94 +163,170 @@ const Vendas: React.FC = () => {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="pos-layout">
+      <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: '24px' }}>
         
         {/* Lado Esquerdo: Seleção */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
           <div className="glass-panel" style={{ padding: '24px' }}>
             <h3 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '12px' }}>
-              <User size={18} color="var(--color-blue)" /> Dados do Comprador
+              <User size={18} color="var(--color-blue)" /> 1. Dados do Comprador
             </h3>
             
             <div className="form-group">
               <label className="form-label">Selecionar Cliente na Base</label>
-              <select className="form-input" value={clienteId} onChange={e => setClienteId(e.target.value)} required style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <select className="form-input" value={clienteId} onChange={e => setClienteId(e.target.value)} required>
                 <option value="">-- Selecione um cliente --</option>
                 {clientes.map(c => (
                   <option key={c.id} value={c.id}>{c.nomeRazaoSocial || c.nome} - CPF/CNPJ: {c.cpfCnpj}</option>
                 ))}
               </select>
-              {clientes.length === 0 && <small style={{color: '#ef4444', marginTop: '8px', display: 'block'}}>Nenhum cliente cadastrado. Cadastre em "Clientes" primeiro.</small>}
             </div>
           </div>
 
           <div className="glass-panel" style={{ padding: '24px' }}>
             <h3 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '12px' }}>
-              <Car size={18} color="var(--color-blue)" /> Seleção de Veículo
+              <Car size={18} color="var(--color-blue)" /> 2. Seleção de Veículo
             </h3>
             
             <div className="form-group">
-              <label className="form-label">Veículos Disponíveis no Pátio</label>
-              <select className="form-input" value={veiculoId} onChange={e => setVeiculoId(e.target.value)} required style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                <option value="">-- Selecione o veículo --</option>
+              <label className="form-label">Selecionar Veículo do Estoque</label>
+              <select className="form-input" value={veiculoId} onChange={e => setVeiculoId(e.target.value)} required>
+                <option value="">-- Selecione um veículo disponível --</option>
                 {veiculosDisponiveis.map(v => (
-                  <option key={v.id} value={v.id}>{v.marca} {v.modelo} {v.versao} (Placa: {v.placa}) - R$ {v.valorVenda}</option>
+                  <option key={v.id} value={v.id}>
+                    {v.marca} {v.modelo} {v.anoFabricacao}/{v.anoModelo} - {v.placa} ({new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v.valorVenda || 0)})
+                  </option>
                 ))}
               </select>
-              {veiculosDisponiveis.length === 0 && <small style={{color: '#eab308', marginTop: '8px', display: 'block'}}>Nenhum veículo disponível no estoque atual.</small>}
             </div>
+          </div>
+
+          <div className="glass-panel" style={{ padding: '24px' }}>
+            <h3 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '12px' }}>
+              <CreditCard size={18} color="var(--color-warning)" /> 3. Fechamento e Pagamentos
+            </h3>
+            
+            {/* Veículo na Troca */}
+            <div style={{ marginBottom: '24px', padding: '16px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
+                <h4 style={{ marginBottom: '12px', fontSize: '14px', color: 'var(--color-gray-400)' }}>Adicionar Veículo na Troca</h4>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                    <input className="form-input" placeholder="Marca" value={novaTroca.marca} onChange={e => setNovaTroca({...novaTroca, marca: e.target.value})} />
+                    <input className="form-input" placeholder="Modelo" value={novaTroca.modelo} onChange={e => setNovaTroca({...novaTroca, modelo: e.target.value})} />
+                    <input className="form-input" placeholder="Placa" value={novaTroca.placa} onChange={e => setNovaTroca({...novaTroca, placa: e.target.value})} />
+                    <input className="form-input" type="number" placeholder="Valor (R$)" value={novaTroca.valorAvaliacao} onChange={e => setNovaTroca({...novaTroca, valorAvaliacao: e.target.value})} />
+                    <button type="button" className="btn btn-secondary" onClick={addTroca}><PlusCircle size={18}/></button>
+                </div>
+                {trocas.map((t, idx) => (
+                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', marginBottom: '4px' }}>
+                        <span>🚗 Troca: {t.marca} {t.modelo} ({t.placa})</span>
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                            <strong style={{ color: 'var(--color-success)' }}>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(t.valorAvaliacao)}</strong>
+                            <button type="button" onClick={() => removeTroca(idx)} style={{ background: 'none', border: 'none', color: 'var(--color-danger)', cursor: 'pointer' }}><Trash2 size={16}/></button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Outros Pagamentos */}
+            <div style={{ padding: '16px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
+                <h4 style={{ marginBottom: '12px', fontSize: '14px', color: 'var(--color-gray-400)' }}>Adicionar Pagamento</h4>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                    <select className="form-input" value={novoPagamentoTipo} onChange={e => setNovoPagamentoTipo(Number(e.target.value))}>
+                        <option value={1}>Dinheiro / Pix</option>
+                        <option value={2}>Financiamento</option>
+                        <option value={3}>Cheque</option>
+                        <option value={4}>Cartão</option>
+                    </select>
+                    <input className="form-input" type="number" placeholder="Valor (R$)" value={novoPagamentoValor} onChange={e => setNovoPagamentoValor(e.target.value)} />
+                    <button type="button" className="btn btn-secondary" onClick={addPagamento}><PlusCircle size={18}/></button>
+                </div>
+                {pagamentos.map((p, idx) => (
+                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', marginBottom: '4px' }}>
+                        <span>💰 {p.tipoPagamento === 1 ? 'PIX' : p.tipoPagamento === 2 ? 'Financiamento' : p.tipoPagamento === 3 ? 'Cheque' : 'Cartão'}</span>
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                            <strong style={{ color: 'var(--color-success)' }}>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.valor)}</strong>
+                            <button type="button" onClick={() => removePagamento(idx)} style={{ background: 'none', border: 'none', color: 'var(--color-danger)', cursor: 'pointer' }}><Trash2 size={16}/></button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
           </div>
 
         </div>
 
-        {/* Lado Direito: Resumo Financeiro */}
-        <div className="pos-summary-card">
-          <h2 style={{ marginBottom: '32px', textAlign: 'center' }}>Resumo da Venda</h2>
+        {/* Lado Direito: Resumo */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          
+          <div className="glass-panel" style={{ padding: '24px', position: 'sticky', top: '24px' }}>
+            <h3 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '12px' }}>
+              <Tag size={18} color="var(--color-success)" /> Resumo da Venda
+            </h3>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <span style={{ color: 'var(--color-gray-400)' }}>Veículo (Bruto):</span>
+              <strong>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valorBruto)}</strong>
+            </div>
 
-          <div className="pos-summary-row">
-            <span style={{ color: 'var(--color-gray-400)' }}>Subtotal:</span>
-            <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valorBruto)}</span>
-          </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', alignItems: 'center' }}>
+              <span style={{ color: 'var(--color-gray-400)' }}>Desconto (-):</span>
+              <input 
+                type="number" 
+                className="form-input" 
+                style={{ width: '120px', padding: '4px 8px', textAlign: 'right' }} 
+                value={desconto} 
+                onChange={e => setDesconto(Number(e.target.value) || 0)} 
+                min="0"
+              />
+            </div>
 
-          <div className="pos-summary-row">
-            <span style={{ color: 'var(--color-gray-400)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Tag size={16} /> Desconto Aplicado:
-            </span>
-            <input 
-              type="number" 
-              style={{ width: '120px', textAlign: 'right', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', padding: '8px', color: 'white', borderRadius: '6px' }} 
-              value={desconto} 
-              onChange={e => setDesconto(Number(e.target.value))}
-              disabled={!veiculoId}
-            />
-          </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', paddingTop: '16px', borderTop: '1px dashed rgba(255,255,255,0.2)' }}>
+              <span style={{ fontSize: '1.1rem' }}>Total da Venda:</span>
+              <strong style={{ fontSize: '1.2rem', color: 'var(--color-white)' }}>
+                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valorLiquido)}
+              </strong>
+            </div>
 
-          <div className="pos-total">
-            <span>Total a Pagar:</span>
-            <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valorLiquido)}</span>
-          </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <span style={{ color: 'var(--color-warning)' }}>Total Trocas (-):</span>
+              <strong style={{ color: 'var(--color-warning)' }}>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalTrocas)}</strong>
+            </div>
 
-          <div style={{ marginTop: '40px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <span style={{ color: 'var(--color-success)' }}>Total Pagamentos (-):</span>
+              <strong style={{ color: 'var(--color-success)' }}>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalPagamentos)}</strong>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '16px', background: diferenca === 0 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)', borderRadius: '8px', border: `1px solid ${diferenca === 0 ? 'var(--color-success)' : 'var(--color-danger)'}` }}>
+              <span>Diferença:</span>
+              <strong style={{ color: diferenca === 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
+                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(diferenca)}
+              </strong>
+            </div>
+            {diferenca !== 0 && (
+                <p style={{ color: 'var(--color-danger)', fontSize: '0.8rem', marginTop: '8px', textAlign: 'center' }}>
+                    O total pago deve ser exatamente igual ao valor da venda.
+                </p>
+            )}
+
+            <div className="form-group" style={{ marginTop: '24px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <input type="checkbox" checked={emitirNfe} onChange={e => setEmitirNfe(e.target.checked)} />
+                Emitir NF-e de Saída Automaticamente
+              </label>
+            </div>
+
             <button 
-              type="submit" 
-              className="btn btn-primary" 
-              style={{ 
-                width: '100%', 
-                padding: '20px', 
-                fontSize: '1.2rem', 
-                fontWeight: 700,
-                background: 'var(--color-success)',
-                boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)'
-              }} 
-              disabled={saving || !clienteId || !veiculoId}
+                type="submit" 
+                className="btn btn-success" 
+                style={{ width: '100%', marginTop: '24px', padding: '16px', fontSize: '1.1rem', opacity: fechamentoValido ? 1 : 0.5 }}
+                disabled={!fechamentoValido || saving}
             >
-              {saving ? 'PROCESSANDO...' : 'FINALIZAR VENDA'}
+              {saving ? 'Processando...' : 'Concluir Venda'}
             </button>
-            <p style={{ textAlign: 'center', marginTop: '16px', fontSize: '0.8rem', color: 'var(--color-gray-400)' }}>
-              A nota fiscal e o registro em Contas a Receber serão gerados automaticamente.
-            </p>
           </div>
+
         </div>
 
       </form>

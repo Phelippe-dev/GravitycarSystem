@@ -11,5 +11,6 @@ public interface IClienteService
     Task<ClienteDto> AtualizarAsync(Guid id, ClienteDto dto);
     Task RemoverAsync(Guid id);
     Task<ClienteDto?> ObterPorIdAsync(Guid id);
+    Task<ClienteDetalhesDto?> ObterDetalhesAsync(Guid id);
     Task<IEnumerable<ClienteDto>> ObterTodosAsync();
 }
