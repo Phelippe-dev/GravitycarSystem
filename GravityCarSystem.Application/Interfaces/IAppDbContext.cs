@@ -7,6 +7,9 @@ using GravityCarSystem.Domain.Entities.Financeiro;
 using GravityCarSystem.Domain.Entities.Negocio;
 using GravityCarSystem.Domain.Entities.Veiculos;
 
+using GravityCarSystem.Domain.Entities.Auditoria;
+using GravityCarSystem.Domain.Entities.Fiscal;
+
 namespace GravityCarSystem.Application.Interfaces;
 
 public interface IAppDbContext
@@ -45,6 +48,14 @@ public interface IAppDbContext
     // Financeiro
     DbSet<ContaReceber> ContasReceber { get; }
     DbSet<ContaPagar> ContasPagar { get; }
+    DbSet<CategoriaFinanceira> CategoriasFinanceiras { get; }
+    DbSet<ContaFinanceira> ContasFinanceiras { get; }
+    DbSet<MovimentoFinanceiro> MovimentosFinanceiros { get; }
+
+    // Fiscal e Auditoria
+    DbSet<NotaFiscal> NotasFiscais { get; }
+    DbSet<NotaFiscalItem> NotaFiscalItens { get; }
+    DbSet<AuditoriaLog> AuditoriaLogs { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

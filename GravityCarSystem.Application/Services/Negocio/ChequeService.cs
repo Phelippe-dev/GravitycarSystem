@@ -7,7 +7,6 @@ using GravityCarSystem.Application.DTOs.Negocio;
 using GravityCarSystem.Application.Interfaces;
 using GravityCarSystem.Domain.Entities.Negocio;
 using GravityCarSystem.Domain.Enums;
-using GravityCarSystem.Infrastructure.Data;
 
 namespace GravityCarSystem.Application.Services.Negocio;
 
@@ -24,10 +23,11 @@ public class ChequeService : IChequeService
 
     public async Task<ChequeDto> RegistrarChequeAsync(ChequeDto dto)
     {
+        var empresaId = _tenantService.GetEmpresaId();
         var cheque = new Cheque
         {
             Id = Guid.NewGuid(),
-            TenantId = _tenantService.TenantId,
+            EmpresaId = empresaId ?? Guid.Empty,
             ClienteId = dto.ClienteId,
             VendaPagamentoId = dto.VendaPagamentoId,
             Valor = dto.Valor,
@@ -51,18 +51,22 @@ public class ChequeService : IChequeService
 
     public async Task<IEnumerable<ChequeDto>> ObterTodosAsync()
     {
-        var cheques = await _context.Cheques
-            .Include(c => c.Cliente)
-            .Where(c => c.TenantId == _tenantService.TenantId)
-            .OrderBy(c => c.DataBomPara)
-            .ToListAsync();
+        var empresaId = _tenantService.GetEmpresaId();
+        var query = _context.Cheques.Include(c => c.Cliente).AsQueryable();
+
+        if (empresaId.HasValue && empresaId.Value != Guid.Empty)
+        {
+            query = query.Where(c => c.EmpresaId == empresaId.Value);
+        }
+
+        var cheques = await query.OrderBy(c => c.DataBomPara).ToListAsync();
 
         return cheques.Select(c => new ChequeDto
         {
             Id = c.Id,
             VendaPagamentoId = c.VendaPagamentoId,
             ClienteId = c.ClienteId,
-            ClienteNome = c.Cliente?.Nome,
+            ClienteNome = c.Cliente?.NomeRazaoSocial,
             Valor = c.Valor,
             Banco = c.Banco,
             Agencia = c.Agencia,
@@ -80,7 +84,7 @@ public class ChequeService : IChequeService
     public async Task<ChequeDto> AlterarStatusAsync(Guid id, StatusCheque novoStatus)
     {
         var cheque = await _context.Cheques
-            .FirstOrDefaultAsync(c => c.Id == id && c.TenantId == _tenantService.TenantId);
+            .FirstOrDefaultAsync(c => c.Id == id);
 
         if (cheque == null) throw new KeyNotFoundException("Cheque não encontrado.");
 
@@ -109,7 +113,7 @@ public class ChequeService : IChequeService
     public async Task<ChequeDto> AtualizarDadosChequeAsync(Guid id, ChequeDto dto)
     {
         var cheque = await _context.Cheques
-            .FirstOrDefaultAsync(c => c.Id == id && c.TenantId == _tenantService.TenantId);
+            .FirstOrDefaultAsync(c => c.Id == id);
 
         if (cheque == null) throw new KeyNotFoundException("Cheque não encontrado.");
 

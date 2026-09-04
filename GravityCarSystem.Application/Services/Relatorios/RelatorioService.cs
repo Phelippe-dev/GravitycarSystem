@@ -23,8 +23,8 @@ public class RelatorioService : IRelatorioService
         var query = _context.Vendas
             .Include(v => v.Veiculos)
                 .ThenInclude(vv => vv.Veiculo)
-                    .ThenInclude(veiculo => veiculo.CustosAdicionais)
-            .Where(v => v.Status == (byte)GravityCarSystem.Domain.Enums.StatusVenda.Concluida);
+                    .ThenInclude(veiculo => veiculo.Custos)
+            .Where(v => v.Status == GravityCarSystem.Domain.Enums.StatusVenda.Concluida);
 
         if (dataInicio.HasValue)
             query = query.Where(v => v.DataVenda >= dataInicio.Value);
@@ -49,7 +49,7 @@ public class RelatorioService : IRelatorioService
                 var veiculo = vendaVeiculo.Veiculo;
                 if (veiculo == null) continue;
 
-                var totalCustos = veiculo.CustosAdicionais.Sum(c => c.Valor);
+                var totalCustos = veiculo.Custos.Sum(c => c.Valor);
                 var valorCompra = veiculo.ValorCompra ?? 0;
                 var valorVenda = veiculo.ValorVenda ?? 0; // Ou o valor real rateado da venda se houver lógica específica
                 var desconto = descontoPorVeiculo;
@@ -80,8 +80,8 @@ public class RelatorioService : IRelatorioService
     {
         var resumo = new ResumoFinanceiroDto();
 
-        var queryPagar = _context.ContasPagar.Where(c => c.Status == (byte)GravityCarSystem.Domain.Enums.StatusConta.Pago);
-        var queryVendas = _context.Vendas.Where(v => v.Status == (byte)GravityCarSystem.Domain.Enums.StatusVenda.Concluida);
+        var queryPagar = _context.ContasPagar.Where(c => c.Status == GravityCarSystem.Domain.Enums.StatusConta.Pago);
+        var queryVendas = _context.Vendas.Where(v => v.Status == GravityCarSystem.Domain.Enums.StatusVenda.Concluida);
 
         if (dataInicio.HasValue)
         {
@@ -103,11 +103,11 @@ public class RelatorioService : IRelatorioService
         
         resumo.TotalSaidasComprasVeiculos = contasPagas
             .Where(c => c.Descricao.Contains("Compra de Veículo") || c.Descricao.Contains("Aquisição"))
-            .Sum(c => c.ValorPago ?? 0);
+            .Sum(c => c.ValorPago);
             
         resumo.TotalSaidasContasPagar = contasPagas
             .Where(c => !c.Descricao.Contains("Compra de Veículo") && !c.Descricao.Contains("Aquisição"))
-            .Sum(c => c.ValorPago ?? 0);
+            .Sum(c => c.ValorPago);
 
         resumo.SaldoLiquido = resumo.TotalEntradasVendas - (resumo.TotalSaidasContasPagar + resumo.TotalSaidasComprasVeiculos);
 

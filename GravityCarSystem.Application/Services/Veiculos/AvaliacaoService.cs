@@ -6,7 +6,6 @@ using GravityCarSystem.Application.DTOs.Veiculos;
 using GravityCarSystem.Application.Interfaces;
 using GravityCarSystem.Domain.Entities.Veiculos;
 using GravityCarSystem.Domain.Enums;
-using GravityCarSystem.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace GravityCarSystem.Application.Services.Veiculos;
@@ -24,10 +23,11 @@ public class AvaliacaoService : IAvaliacaoService
 
     public async Task<AvaliacaoDto> CriarAvaliacaoAsync(AvaliacaoDto dto)
     {
+        var empresaId = _tenantService.GetEmpresaId();
         var avaliacao = new Avaliacao
         {
             Id = Guid.NewGuid(),
-            TenantId = _tenantService.TenantId,
+            EmpresaId = empresaId ?? Guid.Empty,
             ClienteId = dto.ClienteId,
             VeiculoId = dto.VeiculoId,
             ValorMercado = dto.ValorMercado,
@@ -61,7 +61,7 @@ public class AvaliacaoService : IAvaliacaoService
     {
         var avaliacao = await _context.Avaliacoes
             .Include(a => a.Itens)
-            .FirstOrDefaultAsync(a => a.Id == id && a.TenantId == _tenantService.TenantId);
+            .FirstOrDefaultAsync(a => a.Id == id);
 
         if (avaliacao == null) return null;
 
@@ -91,8 +91,15 @@ public class AvaliacaoService : IAvaliacaoService
 
     public async Task<IEnumerable<AvaliacaoDto>> ObterTodasAvaliacoesAsync()
     {
-        var avaliacoes = await _context.Avaliacoes
-            .Where(a => a.TenantId == _tenantService.TenantId)
+        var empresaId = _tenantService.GetEmpresaId();
+        var query = _context.Avaliacoes.AsQueryable();
+
+        if (empresaId.HasValue && empresaId.Value != Guid.Empty)
+        {
+            query = query.Where(a => a.EmpresaId == empresaId.Value);
+        }
+
+        var avaliacoes = await query
             .OrderByDescending(a => a.DataAvaliacao)
             .ToListAsync();
 
@@ -112,7 +119,7 @@ public class AvaliacaoService : IAvaliacaoService
     public async Task<AvaliacaoDto> AprovarAvaliacaoAsync(Guid id, decimal valorAprovado, Guid usuarioAprovadorId)
     {
         var avaliacao = await _context.Avaliacoes
-            .FirstOrDefaultAsync(a => a.Id == id && a.TenantId == _tenantService.TenantId);
+            .FirstOrDefaultAsync(a => a.Id == id);
 
         if (avaliacao == null) throw new Exception("Avaliação não encontrada");
 

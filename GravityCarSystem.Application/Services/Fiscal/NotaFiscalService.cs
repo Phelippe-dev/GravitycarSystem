@@ -101,7 +101,7 @@ public class NotaFiscalService : INotaFiscalService
             EmitenteCnpj = "12.345.678/0001-90",
             EmitenteNome = "Gravity Car System Auto",
             DestinatarioCnpj = venda.Cliente?.CpfCnpj,
-            DestinatarioNome = venda.Cliente?.Nome,
+            DestinatarioNome = venda.Cliente?.NomeRazaoSocial,
             ValorTotal = venda.ValorLiquido,
             NaturezaOperacao = dto.NaturezaOperacao,
             Cfop = "5102", // Venda de mercadoria adquirida de terceiros
@@ -147,7 +147,7 @@ public class NotaFiscalService : INotaFiscalService
             Tipo = 0, // 0 = Entrada
             DataEmissao = DateTime.UtcNow,
             EmitenteCnpj = cliente.CpfCnpj, // Na NFe de entrada, o emitente de fato é a concessionária, mas para registro simula-se a origem
-            EmitenteNome = cliente.Nome,
+            EmitenteNome = cliente.NomeRazaoSocial,
             DestinatarioCnpj = "12.345.678/0001-90", // Loja
             DestinatarioNome = "Gravity Car System Auto",
             ValorTotal = dto.ValorCompra,

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using GravityCarSystem.Application.DTOs.Acesso;
 using GravityCarSystem.Application.Interfaces.Acesso;
 using GravityCarSystem.Domain.Entities.Acesso;
-using GravityCarSystem.Infrastructure.Data;
+using GravityCarSystem.Application.Interfaces;
 
 namespace GravityCarSystem.Application.Services.Acesso;
 
@@ -23,7 +23,7 @@ public class EmpresaService : IEmpresaService
     {
         // NOTA: Como é o Portal Admin da Software House, ele NÃO usa o TenantId, 
         // ele busca TODAS as Empresas cadastradas no banco de dados inteiro.
-        var empresas = await _context.Empresas.OrderByDescending(e => e.CriadoEm).ToListAsync();
+        var empresas = await _context.Empresas.OrderByDescending(e => e.DataCadastro).ToListAsync();
         
         return empresas.Select(e => new EmpresaDto
         {
@@ -41,7 +41,7 @@ public class EmpresaService : IEmpresaService
             Cidade = e.Cidade,
             Estado = e.Estado,
             Ativa = e.Ativa,
-            CriadoEm = e.CriadoEm
+            CriadoEm = e.DataCadastro
         });
     }
 
@@ -66,7 +66,7 @@ public class EmpresaService : IEmpresaService
             Cidade = e.Cidade,
             Estado = e.Estado,
             Ativa = e.Ativa,
-            CriadoEm = e.CriadoEm
+            CriadoEm = e.DataCadastro
         };
     }
 
@@ -88,7 +88,7 @@ public class EmpresaService : IEmpresaService
             Cidade = dto.Cidade,
             Estado = dto.Estado,
             Ativa = true,
-            CriadoEm = DateTime.Now
+            DataCadastro = DateTime.UtcNow
         };
 
         _context.Empresas.Add(empresa);
@@ -98,7 +98,7 @@ public class EmpresaService : IEmpresaService
         await _context.SaveChangesAsync();
         dto.Id = empresa.Id;
         dto.Ativa = empresa.Ativa;
-        dto.CriadoEm = empresa.CriadoEm;
+        dto.CriadoEm = empresa.DataCadastro;
         return dto;
     }
 
