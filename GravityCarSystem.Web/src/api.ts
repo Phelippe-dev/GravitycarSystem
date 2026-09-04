@@ -528,3 +528,40 @@ export const registrarEntradaRenave = async (veiculoId: string): Promise<boolean
         return false;
     }
 };
+// ================= ADMIN PORTAL ==================
+
+export interface Empresa {
+    id?: string;
+    razaoSocial: string;
+    nomeFantasia: string;
+    cnpj: string;
+    inscricaoEstadual?: string;
+    telefone?: string;
+    email?: string;
+    cidade?: string;
+    estado?: string;
+    ativa: boolean;
+    criadoEm: string;
+}
+
+export const fetchEmpresas = async (): Promise<Empresa[]> => {
+    const response = await fetch(`${API_BASE_URL}/admin/empresas`, { headers: getHeaders() });
+    return response.json();
+};
+
+export const createEmpresa = async (empresa: Partial<Empresa>): Promise<Empresa> => {
+    const response = await fetch(`${API_BASE_URL}/admin/empresas`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(empresa)
+    });
+    return response.json();
+};
+
+export const toggleStatusEmpresa = async (id: string): Promise<{ ativa: boolean }> => {
+    const response = await fetch(`${API_BASE_URL}/admin/empresas/${id}/toggle-status`, {
+        method: 'PATCH',
+        headers: getHeaders()
+    });
+    return response.json();
+};

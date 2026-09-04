@@ -65,6 +65,7 @@ builder.Services.AddScoped<GravityCarSystem.Application.Interfaces.Fiscal.INotaF
 builder.Services.AddScoped<GravityCarSystem.Application.Interfaces.Integracoes.ISenatranService, GravityCarSystem.Application.Services.Integracoes.SenatranMockService>();
 builder.Services.AddScoped<GravityCarSystem.Application.Interfaces.IAvaliacaoService, GravityCarSystem.Application.Services.Veiculos.AvaliacaoService>();
 builder.Services.AddScoped<GravityCarSystem.Application.Interfaces.IChequeService, GravityCarSystem.Application.Services.Negocio.ChequeService>();
+builder.Services.AddScoped<GravityCarSystem.Application.Interfaces.Acesso.IEmpresaService, GravityCarSystem.Application.Services.Acesso.EmpresaService>();
 
 // Database Configuration
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");

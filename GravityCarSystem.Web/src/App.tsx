@@ -1,5 +1,5 @@
 import React from 'react';
-import { Car, User, LogOut, DollarSign, LayoutDashboard, PlusCircle, Sun, Moon, FileText, CreditCard } from 'lucide-react';
+import { Car, User, LogOut, DollarSign, LayoutDashboard, PlusCircle, Sun, Moon, FileText, CreditCard, ShieldAlert } from 'lucide-react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import CadastroVeiculo from './pages/CadastroVeiculo';
@@ -16,6 +16,7 @@ import Fiscal from './pages/Fiscal';
 import ContratoVenda from './pages/ContratoVenda';
 import AvaliacaoVeiculo from './pages/AvaliacaoVeiculo';
 import Cheques from './pages/Cheques';
+import AdminPortal from './pages/AdminPortal';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -86,6 +87,12 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             <FileText size={20} />
             Fiscal
           </Link>
+
+          <div style={{ margin: '16px 0', borderTop: '1px solid rgba(255,255,255,0.1)' }}></div>
+          <Link to="/admin/empresas" className={`nav-item ${location.pathname === '/admin/empresas' ? 'active' : ''}`} style={{ color: 'var(--color-blue-light)' }}>
+            <ShieldAlert size={20} />
+            Portal Admin
+          </Link>
         </nav>
 
         <div className="sidebar-footer">
@@ -149,6 +156,7 @@ const App: React.FC = () => {
                   <Route path="/veiculos/:id" element={<VeiculoDetalhesPage />} />
                   <Route path="/relatorios" element={<Relatorios />} />
                   <Route path="/fiscal" element={<Fiscal />} />
+                  <Route path="/admin/empresas" element={<AdminPortal />} />
                   <Route path="/contrato/:id" element={<ContratoVenda />} />
                 </Routes>
               </Layout>
