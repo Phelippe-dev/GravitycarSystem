@@ -29,8 +29,15 @@ const Login: React.FC = () => {
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Erro ao realizar login');
+                let errorMsg = 'E-mail ou senha inválidos.';
+                try {
+                    const errorData = await response.json();
+                    errorMsg = errorData.message || errorData.title || errorMsg;
+                } catch {
+                    const errorText = await response.text();
+                    if (errorText && errorText.length < 200) errorMsg = errorText;
+                }
+                throw new Error(errorMsg);
             }
 
             const data = await response.json();
