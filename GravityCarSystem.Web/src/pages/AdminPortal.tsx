@@ -82,8 +82,13 @@ const AdminPortal: React.FC = () => {
       <div className="glass-panel" style={{ padding: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
             <div className="search-bar">
-              <Search size={20} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-gray-400)' }} />
-              <input type="text" className="form-input" placeholder="Buscar por loja ou CNPJ..." style={{ paddingLeft: '40px', width: '300px' }} />
+              <Search size={18} />
+              <input 
+                type="text" 
+                className="form-input" 
+                placeholder="Buscar por loja ou CNPJ..." 
+                style={{ width: '320px' }} 
+              />
             </div>
         </div>
 

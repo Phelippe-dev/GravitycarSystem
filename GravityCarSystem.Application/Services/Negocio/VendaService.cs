@@ -84,20 +84,36 @@ public class VendaService : IVendaService
         // Lidar com Veículos na Troca
         foreach (var trocaDto in dto.Trocas)
         {
-            var veiculoTroca = new Veiculo
+            Veiculo? veiculoTroca = null;
+            if (!string.IsNullOrWhiteSpace(trocaDto.Placa))
             {
-                Marca = trocaDto.Marca,
-                Modelo = trocaDto.Modelo,
-                Versao = trocaDto.Versao,
-                AnoFabricacao = trocaDto.AnoFabricacao,
-                AnoModelo = trocaDto.AnoModelo,
-                Placa = trocaDto.Placa,
-                ValorCompra = trocaDto.ValorAvaliacao,
-                Status = StatusVeiculo.EmPreparacao, // Conforme pedido do usuário
-                DataEntrada = DateTime.Now
-            };
-            
-            _context.Veiculos.Add(veiculoTroca);
+                veiculoTroca = await _context.Veiculos.FirstOrDefaultAsync(v => v.Placa == trocaDto.Placa);
+            }
+
+            if (veiculoTroca != null)
+            {
+                veiculoTroca.Status = StatusVeiculo.EmPreparacao;
+                veiculoTroca.ValorCompra = trocaDto.ValorAvaliacao;
+                veiculoTroca.DataEntrada ??= DateTime.UtcNow;
+                if (!string.IsNullOrWhiteSpace(trocaDto.Marca)) veiculoTroca.Marca = trocaDto.Marca;
+                if (!string.IsNullOrWhiteSpace(trocaDto.Modelo)) veiculoTroca.Modelo = trocaDto.Modelo;
+            }
+            else
+            {
+                veiculoTroca = new Veiculo
+                {
+                    Marca = trocaDto.Marca,
+                    Modelo = trocaDto.Modelo,
+                    Versao = trocaDto.Versao,
+                    AnoFabricacao = trocaDto.AnoFabricacao,
+                    AnoModelo = trocaDto.AnoModelo,
+                    Placa = trocaDto.Placa,
+                    ValorCompra = trocaDto.ValorAvaliacao,
+                    Status = StatusVeiculo.EmPreparacao,
+                    DataEntrada = DateTime.UtcNow
+                };
+                _context.Veiculos.Add(veiculoTroca);
+            }
             
             venda.Trocas.Add(new VendaTroca
             {

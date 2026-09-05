@@ -61,9 +61,15 @@ const AvaliacaoVeiculo: React.FC = () => {
 
         const avaliacao = {
             clienteId,
-            valorMercado: Number(valorMercado) || 0,
+            marca,
+            modelo,
+            placa,
+            anoFabricacao: Number(anoFab) || null,
+            anoModelo: Number(anoMod) || null,
+            quilometragem: Number(km) || 0,
+            valorMercado: Number(valorMercado.replace(',', '.')) || 0,
             valorAvaliacao: valorSugerido, // Custo abatido
-            valorAprovado: Number(valorAprovado) || null,
+            valorAprovado: valorAprovado ? Number(valorAprovado.replace(',', '.')) : null,
             observacoes: 'Avaliação via Painel Web',
             itens: [
                 { categoria: 'Mecânica', item: 'Motor', status: statusMotor, custoEstimado: 0 },
@@ -88,8 +94,8 @@ const AvaliacaoVeiculo: React.FC = () => {
 
             if (!response.ok) throw new Error('Erro ao salvar avaliação');
             
-            setSuccessMsg('Avaliação salva com sucesso!');
-            setTimeout(() => navigate('/vendas'), 2000);
+            setSuccessMsg('Avaliação salva com sucesso! O veículo foi adicionado ao Estoque.');
+            setTimeout(() => navigate('/estoque'), 1800);
         } catch (err: any) {
             setErrorMsg(err.message);
             setSaving(false);

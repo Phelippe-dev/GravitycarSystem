@@ -1,6 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
+  color-scheme: dark;
   /* Default Theme (Dark) Colors */
   --color-black: #030a16;
   --color-black-light: #0a162d;
@@ -31,6 +32,7 @@
 }
 
 body.theme-light {
+  color-scheme: light;
   /* Light Theme Colors */
   --color-black: #f1f5f9; /* Slate 100 for softer background */
   --color-black-light: #ffffff; /* Panels background */
@@ -402,8 +404,162 @@ body.theme-light .glass-panel {
 /* Form Elements */
 .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
 .form-label { font-size: 0.9rem; font-weight: 500; color: var(--color-gray-200); }
-.form-input { background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border); border-radius: 8px; padding: 12px 16px; padding-left: 40px; color: white; font-family: var(--font-family); transition: border-color 0.2s; outline: none; width: 100%; }
-.form-input:focus { border-color: var(--color-blue); background: rgba(255, 255, 255, 0.1); }
+.form-input { 
+  background: rgba(255, 255, 255, 0.05); 
+  border: 1px solid var(--glass-border); 
+  border-radius: 8px; 
+  padding: 10px 14px; 
+  color: var(--color-white); 
+  font-family: var(--font-family); 
+  font-size: 0.95rem;
+  transition: all 0.2s ease; 
+  outline: none; 
+  width: 100%; 
+}
+.form-input:focus { 
+  border-color: var(--color-blue); 
+  background: rgba(255, 255, 255, 0.08); 
+  box-shadow: 0 0 0 3px rgba(0, 98, 255, 0.15);
+}
+
+body.theme-light .form-input {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+body.theme-light .form-input:focus {
+  border-color: var(--color-blue);
+  box-shadow: 0 0 0 3px rgba(0, 98, 255, 0.12);
+}
+
+/* Select Styling with Sleek Dark & Light Themes */
+select, select.form-input {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-color: var(--color-black-light);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 16px;
+  padding-right: 42px !important;
+  color: var(--color-white) !important;
+  cursor: pointer;
+}
+
+body.theme-light select, body.theme-light select.form-input {
+  background-color: #ffffff;
+  color: #0f172a !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+}
+
+/* Force dark options dropdown menu in Chrome, Edge, and Firefox */
+select option {
+  background-color: #0b1528 !important;
+  color: #f1f5f9 !important;
+  padding: 10px 14px;
+}
+select option:checked, select option:hover {
+  background-color: #004acc !important;
+  color: #ffffff !important;
+}
+
+body.theme-light select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+body.theme-light select option:checked, body.theme-light select option:hover {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+}
+
+/* Native Date Input Customization */
+input[type="date"].form-input {
+  cursor: pointer;
+  min-height: 42px;
+}
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.8);
+  cursor: pointer;
+  opacity: 0.75;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  margin-right: 4px;
+}
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+body.theme-light input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.2);
+}
+
+/* Search Bar Component */
+.search-bar {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.search-bar svg {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--color-gray-400);
+}
+.search-bar input.form-input {
+  padding-left: 42px !important;
+  height: 42px;
+}
+
+/* Date Preset Pills for Fluid Reporting */
+.date-presets-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.date-preset-pill {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  color: var(--color-gray-400);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.date-preset-pill:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-white);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+.date-preset-pill.active {
+  background: rgba(0, 98, 255, 0.2);
+  color: var(--color-blue-light);
+  border-color: var(--color-blue);
+  box-shadow: 0 0 10px rgba(0, 98, 255, 0.2);
+}
+body.theme-light .date-preset-pill {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #475569;
+}
+body.theme-light .date-preset-pill:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+body.theme-light .date-preset-pill.active {
+  background: #eff6ff;
+  border-color: #2563eb;
+  color: #2563eb;
+}
+
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 
 /* Login Page Elements */

@@ -133,7 +133,7 @@ const CadastroVeiculo: React.FC = () => {
           <div className="form-row">
             <div className="form-group">
               <label className="form-label">Combustível</label>
-              <select name="combustivel" value={formData.combustivel} onChange={handleChange} className="form-input" style={{ appearance: 'auto' }}>
+              <select name="combustivel" value={formData.combustivel} onChange={handleChange} className="form-input">
                 <option value="">-- Selecione --</option>
                 <option value="Flex">Flex</option>
                 <option value="Gasolina">Gasolina</option>
@@ -145,7 +145,7 @@ const CadastroVeiculo: React.FC = () => {
             </div>
             <div className="form-group">
               <label className="form-label">Câmbio</label>
-              <select name="cambio" value={formData.cambio} onChange={handleChange} className="form-input" style={{ appearance: 'auto' }}>
+              <select name="cambio" value={formData.cambio} onChange={handleChange} className="form-input">
                 <option value="">-- Selecione --</option>
                 <option value="Manual">Manual</option>
                 <option value="Automático">Automático</option>

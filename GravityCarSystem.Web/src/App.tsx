@@ -18,6 +18,7 @@ import AvaliacaoVeiculo from './pages/AvaliacaoVeiculo';
 import Cheques from './pages/Cheques';
 import AdminPortal from './pages/AdminPortal';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import logoImg from './assets/logo.png';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
@@ -42,8 +43,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       {/* Sidebar */}
       <aside className="sidebar">
         <div className="sidebar-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <span style={{ fontSize: '1.2rem' }}>Gravity Car System</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <img src={logoImg} alt="Gravity Logo" style={{ height: '32px', width: 'auto', borderRadius: '6px', objectFit: 'contain' }} />
+            <span style={{ fontSize: '1.1rem', fontWeight: 700, letterSpacing: '-0.01em' }}>Gravity Car</span>
           </div>
           <button onClick={toggleTheme} className="theme-toggle-btn" title="Alternar Tema">
             {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
@@ -118,11 +120,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       {/* Main Content */}
       <main className="main-content" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
         {children}
-        
-        {/* Global Floating Logo */}
-        <div style={{ position: 'fixed', bottom: '32px', right: '32px', zIndex: 0, opacity: 0.4, pointerEvents: 'none' }}>
-          <img src="/src/assets/logo.png" alt="Gravity Tech Logo" style={{ width: '280px', height: 'auto' }} />
-        </div>
       </main>
     </div>
   );

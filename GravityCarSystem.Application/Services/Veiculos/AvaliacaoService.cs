@@ -24,17 +24,70 @@ public class AvaliacaoService : IAvaliacaoService
     public async Task<AvaliacaoDto> CriarAvaliacaoAsync(AvaliacaoDto dto)
     {
         var empresaId = _tenantService.GetEmpresaId();
+
+        // Localizar veículo existente ou criar novo no estoque
+        Veiculo? veiculo = null;
+        if (dto.VeiculoId.HasValue && dto.VeiculoId.Value != Guid.Empty)
+        {
+            veiculo = await _context.Veiculos.FindAsync(dto.VeiculoId.Value);
+        }
+        else if (!string.IsNullOrWhiteSpace(dto.Placa))
+        {
+            veiculo = await _context.Veiculos.FirstOrDefaultAsync(v => v.Placa == dto.Placa);
+        }
+
+        if (veiculo != null)
+        {
+            veiculo.Status = dto.ValorAprovado.HasValue ? StatusVeiculo.EmPreparacao : StatusVeiculo.EmAvaliacao;
+            veiculo.ValorCompra = dto.ValorAprovado ?? dto.ValorAvaliacao ?? veiculo.ValorCompra;
+            if (dto.ValorMercado.HasValue) veiculo.ValorVenda = dto.ValorMercado;
+            if (!string.IsNullOrWhiteSpace(dto.Marca)) veiculo.Marca = dto.Marca;
+            if (!string.IsNullOrWhiteSpace(dto.Modelo)) veiculo.Modelo = dto.Modelo;
+            if (!string.IsNullOrWhiteSpace(dto.Versao)) veiculo.Versao = dto.Versao;
+            if (dto.AnoFabricacao.HasValue) veiculo.AnoFabricacao = dto.AnoFabricacao;
+            if (dto.AnoModelo.HasValue) veiculo.AnoModelo = dto.AnoModelo;
+            if (dto.Quilometragem.HasValue) veiculo.Quilometragem = dto.Quilometragem;
+            if (!string.IsNullOrWhiteSpace(dto.Cor)) veiculo.Cor = dto.Cor;
+            if (!string.IsNullOrWhiteSpace(dto.Combustivel)) veiculo.Combustivel = dto.Combustivel;
+            if (!string.IsNullOrWhiteSpace(dto.Cambio)) veiculo.Cambio = dto.Cambio;
+        }
+        else
+        {
+            veiculo = new Veiculo
+            {
+                Id = Guid.NewGuid(),
+                EmpresaId = empresaId ?? Guid.Empty,
+                Marca = !string.IsNullOrWhiteSpace(dto.Marca) ? dto.Marca : "Não informada",
+                Modelo = !string.IsNullOrWhiteSpace(dto.Modelo) ? dto.Modelo : "Não informado",
+                Versao = dto.Versao ?? string.Empty,
+                Placa = dto.Placa,
+                AnoFabricacao = dto.AnoFabricacao,
+                AnoModelo = dto.AnoModelo,
+                Cor = dto.Cor,
+                Combustivel = dto.Combustivel,
+                Cambio = dto.Cambio,
+                Quilometragem = dto.Quilometragem,
+                ValorCompra = dto.ValorAprovado ?? dto.ValorAvaliacao,
+                ValorVenda = dto.ValorMercado,
+                Status = dto.ValorAprovado.HasValue ? StatusVeiculo.EmPreparacao : StatusVeiculo.EmAvaliacao,
+                DataEntrada = DateTime.UtcNow,
+                Observacoes = $"Entrada via Avaliação de Veículo. {dto.Observacoes}".Trim()
+            };
+            _context.Veiculos.Add(veiculo);
+        }
+
         var avaliacao = new Avaliacao
         {
             Id = Guid.NewGuid(),
             EmpresaId = empresaId ?? Guid.Empty,
             ClienteId = dto.ClienteId,
-            VeiculoId = dto.VeiculoId,
+            VeiculoId = veiculo.Id,
             ValorMercado = dto.ValorMercado,
             ValorAvaliacao = dto.ValorAvaliacao,
+            ValorAprovado = dto.ValorAprovado,
             Observacoes = dto.Observacoes,
             DataAvaliacao = DateTime.UtcNow,
-            Status = StatusAvaliacao.Pendente
+            Status = dto.ValorAprovado.HasValue ? StatusAvaliacao.Aprovada : StatusAvaliacao.Pendente
         };
 
         foreach (var item in dto.Itens)
@@ -54,6 +107,7 @@ public class AvaliacaoService : IAvaliacaoService
         await _context.SaveChangesAsync();
 
         dto.Id = avaliacao.Id;
+        dto.VeiculoId = veiculo.Id;
         return dto;
     }
 
@@ -61,6 +115,7 @@ public class AvaliacaoService : IAvaliacaoService
     {
         var avaliacao = await _context.Avaliacoes
             .Include(a => a.Itens)
+            .Include(a => a.Veiculo)
             .FirstOrDefaultAsync(a => a.Id == id);
 
         if (avaliacao == null) return null;
@@ -70,6 +125,16 @@ public class AvaliacaoService : IAvaliacaoService
             Id = avaliacao.Id,
             ClienteId = avaliacao.ClienteId,
             VeiculoId = avaliacao.VeiculoId,
+            Marca = avaliacao.Veiculo?.Marca,
+            Modelo = avaliacao.Veiculo?.Modelo,
+            Versao = avaliacao.Veiculo?.Versao,
+            Placa = avaliacao.Veiculo?.Placa,
+            AnoFabricacao = avaliacao.Veiculo?.AnoFabricacao,
+            AnoModelo = avaliacao.Veiculo?.AnoModelo,
+            Cor = avaliacao.Veiculo?.Cor,
+            Combustivel = avaliacao.Veiculo?.Combustivel,
+            Cambio = avaliacao.Veiculo?.Cambio,
+            Quilometragem = avaliacao.Veiculo?.Quilometragem,
             ValorMercado = avaliacao.ValorMercado,
             ValorAvaliacao = avaliacao.ValorAvaliacao,
             ValorAprovado = avaliacao.ValorAprovado,
@@ -92,7 +157,9 @@ public class AvaliacaoService : IAvaliacaoService
     public async Task<IEnumerable<AvaliacaoDto>> ObterTodasAvaliacoesAsync()
     {
         var empresaId = _tenantService.GetEmpresaId();
-        var query = _context.Avaliacoes.AsQueryable();
+        var query = _context.Avaliacoes
+            .Include(a => a.Veiculo)
+            .AsQueryable();
 
         if (empresaId.HasValue && empresaId.Value != Guid.Empty)
         {
@@ -108,6 +175,16 @@ public class AvaliacaoService : IAvaliacaoService
             Id = a.Id,
             ClienteId = a.ClienteId,
             VeiculoId = a.VeiculoId,
+            Marca = a.Veiculo?.Marca,
+            Modelo = a.Veiculo?.Modelo,
+            Versao = a.Veiculo?.Versao,
+            Placa = a.Veiculo?.Placa,
+            AnoFabricacao = a.Veiculo?.AnoFabricacao,
+            AnoModelo = a.Veiculo?.AnoModelo,
+            Cor = a.Veiculo?.Cor,
+            Combustivel = a.Veiculo?.Combustivel,
+            Cambio = a.Veiculo?.Cambio,
+            Quilometragem = a.Veiculo?.Quilometragem,
             ValorMercado = a.ValorMercado,
             ValorAvaliacao = a.ValorAvaliacao,
             ValorAprovado = a.ValorAprovado,
@@ -119,6 +196,7 @@ public class AvaliacaoService : IAvaliacaoService
     public async Task<AvaliacaoDto> AprovarAvaliacaoAsync(Guid id, decimal valorAprovado, Guid usuarioAprovadorId)
     {
         var avaliacao = await _context.Avaliacoes
+            .Include(a => a.Veiculo)
             .FirstOrDefaultAsync(a => a.Id == id);
 
         if (avaliacao == null) throw new Exception("Avaliação não encontrada");
@@ -127,6 +205,12 @@ public class AvaliacaoService : IAvaliacaoService
         avaliacao.Status = StatusAvaliacao.Aprovada;
         avaliacao.DataAprovacao = DateTime.UtcNow;
         avaliacao.UsuarioId = usuarioAprovadorId;
+
+        if (avaliacao.Veiculo != null)
+        {
+            avaliacao.Veiculo.Status = StatusVeiculo.EmPreparacao;
+            avaliacao.Veiculo.ValorCompra = valorAprovado;
+        }
 
         await _context.SaveChangesAsync();
 

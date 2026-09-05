@@ -565,3 +565,32 @@ export const toggleStatusEmpresa = async (id: string): Promise<{ ativa: boolean 
     });
     return response.json();
 };
+
+// ================= AVALIAÇÕES ==================
+export interface Avaliacao {
+    id: string;
+    clienteId: string;
+    veiculoId?: string;
+    marca?: string;
+    modelo?: string;
+    versao?: string;
+    placa?: string;
+    anoFabricacao?: number;
+    anoModelo?: number;
+    valorMercado?: number;
+    valorAvaliacao?: number;
+    valorAprovado?: number;
+    status: number;
+    dataAvaliacao?: string;
+}
+
+export const fetchAvaliacoes = async (): Promise<Avaliacao[]> => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/avaliacoes`, { headers: getHeaders() });
+        if (!response.ok) return [];
+        return await response.json();
+    } catch (e) {
+        console.error(e);
+        return [];
+    }
+};

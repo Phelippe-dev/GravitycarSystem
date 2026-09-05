@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchClientes, fetchVeiculos, realizarVenda, emitirNotaFiscalVenda } from '../api';
-import type { Cliente, Veiculo, VendaDto, VendaPagamentoDto, VendaTrocaDto } from '../api';
+import { fetchClientes, fetchVeiculos, fetchAvaliacoes, realizarVenda, emitirNotaFiscalVenda } from '../api';
+import type { Cliente, Veiculo, Avaliacao, VendaDto, VendaPagamentoDto, VendaTrocaDto } from '../api';
 import { Car, User, DollarSign, Tag, CheckCircle, AlertTriangle, CreditCard, PlusCircle, Trash2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -10,6 +10,7 @@ const Vendas: React.FC = () => {
   const { user } = useAuth();
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [veiculosDisponiveis, setVeiculosDisponiveis] = useState<Veiculo[]>([]);
+  const [avaliacoes, setAvaliacoes] = useState<Avaliacao[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -38,10 +39,24 @@ const Vendas: React.FC = () => {
 
   const carregarDados = async () => {
     setLoading(true);
-    const [cli, veic] = await Promise.all([fetchClientes(), fetchVeiculos()]);
+    const [cli, veic, aval] = await Promise.all([fetchClientes(), fetchVeiculos(), fetchAvaliacoes()]);
     setClientes(cli);
     setVeiculosDisponiveis(veic.filter(v => v.status === 4)); // 4 = Disponível
+    setAvaliacoes(aval);
     setLoading(false);
+  };
+
+  const handleSelecionarAvaliacao = (avaliacaoId: string) => {
+    if (!avaliacaoId) return;
+    const aval = avaliacoes.find(a => a.id === avaliacaoId);
+    if (aval) {
+      setNovaTroca({
+        marca: aval.marca || '',
+        modelo: aval.modelo || '',
+        placa: aval.placa || '',
+        valorAvaliacao: String(aval.valorAprovado || aval.valorAvaliacao || '')
+      });
+    }
   };
 
   const veiculoSelecionado = veiculosDisponiveis.find(v => v.id === veiculoId);
@@ -208,45 +223,70 @@ const Vendas: React.FC = () => {
             </h3>
             
             {/* Veículo na Troca */}
-            <div style={{ marginBottom: '24px', padding: '16px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
-                <h4 style={{ marginBottom: '12px', fontSize: '14px', color: 'var(--color-gray-400)' }}>Adicionar Veículo na Troca</h4>
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                    <input className="form-input" placeholder="Marca" value={novaTroca.marca} onChange={e => setNovaTroca({...novaTroca, marca: e.target.value})} />
-                    <input className="form-input" placeholder="Modelo" value={novaTroca.modelo} onChange={e => setNovaTroca({...novaTroca, modelo: e.target.value})} />
-                    <input className="form-input" placeholder="Placa" value={novaTroca.placa} onChange={e => setNovaTroca({...novaTroca, placa: e.target.value})} />
-                    <input className="form-input" type="number" placeholder="Valor (R$)" value={novaTroca.valorAvaliacao} onChange={e => setNovaTroca({...novaTroca, valorAvaliacao: e.target.value})} />
-                    <button type="button" className="btn btn-secondary" onClick={addTroca}><PlusCircle size={18}/></button>
+            <div style={{ marginBottom: '24px', padding: '18px', background: 'rgba(0,0,0,0.2)', borderRadius: '10px', border: '1px solid var(--glass-border)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+                    <h4 style={{ fontSize: '14px', color: 'var(--color-gray-200)', fontWeight: 600 }}>Adicionar Veículo na Troca</h4>
+                    {avaliacoes.length > 0 && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--color-gray-400)' }}>Puxar de Avaliação:</span>
+                        <select 
+                          className="form-input" 
+                          style={{ height: '34px', fontSize: '0.8rem', padding: '4px 32px 4px 10px', width: '220px' }}
+                          onChange={e => handleSelecionarAvaliacao(e.target.value)}
+                          defaultValue=""
+                        >
+                          <option value="">-- Selecionar Avaliação --</option>
+                          {avaliacoes.map(a => (
+                            <option key={a.id} value={a.id}>
+                              {a.marca} {a.modelo} {a.placa ? `(${a.placa})` : ''} - R$ {(a.valorAprovado || a.valorAvaliacao || 0).toLocaleString('pt-BR')}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.2fr 1fr 1.2fr 44px', gap: '8px', alignItems: 'center', marginBottom: '12px' }}>
+                    <input className="form-input" style={{ height: '42px' }} placeholder="Marca" value={novaTroca.marca} onChange={e => setNovaTroca({...novaTroca, marca: e.target.value})} />
+                    <input className="form-input" style={{ height: '42px' }} placeholder="Modelo" value={novaTroca.modelo} onChange={e => setNovaTroca({...novaTroca, modelo: e.target.value})} />
+                    <input className="form-input" style={{ height: '42px' }} placeholder="Placa" value={novaTroca.placa} onChange={e => setNovaTroca({...novaTroca, placa: e.target.value})} />
+                    <input className="form-input" style={{ height: '42px' }} type="number" placeholder="Valor (R$)" value={novaTroca.valorAvaliacao} onChange={e => setNovaTroca({...novaTroca, valorAvaliacao: e.target.value})} />
+                    <button type="button" className="btn btn-primary" onClick={addTroca} style={{ height: '42px', width: '44px', padding: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px' }} title="Adicionar Troca">
+                      <PlusCircle size={20}/>
+                    </button>
                 </div>
                 {trocas.map((t, idx) => (
-                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', marginBottom: '4px' }}>
-                        <span>🚗 Troca: {t.marca} {t.modelo} ({t.placa})</span>
-                        <div style={{ display: 'flex', gap: '12px' }}>
-                            <strong style={{ color: 'var(--color-success)' }}>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(t.valorAvaliacao)}</strong>
-                            <button type="button" onClick={() => removeTroca(idx)} style={{ background: 'none', border: 'none', color: 'var(--color-danger)', cursor: 'pointer' }}><Trash2 size={16}/></button>
+                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '6px', marginBottom: '6px' }}>
+                        <span>🚗 <strong>{t.marca} {t.modelo}</strong> <span style={{ fontFamily: 'monospace', color: 'var(--color-gray-400)', marginLeft: '6px' }}>({t.placa})</span></span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                            <strong style={{ color: 'var(--color-warning)' }}>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(t.valorAvaliacao)}</strong>
+                            <button type="button" onClick={() => removeTroca(idx)} style={{ background: 'none', border: 'none', color: 'var(--color-danger)', cursor: 'pointer', display: 'flex' }}><Trash2 size={16}/></button>
                         </div>
                     </div>
                 ))}
             </div>
 
             {/* Outros Pagamentos */}
-            <div style={{ padding: '16px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
-                <h4 style={{ marginBottom: '12px', fontSize: '14px', color: 'var(--color-gray-400)' }}>Adicionar Pagamento</h4>
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                    <select className="form-input" value={novoPagamentoTipo} onChange={e => setNovoPagamentoTipo(Number(e.target.value))}>
+            <div style={{ padding: '18px', background: 'rgba(0,0,0,0.2)', borderRadius: '10px', border: '1px solid var(--glass-border)' }}>
+                <h4 style={{ marginBottom: '14px', fontSize: '14px', color: 'var(--color-gray-200)', fontWeight: 600 }}>Adicionar Pagamento</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 2fr 44px', gap: '8px', alignItems: 'center', marginBottom: '12px' }}>
+                    <select className="form-input" style={{ height: '42px' }} value={novoPagamentoTipo} onChange={e => setNovoPagamentoTipo(Number(e.target.value))}>
                         <option value={1}>Dinheiro / Pix</option>
                         <option value={2}>Financiamento</option>
                         <option value={3}>Cheque</option>
                         <option value={4}>Cartão</option>
                     </select>
-                    <input className="form-input" type="number" placeholder="Valor (R$)" value={novoPagamentoValor} onChange={e => setNovoPagamentoValor(e.target.value)} />
-                    <button type="button" className="btn btn-secondary" onClick={addPagamento}><PlusCircle size={18}/></button>
+                    <input className="form-input" style={{ height: '42px' }} type="number" placeholder="Valor (R$)" value={novoPagamentoValor} onChange={e => setNovoPagamentoValor(e.target.value)} />
+                    <button type="button" className="btn btn-primary" onClick={addPagamento} style={{ height: '42px', width: '44px', padding: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px' }} title="Adicionar Pagamento">
+                      <PlusCircle size={20}/>
+                    </button>
                 </div>
                 {pagamentos.map((p, idx) => (
-                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', marginBottom: '4px' }}>
-                        <span>💰 {p.tipoPagamento === 1 ? 'PIX' : p.tipoPagamento === 2 ? 'Financiamento' : p.tipoPagamento === 3 ? 'Cheque' : 'Cartão'}</span>
-                        <div style={{ display: 'flex', gap: '12px' }}>
+                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '6px', marginBottom: '6px' }}>
+                        <span>💰 {p.tipoPagamento === 1 ? 'PIX / Dinheiro' : p.tipoPagamento === 2 ? 'Financiamento' : p.tipoPagamento === 3 ? 'Cheque' : 'Cartão'}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                             <strong style={{ color: 'var(--color-success)' }}>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.valor)}</strong>
-                            <button type="button" onClick={() => removePagamento(idx)} style={{ background: 'none', border: 'none', color: 'var(--color-danger)', cursor: 'pointer' }}><Trash2 size={16}/></button>
+                            <button type="button" onClick={() => removePagamento(idx)} style={{ background: 'none', border: 'none', color: 'var(--color-danger)', cursor: 'pointer', display: 'flex' }}><Trash2 size={16}/></button>
                         </div>
                     </div>
                 ))}

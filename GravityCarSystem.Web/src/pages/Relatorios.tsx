@@ -11,15 +11,17 @@ const Relatorios: React.FC = () => {
   const [dataInicio, setDataInicio] = useState<string>('');
   const [dataFim, setDataFim] = useState<string>('');
 
+  const [presetAtivo, setPresetAtivo] = useState<string>('');
+
   useEffect(() => {
     carregarRelatorios();
   }, []);
 
-  const carregarRelatorios = async () => {
+  const carregarRelatorios = async (inicio = dataInicio, fim = dataFim) => {
     setLoading(true);
     try {
-        const reqInicio = dataInicio ? new Date(dataInicio).toISOString() : undefined;
-        const reqFim = dataFim ? new Date(dataFim).toISOString() : undefined;
+        const reqInicio = inicio ? new Date(inicio).toISOString() : undefined;
+        const reqFim = fim ? new Date(fim).toISOString() : undefined;
         
         const [rentData, resData] = await Promise.all([
             fetchRentabilidade(reqInicio, reqFim),
@@ -39,6 +41,42 @@ const Relatorios: React.FC = () => {
       carregarRelatorios();
   };
 
+  const aplicarPeriodo = (tipo: 'hoje' | '7dias' | 'mes' | '30dias' | 'ano' | 'todos') => {
+    setPresetAtivo(tipo);
+    const hoje = new Date();
+    const formatarData = (d: Date) => d.toISOString().split('T')[0];
+
+    let ini = '';
+    let fim = '';
+
+    if (tipo === 'hoje') {
+      ini = formatarData(hoje);
+      fim = formatarData(hoje);
+    } else if (tipo === '7dias') {
+      const pass = new Date();
+      pass.setDate(hoje.getDate() - 7);
+      ini = formatarData(pass);
+      fim = formatarData(hoje);
+    } else if (tipo === 'mes') {
+      const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+      ini = formatarData(primeiroDia);
+      fim = formatarData(hoje);
+    } else if (tipo === '30dias') {
+      const pass = new Date();
+      pass.setDate(hoje.getDate() - 30);
+      ini = formatarData(pass);
+      fim = formatarData(hoje);
+    } else if (tipo === 'ano') {
+      const primeiroDiaAno = new Date(hoje.getFullYear(), 0, 1);
+      ini = formatarData(primeiroDiaAno);
+      fim = formatarData(hoje);
+    }
+
+    setDataInicio(ini);
+    setDataFim(fim);
+    carregarRelatorios(ini, fim);
+  };
+
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', width: '100%', padding: '24px' }}>
       <header className="page-header" style={{ marginBottom: '32px' }}>
@@ -49,16 +87,27 @@ const Relatorios: React.FC = () => {
 
       {/* Filtros */}
       <div className="glass-panel" style={{ padding: '24px', marginBottom: '32px' }}>
+          {/* Fluid Date Presets */}
+          <div className="date-presets-wrapper">
+              <span style={{ fontSize: '0.85rem', color: 'var(--color-gray-400)', marginRight: '4px' }}>Período Rápido:</span>
+              <button type="button" className={`date-preset-pill ${presetAtivo === 'hoje' ? 'active' : ''}`} onClick={() => aplicarPeriodo('hoje')}>Hoje</button>
+              <button type="button" className={`date-preset-pill ${presetAtivo === '7dias' ? 'active' : ''}`} onClick={() => aplicarPeriodo('7dias')}>Últimos 7 dias</button>
+              <button type="button" className={`date-preset-pill ${presetAtivo === 'mes' ? 'active' : ''}`} onClick={() => aplicarPeriodo('mes')}>Este Mês</button>
+              <button type="button" className={`date-preset-pill ${presetAtivo === '30dias' ? 'active' : ''}`} onClick={() => aplicarPeriodo('30dias')}>Últimos 30 dias</button>
+              <button type="button" className={`date-preset-pill ${presetAtivo === 'ano' ? 'active' : ''}`} onClick={() => aplicarPeriodo('ano')}>Ano Atual</button>
+              <button type="button" className={`date-preset-pill ${presetAtivo === 'todos' ? 'active' : ''}`} onClick={() => aplicarPeriodo('todos')}>Todos</button>
+          </div>
+
           <form onSubmit={handleFiltrar} style={{ display: 'flex', gap: '16px', alignItems: 'flex-end' }}>
-              <div className="form-group" style={{ flex: 1 }}>
+              <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
                   <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Calendar size={16}/> Data Inicial</label>
-                  <input type="date" className="form-input" value={dataInicio} onChange={e => setDataInicio(e.target.value)} />
+                  <input type="date" className="form-input" value={dataInicio} onChange={e => { setDataInicio(e.target.value); setPresetAtivo(''); }} />
               </div>
-              <div className="form-group" style={{ flex: 1 }}>
+              <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
                   <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Calendar size={16}/> Data Final</label>
-                  <input type="date" className="form-input" value={dataFim} onChange={e => setDataFim(e.target.value)} />
+                  <input type="date" className="form-input" value={dataFim} onChange={e => { setDataFim(e.target.value); setPresetAtivo(''); }} />
               </div>
-              <button type="submit" className="btn btn-primary" style={{ height: '42px', padding: '0 24px' }}>Aplicar Filtros</button>
+              <button type="submit" className="btn btn-primary" style={{ height: '42px', padding: '0 24px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>Aplicar Filtros</button>
           </form>
       </div>
 

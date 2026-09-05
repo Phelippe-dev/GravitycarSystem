@@ -7,7 +7,20 @@ public class AvaliacaoDto
 {
     public Guid? Id { get; set; }
     public Guid ClienteId { get; set; }
-    public Guid VeiculoId { get; set; }
+    public Guid? VeiculoId { get; set; }
+
+    // Dados do Veículo para cadastro automático no estoque
+    public string? Marca { get; set; }
+    public string? Modelo { get; set; }
+    public string? Versao { get; set; }
+    public string? Placa { get; set; }
+    public short? AnoFabricacao { get; set; }
+    public short? AnoModelo { get; set; }
+    public string? Cor { get; set; }
+    public string? Combustivel { get; set; }
+    public string? Cambio { get; set; }
+    public int? Quilometragem { get; set; }
+
     public decimal? ValorMercado { get; set; }
     public decimal? ValorAvaliacao { get; set; } // O ValorSugerido (Mercado - Custos)
     public decimal? ValorAprovado { get; set; }
