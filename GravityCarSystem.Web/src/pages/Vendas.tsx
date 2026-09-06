@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchClientes, fetchVeiculos, fetchAvaliacoes, realizarVenda, emitirNotaFiscalVenda } from '../api';
 import type { Cliente, Veiculo, Avaliacao, VendaDto, VendaPagamentoDto, VendaTrocaDto } from '../api';
-import { Car, User, DollarSign, Tag, CheckCircle, AlertTriangle, CreditCard, PlusCircle, Trash2 } from 'lucide-react';
+import { Car, User, DollarSign, Tag, CheckCircle, AlertTriangle, CreditCard, PlusCircle, Trash2, Layers } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const Vendas: React.FC = () => {
@@ -26,6 +26,34 @@ const Vendas: React.FC = () => {
   const [pagamentos, setPagamentos] = useState<VendaPagamentoDto[]>([]);
   const [novoPagamentoTipo, setNovoPagamentoTipo] = useState(1);
   const [novoPagamentoValor, setNovoPagamentoValor] = useState('');
+
+  // Estados específicos para Cheque
+  const [modoCheque, setModoCheque] = useState<'unico' | 'multiplo'>('unico');
+  const [chequeBanco, setChequeBanco] = useState('Banco Itaú (341)');
+  const [chequeAgencia, setChequeAgencia] = useState('');
+  const [chequeConta, setChequeConta] = useState('');
+  const [chequeNumero, setChequeNumero] = useState('');
+  const [chequeBomPara, setChequeBomPara] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 30);
+    return d.toISOString().split('T')[0];
+  });
+  const [chequeEmitente, setChequeEmitente] = useState('');
+
+  // Múltiplos Cheques (Parcelamento)
+  const [multiQtd, setMultiQtd] = useState(3);
+  const [multiValorTotal, setMultiValorTotal] = useState('');
+  const [multiBanco, setMultiBanco] = useState('Banco Itaú (341)');
+  const [multiAgencia, setMultiAgencia] = useState('');
+  const [multiConta, setMultiConta] = useState('');
+  const [multiNumeroInicial, setMultiNumeroInicial] = useState('001001');
+  const [multiPrimeiroVenc, setMultiPrimeiroVenc] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 30);
+    return d.toISOString().split('T')[0];
+  });
+  const [multiIntervaloDias, setMultiIntervaloDias] = useState(30);
+  const [multiEmitente, setMultiEmitente] = useState('');
 
   // Vendas 2.0 - Trocas Dinâmicas
   const [trocas, setTrocas] = useState<VendaTrocaDto[]>([]);
@@ -78,6 +106,65 @@ const Vendas: React.FC = () => {
       }
   };
 
+  const addChequeUnico = () => {
+    const val = Number(novoPagamentoValor);
+    if (val <= 0) return;
+    const cliNome = clientes.find(c => c.id === clienteId)?.nomeRazaoSocial || clientes.find(c => c.id === clienteId)?.nome || 'Cliente';
+
+    setPagamentos([
+      ...pagamentos,
+      {
+        tipoPagamento: 3,
+        valor: val,
+        banco: chequeBanco,
+        agencia: chequeAgencia,
+        conta: chequeConta,
+        numeroCheque: chequeNumero || `CHQ-${Math.floor(100000 + Math.random() * 900000)}`,
+        dataBomPara: chequeBomPara ? new Date(`${chequeBomPara}T12:00:00Z`).toISOString() : new Date().toISOString(),
+        emitente: chequeEmitente || cliNome
+      }
+    ]);
+    setNovoPagamentoValor('');
+    setChequeNumero('');
+    setChequeEmitente('');
+  };
+
+  const addMultiplosCheques = () => {
+    const total = Number(multiValorTotal);
+    const qtd = Number(multiQtd);
+    if (total <= 0 || qtd <= 0) return;
+
+    const valorParcela = Math.round((total / qtd) * 100) / 100;
+    const diffCentavos = Math.round((total - (valorParcela * qtd)) * 100) / 100;
+
+    const baseNum = parseInt(multiNumeroInicial.replace(/\D/g, '') || '1001', 10);
+    const novosCheques: VendaPagamentoDto[] = [];
+    const baseDate = new Date(`${multiPrimeiroVenc}T12:00:00Z`);
+    const cliNome = clientes.find(c => c.id === clienteId)?.nomeRazaoSocial || clientes.find(c => c.id === clienteId)?.nome || 'Cliente';
+
+    for (let i = 0; i < qtd; i++) {
+      const dataParcela = new Date(baseDate);
+      dataParcela.setDate(baseDate.getDate() + (i * multiIntervaloDias));
+
+      const valAtual = (i === qtd - 1) ? valorParcela + diffCentavos : valorParcela;
+      const numChequeStr = String(baseNum + i).padStart(multiNumeroInicial.length > 4 ? multiNumeroInicial.length : 6, '0');
+
+      novosCheques.push({
+        tipoPagamento: 3,
+        valor: valAtual,
+        banco: multiBanco,
+        agencia: multiAgencia,
+        conta: multiConta,
+        numeroCheque: numChequeStr,
+        dataBomPara: dataParcela.toISOString(),
+        emitente: multiEmitente || cliNome
+      });
+    }
+
+    setPagamentos([...pagamentos, ...novosCheques]);
+    setMultiValorTotal('');
+  };
+
   const removePagamento = (index: number) => {
       const copy = [...pagamentos];
       copy.splice(index, 1);
@@ -120,7 +207,7 @@ const Vendas: React.FC = () => {
     
     const venda: VendaDto = {
       clienteId: clienteId,
-      usuarioId: '00000000-0000-0000-0000-000000000000', 
+      usuarioId: user?.id || '11111111-1111-1111-1111-111111111111', 
       veiculosIds: [veiculoId],
       desconto: Number(desconto),
       pagamentos: pagamentos,
@@ -144,7 +231,13 @@ const Vendas: React.FC = () => {
           }
       }, 1500);
     } catch (err: any) {
-      setErrorMsg(`Erro: ${err.message}`);
+      let msg = err.message || 'Erro ao realizar venda';
+      try {
+        const parsed = JSON.parse(msg);
+        if (parsed.erro) msg = parsed.erro;
+        else if (parsed.message) msg = parsed.message;
+      } catch {}
+      setErrorMsg(`Erro: ${msg}`);
       setSaving(false);
     }
   };
@@ -267,29 +360,479 @@ const Vendas: React.FC = () => {
             </div>
 
             {/* Outros Pagamentos */}
-            <div style={{ padding: '18px', background: 'rgba(0,0,0,0.2)', borderRadius: '10px', border: '1px solid var(--glass-border)' }}>
-                <h4 style={{ marginBottom: '14px', fontSize: '14px', color: 'var(--color-gray-200)', fontWeight: 600 }}>Adicionar Pagamento</h4>
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 2fr 44px', gap: '8px', alignItems: 'center', marginBottom: '12px' }}>
-                    <select className="form-input" style={{ height: '42px' }} value={novoPagamentoTipo} onChange={e => setNovoPagamentoTipo(Number(e.target.value))}>
-                        <option value={1}>Dinheiro / Pix</option>
-                        <option value={2}>Financiamento</option>
-                        <option value={3}>Cheque</option>
-                        <option value={4}>Cartão</option>
-                    </select>
-                    <input className="form-input" style={{ height: '42px' }} type="number" placeholder="Valor (R$)" value={novoPagamentoValor} onChange={e => setNovoPagamentoValor(e.target.value)} />
-                    <button type="button" className="btn btn-primary" onClick={addPagamento} style={{ height: '42px', width: '44px', padding: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px' }} title="Adicionar Pagamento">
-                      <PlusCircle size={20}/>
-                    </button>
+            <div style={{ padding: '20px', background: 'rgba(0,0,0,0.25)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                    <h4 style={{ margin: 0, fontSize: '15px', color: 'var(--color-gray-100)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <CreditCard size={18} color="var(--color-primary)" /> Adicionar Forma de Pagamento
+                    </h4>
+                    {diferenca > 0 && (
+                        <span style={{ fontSize: '0.78rem', color: 'var(--color-warning)', background: 'rgba(234, 179, 8, 0.1)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(234, 179, 8, 0.2)' }}>
+                            Faltando: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(diferenca)}
+                        </span>
+                    )}
                 </div>
-                {pagamentos.map((p, idx) => (
-                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '6px', marginBottom: '6px' }}>
-                        <span>💰 {p.tipoPagamento === 1 ? 'PIX / Dinheiro' : p.tipoPagamento === 2 ? 'Financiamento' : p.tipoPagamento === 3 ? 'Cheque' : 'Cartão'}</span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                            <strong style={{ color: 'var(--color-success)' }}>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.valor)}</strong>
-                            <button type="button" onClick={() => removePagamento(idx)} style={{ background: 'none', border: 'none', color: 'var(--color-danger)', cursor: 'pointer', display: 'flex' }}><Trash2 size={16}/></button>
-                        </div>
+
+                <div style={{ marginBottom: '14px' }}>
+                    <label style={{ fontSize: '0.8rem', color: 'var(--color-gray-400)', display: 'block', marginBottom: '6px' }}>Tipo de Pagamento</label>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+                        {[
+                            { id: 1, label: '💰 PIX / Dinheiro' },
+                            { id: 2, label: '🏦 Financiamento' },
+                            { id: 3, label: '📑 Cheque(s)' },
+                            { id: 4, label: '💳 Cartão' }
+                        ].map(t => (
+                            <button
+                                key={t.id}
+                                type="button"
+                                onClick={() => setNovoPagamentoTipo(t.id)}
+                                style={{
+                                    padding: '8px 4px',
+                                    fontSize: '0.82rem',
+                                    fontWeight: novoPagamentoTipo === t.id ? 600 : 400,
+                                    borderRadius: '6px',
+                                    border: novoPagamentoTipo === t.id ? '1px solid var(--color-primary)' : '1px solid rgba(255,255,255,0.08)',
+                                    background: novoPagamentoTipo === t.id ? 'rgba(59, 130, 246, 0.15)' : 'rgba(255,255,255,0.03)',
+                                    color: novoPagamentoTipo === t.id ? '#60a5fa' : 'var(--color-gray-300)',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.15s'
+                                }}
+                            >
+                                {t.label}
+                            </button>
+                        ))}
                     </div>
-                ))}
+                </div>
+
+                {/* Se for PIX, Financiamento ou Cartão */}
+                {novoPagamentoTipo !== 3 && (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 44px', gap: '8px', alignItems: 'center', marginBottom: '16px' }}>
+                        <input
+                            className="form-input"
+                            style={{ height: '42px' }}
+                            type="number"
+                            placeholder="Valor (R$)"
+                            value={novoPagamentoValor}
+                            onChange={e => setNovoPagamentoValor(e.target.value)}
+                        />
+                        {diferenca > 0 && (
+                            <button
+                                type="button"
+                                onClick={() => setNovoPagamentoValor(String(Math.max(0, diferenca)))}
+                                style={{ height: '42px', padding: '0 10px', fontSize: '0.78rem', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: 'var(--color-gray-200)', borderRadius: '8px', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                            >
+                                Usar Restante
+                            </button>
+                        )}
+                        <button
+                            type="button"
+                            className="btn btn-primary"
+                            onClick={addPagamento}
+                            style={{ height: '42px', width: '44px', padding: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px' }}
+                            title="Adicionar Pagamento"
+                        >
+                            <PlusCircle size={20}/>
+                        </button>
+                    </div>
+                )}
+
+                {/* Se for Cheque: Opção Único ou Múltiplos Cheques (Parcelamento) */}
+                {novoPagamentoTipo === 3 && (
+                    <div style={{ background: 'rgba(30, 41, 59, 0.5)', border: '1px solid rgba(59, 130, 246, 0.25)', borderRadius: '10px', padding: '14px', marginBottom: '16px' }}>
+                        {/* Seletor de Modo do Cheque */}
+                        <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
+                            <button
+                                type="button"
+                                onClick={() => setModoCheque('unico')}
+                                style={{
+                                    flex: 1,
+                                    padding: '8px',
+                                    fontSize: '0.82rem',
+                                    fontWeight: modoCheque === 'unico' ? 600 : 400,
+                                    borderRadius: '6px',
+                                    border: modoCheque === 'unico' ? '1px solid #38bdf8' : '1px solid rgba(255,255,255,0.08)',
+                                    background: modoCheque === 'unico' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
+                                    color: modoCheque === 'unico' ? '#38bdf8' : 'var(--color-gray-400)',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                📄 Cheque Avulso (1 Folha)
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setModoCheque('multiplo');
+                                    if (!multiValorTotal && diferenca > 0) setMultiValorTotal(String(diferenca));
+                                }}
+                                style={{
+                                    flex: 1,
+                                    padding: '8px',
+                                    fontSize: '0.82rem',
+                                    fontWeight: modoCheque === 'multiplo' ? 600 : 400,
+                                    borderRadius: '6px',
+                                    border: modoCheque === 'multiplo' ? '1px solid #a855f7' : '1px solid rgba(255,255,255,0.08)',
+                                    background: modoCheque === 'multiplo' ? 'rgba(168, 85, 247, 0.15)' : 'transparent',
+                                    color: modoCheque === 'multiplo' ? '#c084fc' : 'var(--color-gray-400)',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                📚 Vários Cheques (Parcelamento em Lote)
+                            </button>
+                        </div>
+
+                        {/* Cheque Avulso */}
+                        {modoCheque === 'unico' && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '8px' }}>
+                                    <div>
+                                        <label style={{ fontSize: '0.75rem', color: 'var(--color-gray-400)', display: 'block', marginBottom: '4px' }}>Valor do Cheque (R$)*</label>
+                                        <input
+                                            className="form-input"
+                                            style={{ height: '38px' }}
+                                            type="number"
+                                            placeholder="Ex: 15000"
+                                            value={novoPagamentoValor}
+                                            onChange={e => setNovoPagamentoValor(e.target.value)}
+                                        />
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+                                        {diferenca > 0 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setNovoPagamentoValor(String(Math.max(0, diferenca)))}
+                                                style={{ height: '38px', padding: '0 10px', fontSize: '0.75rem', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: 'var(--color-gray-200)', borderRadius: '6px', cursor: 'pointer' }}
+                                            >
+                                                Usar Restante
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '8px' }}>
+                                    <div>
+                                        <label style={{ fontSize: '0.75rem', color: 'var(--color-gray-400)', display: 'block', marginBottom: '4px' }}>Banco</label>
+                                        <select
+                                            className="form-input"
+                                            style={{ height: '38px', fontSize: '0.85rem' }}
+                                            value={chequeBanco}
+                                            onChange={e => setChequeBanco(e.target.value)}
+                                        >
+                                            <option value="Banco Itaú (341)">Banco Itaú (341)</option>
+                                            <option value="Banco Bradesco (237)">Banco Bradesco (237)</option>
+                                            <option value="Banco do Brasil (001)">Banco do Brasil (001)</option>
+                                            <option value="Santander (033)">Santander (033)</option>
+                                            <option value="Caixa Econômica (104)">Caixa Econômica (104)</option>
+                                            <option value="Sicredi (748)">Sicredi (748)</option>
+                                            <option value="Sicoob (756)">Sicoob (756)</option>
+                                            <option value="Banco Safra (422)">Banco Safra (422)</option>
+                                            <option value="Outro Banco">Outro Banco</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style={{ fontSize: '0.75rem', color: 'var(--color-gray-400)', display: 'block', marginBottom: '4px' }}>Bom Para (Vencimento)*</label>
+                                        <input
+                                            className="form-input"
+                                            style={{ height: '38px', fontSize: '0.85rem' }}
+                                            type="date"
+                                            value={chequeBomPara}
+                                            onChange={e => setChequeBomPara(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                                    <div>
+                                        <label style={{ fontSize: '0.75rem', color: 'var(--color-gray-400)', display: 'block', marginBottom: '4px' }}>Nº Cheque</label>
+                                        <input
+                                            className="form-input"
+                                            style={{ height: '38px', fontSize: '0.85rem' }}
+                                            type="text"
+                                            placeholder="Ex: 004128"
+                                            value={chequeNumero}
+                                            onChange={e => setChequeNumero(e.target.value)}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ fontSize: '0.75rem', color: 'var(--color-gray-400)', display: 'block', marginBottom: '4px' }}>Agência</label>
+                                        <input
+                                            className="form-input"
+                                            style={{ height: '38px', fontSize: '0.85rem' }}
+                                            type="text"
+                                            placeholder="Ex: 1234"
+                                            value={chequeAgencia}
+                                            onChange={e => setChequeAgencia(e.target.value)}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ fontSize: '0.75rem', color: 'var(--color-gray-400)', display: 'block', marginBottom: '4px' }}>Conta Corrente</label>
+                                        <input
+                                            className="form-input"
+                                            style={{ height: '38px', fontSize: '0.85rem' }}
+                                            type="text"
+                                            placeholder="Ex: 56789-0"
+                                            value={chequeConta}
+                                            onChange={e => setChequeConta(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label style={{ fontSize: '0.75rem', color: 'var(--color-gray-400)', display: 'block', marginBottom: '4px' }}>Titular / Emitente</label>
+                                    <input
+                                        className="form-input"
+                                        style={{ height: '38px', fontSize: '0.85rem' }}
+                                        type="text"
+                                        placeholder="Nome do Emitente do Cheque (ou vazio p/ cliente)"
+                                        value={chequeEmitente}
+                                        onChange={e => setChequeEmitente(e.target.value)}
+                                    />
+                                </div>
+
+                                <button
+                                    type="button"
+                                    className="btn btn-primary"
+                                    onClick={addChequeUnico}
+                                    style={{ width: '100%', marginTop: '4px', height: '38px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                                >
+                                    <PlusCircle size={16} /> Adicionar Cheque
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Múltiplos Cheques (Parcelamento) */}
+                        {modoCheque === 'multiplo' && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <div style={{ padding: '8px 12px', background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.25)', borderRadius: '6px', fontSize: '0.8rem', color: '#e9d5ff' }}>
+                                    ✨ <strong>Parcelamento Automático:</strong> Os cheques serão gerados com numeração sequencial e datas pré-datadas calculadas automaticamente.
+                                </div>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                    <div>
+                                        <label style={{ fontSize: '0.75rem', color: 'var(--color-gray-400)', display: 'block', marginBottom: '4px' }}>Qtd. de Cheques (Parcelas)*</label>
+                                        <select
+                                            className="form-input"
+                                            style={{ height: '38px', fontSize: '0.85rem' }}
+                                            value={multiQtd}
+                                            onChange={e => setMultiQtd(Number(e.target.value))}
+                                        >
+                                            {[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 18, 24].map(q => (
+                                                <option key={q} value={q}>{q} folhas (Parcelas)</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                                            <label style={{ fontSize: '0.75rem', color: 'var(--color-gray-400)' }}>Valor Total do Lote (R$)*</label>
+                                            {diferenca > 0 && (
+                                                <span
+                                                    onClick={() => setMultiValorTotal(String(Math.max(0, diferenca)))}
+                                                    style={{ fontSize: '0.7rem', color: '#a855f7', cursor: 'pointer', textDecoration: 'underline' }}
+                                                >
+                                                    Usar Restante
+                                                </span>
+                                            )}
+                                        </div>
+                                        <input
+                                            className="form-input"
+                                            style={{ height: '38px', fontSize: '0.85rem' }}
+                                            type="number"
+                                            placeholder="Ex: 30000"
+                                            value={multiValorTotal}
+                                            onChange={e => setMultiValorTotal(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Preview do Valor de Cada Parcela */}
+                                {Number(multiValorTotal) > 0 && (
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', border: '1px dashed rgba(168, 85, 247, 0.3)' }}>
+                                        <span style={{ fontSize: '0.8rem', color: 'var(--color-gray-300)' }}>Valor por Folha:</span>
+                                        <strong style={{ color: '#c084fc', fontSize: '0.92rem' }}>
+                                            {multiQtd}x de {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(multiValorTotal) / multiQtd)}
+                                        </strong>
+                                    </div>
+                                )}
+
+                                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '8px' }}>
+                                    <div>
+                                        <label style={{ fontSize: '0.75rem', color: 'var(--color-gray-400)', display: 'block', marginBottom: '4px' }}>1º Vencimento (1º Cheque)*</label>
+                                        <input
+                                            className="form-input"
+                                            style={{ height: '38px', fontSize: '0.85rem' }}
+                                            type="date"
+                                            value={multiPrimeiroVenc}
+                                            onChange={e => setMultiPrimeiroVenc(e.target.value)}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ fontSize: '0.75rem', color: 'var(--color-gray-400)', display: 'block', marginBottom: '4px' }}>Intervalo entre Cheques</label>
+                                        <select
+                                            className="form-input"
+                                            style={{ height: '38px', fontSize: '0.85rem' }}
+                                            value={multiIntervaloDias}
+                                            onChange={e => setMultiIntervaloDias(Number(e.target.value))}
+                                        >
+                                            <option value={30}>A cada 30 dias (Mensal)</option>
+                                            <option value={15}>A cada 15 dias (Quinzenal)</option>
+                                            <option value={60}>A cada 60 dias (Bimestral)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '8px' }}>
+                                    <div>
+                                        <label style={{ fontSize: '0.75rem', color: 'var(--color-gray-400)', display: 'block', marginBottom: '4px' }}>Banco</label>
+                                        <select
+                                            className="form-input"
+                                            style={{ height: '38px', fontSize: '0.85rem' }}
+                                            value={multiBanco}
+                                            onChange={e => setMultiBanco(e.target.value)}
+                                        >
+                                            <option value="Banco Itaú (341)">Banco Itaú (341)</option>
+                                            <option value="Banco Bradesco (237)">Banco Bradesco (237)</option>
+                                            <option value="Banco do Brasil (001)">Banco do Brasil (001)</option>
+                                            <option value="Santander (033)">Santander (033)</option>
+                                            <option value="Caixa Econômica (104)">Caixa Econômica (104)</option>
+                                            <option value="Sicredi (748)">Sicredi (748)</option>
+                                            <option value="Sicoob (756)">Sicoob (756)</option>
+                                            <option value="Banco Safra (422)">Banco Safra (422)</option>
+                                            <option value="Outro Banco">Outro Banco</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style={{ fontSize: '0.75rem', color: 'var(--color-gray-400)', display: 'block', marginBottom: '4px' }}>Nº Inicial do Cheque</label>
+                                        <input
+                                            className="form-input"
+                                            style={{ height: '38px', fontSize: '0.85rem' }}
+                                            type="text"
+                                            placeholder="Ex: 001001"
+                                            value={multiNumeroInicial}
+                                            onChange={e => setMultiNumeroInicial(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                    <div>
+                                        <label style={{ fontSize: '0.75rem', color: 'var(--color-gray-400)', display: 'block', marginBottom: '4px' }}>Agência</label>
+                                        <input
+                                            className="form-input"
+                                            style={{ height: '38px', fontSize: '0.85rem' }}
+                                            type="text"
+                                            placeholder="Ex: 1234"
+                                            value={multiAgencia}
+                                            onChange={e => setMultiAgencia(e.target.value)}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ fontSize: '0.75rem', color: 'var(--color-gray-400)', display: 'block', marginBottom: '4px' }}>Conta Corrente</label>
+                                        <input
+                                            className="form-input"
+                                            style={{ height: '38px', fontSize: '0.85rem' }}
+                                            type="text"
+                                            placeholder="Ex: 56789-0"
+                                            value={multiConta}
+                                            onChange={e => setMultiConta(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label style={{ fontSize: '0.75rem', color: 'var(--color-gray-400)', display: 'block', marginBottom: '4px' }}>Titular / Emitente</label>
+                                    <input
+                                        className="form-input"
+                                        style={{ height: '38px', fontSize: '0.85rem' }}
+                                        type="text"
+                                        placeholder="Nome do Emitente dos Cheques"
+                                        value={multiEmitente}
+                                        onChange={e => setMultiEmitente(e.target.value)}
+                                    />
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={addMultiplosCheques}
+                                    style={{
+                                        width: '100%',
+                                        marginTop: '4px',
+                                        height: '40px',
+                                        fontSize: '0.88rem',
+                                        fontWeight: 600,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '8px',
+                                        background: 'linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)',
+                                        color: '#fff',
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        cursor: 'pointer',
+                                        boxShadow: '0 4px 12px rgba(124, 58, 237, 0.3)'
+                                    }}
+                                >
+                                    <Layers size={18} /> Gerar e Incluir Lote de {multiQtd} Cheques
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Lista de Pagamentos Adicionados */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {pagamentos.map((p, idx) => (
+                        <div
+                            key={idx}
+                            style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                padding: '10px 14px',
+                                background: p.tipoPagamento === 3 ? 'rgba(168, 85, 247, 0.08)' : 'rgba(255,255,255,0.04)',
+                                border: p.tipoPagamento === 3 ? '1px solid rgba(168, 85, 247, 0.25)' : '1px solid rgba(255,255,255,0.06)',
+                                borderRadius: '8px'
+                            }}
+                        >
+                            {p.tipoPagamento === 3 ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <span style={{ fontSize: '0.9rem' }}>📑</span>
+                                        <strong style={{ fontSize: '0.88rem', color: '#e9d5ff' }}>
+                                            Cheque Nº {p.numeroCheque || 'S/N'}
+                                        </strong>
+                                        <span style={{ fontSize: '0.75rem', color: 'var(--color-gray-400)', background: 'rgba(255,255,255,0.06)', padding: '1px 6px', borderRadius: '4px' }}>
+                                            {p.banco || 'Banco'}
+                                        </span>
+                                    </div>
+                                    <div style={{ fontSize: '0.76rem', color: 'var(--color-gray-400)' }}>
+                                        Bom para: <strong style={{ color: '#38bdf8' }}>{p.dataBomPara ? new Date(p.dataBomPara).toLocaleDateString('pt-BR') : 'À Vista'}</strong>
+                                        {p.emitente && <span> • Titular: {p.emitente}</span>}
+                                        {p.agencia && <span> • Ag: {p.agencia} / CC: {p.conta}</span>}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span>{p.tipoPagamento === 1 ? '💰' : p.tipoPagamento === 2 ? '🏦' : '💳'}</span>
+                                    <span style={{ fontWeight: 500, fontSize: '0.88rem' }}>
+                                        {p.tipoPagamento === 1 ? 'PIX / Dinheiro' : p.tipoPagamento === 2 ? 'Financiamento' : 'Cartão de Crédito'}
+                                    </span>
+                                </div>
+                            )}
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                                <strong style={{ color: 'var(--color-success)', fontSize: '0.95rem' }}>
+                                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.valor)}
+                                </strong>
+                                <button
+                                    type="button"
+                                    onClick={() => removePagamento(idx)}
+                                    style={{ background: 'none', border: 'none', color: 'var(--color-danger)', cursor: 'pointer', display: 'flex', padding: '4px' }}
+                                    title="Remover"
+                                >
+                                    <Trash2 size={16}/>
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
 
           </div>
@@ -350,7 +893,23 @@ const Vendas: React.FC = () => {
                 </p>
             )}
 
-            <div className="form-group" style={{ marginTop: '24px' }}>
+            {/* Comissão do Operador / Vendedor */}
+            <div style={{ marginTop: '16px', padding: '12px 14px', background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.25)', borderRadius: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem', color: 'var(--color-gray-300)' }}>
+                <span>Operador: <strong>{user?.nome || 'Consultor'}</strong></span>
+                <span style={{ color: '#60a5fa', fontWeight: 600, background: 'rgba(59, 130, 246, 0.15)', padding: '2px 8px', borderRadius: '4px' }}>
+                  {user?.comissaoPercent ?? 2}% comissão
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--color-gray-300)' }}>Sua Comissão Prevista:</span>
+                <strong style={{ color: '#38bdf8', fontSize: '1.05rem' }}>
+                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format((valorLiquido * (user?.comissaoPercent ?? 2)) / 100)}
+                </strong>
+              </div>
+            </div>
+
+            <div className="form-group" style={{ marginTop: '20px' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                 <input type="checkbox" checked={emitirNfe} onChange={e => setEmitirNfe(e.target.checked)} />
                 Emitir NF-e de Saída Automaticamente

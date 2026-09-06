@@ -20,6 +20,7 @@ export interface Veiculo {
     chassi?: string;
     fotoPrincipal?: string;
     dataEntrada?: string;
+    dataCadastro?: string;
 }
 
 export interface Cliente {
@@ -30,6 +31,13 @@ export interface Cliente {
     email?: string;
     telefone?: string;
     celular?: string;
+    cep?: string;
+    endereco?: string;
+    numero?: string;
+    complemento?: string;
+    bairro?: string;
+    cidade?: string;
+    estado?: string;
 }
 
 export interface VendaPagamentoDto {
@@ -39,6 +47,12 @@ export interface VendaPagamentoDto {
     parcelas?: number;
     valorParcela?: number;
     taxaJuros?: number;
+    banco?: string;
+    agencia?: string;
+    conta?: string;
+    numeroCheque?: string;
+    dataBomPara?: string;
+    emitente?: string;
 }
 
 export interface VendaTrocaDto {
@@ -66,6 +80,7 @@ export interface Cheque {
     dataDeposito?: string;
     dataCompensacao?: string;
     observacao?: string;
+    emitente?: string;
 }
 
 export const fetchCheques = async (): Promise<Cheque[]> => {
@@ -103,6 +118,9 @@ export interface DashboardStats {
     veiculosVendidos: number;
     totalContasPagar: number;
     totalContasReceber: number;
+    totalVendasValor: number;
+    totalEntradasRecebidas: number;
+    saldoOperacional: number;
 }
 
 // -- Helper para injetar o Token JWT --
@@ -146,13 +164,40 @@ export const adicionarVeiculo = async (veiculo: Partial<Veiculo>): Promise<Veicu
 export const fetchStats = async (veiculos: Veiculo[]): Promise<DashboardStats> => {
     let totalContasPagar = 0;
     let totalContasReceber = 0;
+    let totalVendasValor = 0;
+    let totalEntradasRecebidas = 0;
+    let saldoOperacional = 0;
     
     try {
-        const contasPagar = await fetchContasPagar();
-        totalContasPagar = contasPagar.reduce((acc, curr) => acc + curr.saldo, 0);
+        const [contasPagar, contasReceber, vendas, resumo, cheques] = await Promise.all([
+            fetchContasPagar(),
+            fetchContasReceber(),
+            fetchVendas(),
+            fetchResumoFinanceiro(),
+            fetchCheques()
+        ]);
+
+        totalContasPagar = contasPagar.reduce((acc, curr) => acc + (curr.status === 0 ? curr.saldo : 0), 0);
         
-        const contasReceber = await fetchContasReceber();
-        totalContasReceber = contasReceber.reduce((acc, curr) => acc + curr.saldo, 0);
+        // Contas a receber normais (pendentes)
+        const contasReceberPendentes = contasReceber.reduce((acc, curr) => acc + (curr.status === 0 ? curr.saldo : 0), 0);
+        
+        // Cheques em custódia (status=1) e recebidos/depositados aguardando (status=0,2)
+        const chequesPendentes = cheques
+            .filter(c => c.status === 1 || c.status === 0 || c.status === 2) // Custódia, Recebido, Depositado
+            .reduce((acc, c) => acc + (c.valor || 0), 0);
+        
+        totalContasReceber = contasReceberPendentes + chequesPendentes;
+        
+        totalVendasValor = vendas.reduce((acc, curr) => acc + (curr.valorLiquido || 0), 0);
+
+        if (resumo) {
+            totalEntradasRecebidas = resumo.totalEntradasVendas;
+            saldoOperacional = resumo.saldoLiquido;
+        } else {
+            totalEntradasRecebidas = totalVendasValor;
+            saldoOperacional = totalEntradasRecebidas - totalContasPagar;
+        }
     } catch (e) {
         console.error("Erro ao carregar dados financeiros no fetchStats", e);
     }
@@ -162,9 +207,13 @@ export const fetchStats = async (veiculos: Veiculo[]): Promise<DashboardStats> =
         veiculosDisponiveis: veiculos.filter(v => v.status === 4).length, // 4 = Disponivel
         veiculosVendidos: veiculos.filter(v => v.status === 6).length,    // 6 = Vendido
         totalContasPagar,
-        totalContasReceber
+        totalContasReceber,
+        totalVendasValor,
+        totalEntradasRecebidas,
+        saldoOperacional
     };
 };
+
 
 // -- Clientes --
 export interface ClienteDetalhes extends Cliente {
@@ -219,6 +268,16 @@ export const realizarVenda = async (venda: VendaDto): Promise<VendaDto> => {
     }
 
     return await response.json();
+};
+
+export const fetchVendas = async (): Promise<VendaDto[]> => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/vendas`, { headers: getHeaders() });
+        if (!response.ok) throw new Error('Erro ao buscar vendas');
+        return await response.json();
+    } catch {
+        return [];
+    }
 };
 
 export const fetchVenda = async (id: string): Promise<VendaDto | null> => {
@@ -295,6 +354,34 @@ export const uploadFotoVeiculo = async (id: string, file: File, isPrincipal: boo
     return response.json();
 };
 
+export const removerFotoVeiculo = async (veiculoId: string, fotoId: string): Promise<void> => {
+    const token = localStorage.getItem('@GravityCar:token');
+    const response = await fetch(`${API_BASE_URL}/veiculos/${veiculoId}/fotos/${fotoId}`, {
+        method: 'DELETE',
+        headers: {
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error('Falha ao excluir foto');
+    }
+};
+
+export const definirFotoPrincipalVeiculo = async (veiculoId: string, fotoId: string): Promise<void> => {
+    const token = localStorage.getItem('@GravityCar:token');
+    const response = await fetch(`${API_BASE_URL}/veiculos/${veiculoId}/fotos/${fotoId}/principal`, {
+        method: 'PATCH',
+        headers: {
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error('Falha ao definir foto principal');
+    }
+};
+
 export const uploadDocumentoVeiculo = async (id: string, file: File, tipo: string = 'Outro'): Promise<VeiculoDocumento> => {
     const formData = new FormData();
     formData.append('file', file);
@@ -316,12 +403,37 @@ export const uploadDocumentoVeiculo = async (id: string, file: File, tipo: strin
     return response.json();
 };
 
+export const removerDocumentoVeiculo = async (veiculoId: string, documentoId: string): Promise<void> => {
+    const token = localStorage.getItem('@GravityCar:token');
+    const response = await fetch(`${API_BASE_URL}/veiculos/${veiculoId}/documentos/${documentoId}`, {
+        method: 'DELETE',
+        headers: {
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error('Falha ao excluir documento');
+    }
+};
+
 export const adicionarCustoVeiculo = async (id: string, custo: VeiculoCusto): Promise<VeiculoCusto> => {
     const response = await fetch(`${API_BASE_URL}/veiculos/${id}/custos`, {
         method: 'POST',
         headers: getHeaders(),
         body: JSON.stringify(custo),
     });
+    if (!response.ok) {
+        const text = await response.text();
+        let message = 'Falha ao lançar custo do veículo';
+        try {
+            const errObj = JSON.parse(text);
+            message = errObj.message || errObj.title || text;
+        } catch {
+            if (text) message = text;
+        }
+        throw new Error(message);
+    }
     return response.json();
 };
 
@@ -495,20 +607,33 @@ export const emitirNotaFiscalEntrada = async (veiculoId: string, clienteId: stri
 export interface SenatranVeiculoResultDto {
     placa: string;
     renavam: string;
+    chassi?: string;
     marcaModelo: string;
+    marca?: string;
+    modelo?: string;
+    versao?: string;
+    cor?: string;
+    combustivel?: string;
+    cambio?: string;
     anoFabricacao: number;
     anoModelo: number;
+    valorFipe?: number;
     possuiRestricaoRouboFurto: boolean;
     possuiRestricaoJudicial: boolean;
     possuiAlienacaoFiduciaria: boolean;
     totalDebitosPendentes: number;
+    descricaoDebitos?: string;
     statusRenave: string;
     dataConsulta: string;
+    origem?: string;
 }
 
-export const consultarSenatran = async (placa: string, renavam: string = ''): Promise<SenatranVeiculoResultDto | null> => {
+export const consultarSenatran = async (placa: string = '', renavam: string = ''): Promise<SenatranVeiculoResultDto | null> => {
     try {
-        const response = await fetch(`${API_BASE_URL}/senatran/consulta?placa=${placa}&renavam=${renavam}`, { headers: getHeaders() });
+        const params = new URLSearchParams();
+        if (placa) params.append('placa', placa.trim());
+        if (renavam) params.append('renavam', renavam.trim());
+        const response = await fetch(`${API_BASE_URL}/senatran/consulta?${params.toString()}`, { headers: getHeaders() });
         if (!response.ok) throw new Error('Erro na consulta ao SENATRAN');
         return await response.json();
     } catch (e) {
@@ -593,4 +718,23 @@ export const fetchAvaliacoes = async (): Promise<Avaliacao[]> => {
         console.error(e);
         return [];
     }
+};
+
+export const salvarAvaliacao = async (avaliacao: any): Promise<any> => {
+    const response = await fetch(`${API_BASE_URL}/avaliacoes`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(avaliacao)
+    });
+    if (!response.ok) {
+        let errText = 'Erro ao salvar avaliação';
+        try {
+            const errJson = await response.json();
+            errText = errJson.message || errJson.erro || errText;
+        } catch {
+            errText = await response.text() || errText;
+        }
+        throw new Error(errText);
+    }
+    return await response.json();
 };

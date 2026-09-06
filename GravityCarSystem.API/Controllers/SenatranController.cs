@@ -18,12 +18,12 @@ public class SenatranController : ControllerBase
     }
 
     [HttpGet("consulta")]
-    public async Task<IActionResult> ConsultarVeiculo([FromQuery] string placa, [FromQuery] string renavam = "")
+    public async Task<IActionResult> ConsultarVeiculo([FromQuery] string placa = "", [FromQuery] string renavam = "")
     {
         try
         {
-            if (string.IsNullOrEmpty(placa))
-                return BadRequest(new { message = "Placa é obrigatória para a consulta." });
+            if (string.IsNullOrWhiteSpace(placa) && string.IsNullOrWhiteSpace(renavam))
+                return BadRequest(new { message = "Informe a Placa ou o Renavam para realizar a consulta." });
 
             var resultado = await _senatranService.ConsultarVeiculoAsync(placa, renavam);
             return Ok(resultado);

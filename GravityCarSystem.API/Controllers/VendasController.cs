@@ -39,18 +39,18 @@ public class VendasController : ControllerBase
         try
         {
             var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            if (Guid.TryParse(userIdClaim, out var userId))
+            if (Guid.TryParse(userIdClaim, out var userId) && userId != Guid.Empty)
             {
                 dto.UsuarioId = userId;
             }
-            // Caso contrário, tenta usar o que veio no DTO (pode ser o admin default) ou falhará.
 
             var venda = await _vendaService.RealizarVendaAsync(dto);
             return CreatedAtAction(nameof(ObterPorId), new { id = venda.Id }, venda);
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            var innerMsg = ex.InnerException != null ? $" -> {ex.InnerException.Message}" : "";
+            return BadRequest(new { message = $"{ex.Message}{innerMsg}" });
         }
     }
 

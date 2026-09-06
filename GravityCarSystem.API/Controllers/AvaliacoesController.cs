@@ -37,8 +37,16 @@ public class AvaliacoesController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Criar(AvaliacaoDto dto)
     {
-        var result = await _avaliacaoService.CriarAvaliacaoAsync(dto);
-        return CreatedAtAction(nameof(ObterPorId), new { id = result.Id }, result);
+        try
+        {
+            var result = await _avaliacaoService.CriarAvaliacaoAsync(dto);
+            return CreatedAtAction(nameof(ObterPorId), new { id = result.Id }, result);
+        }
+        catch (Exception ex)
+        {
+            var innerMsg = ex.InnerException != null ? $" -> {ex.InnerException.Message}" : "";
+            return BadRequest(new { message = $"{ex.Message}{innerMsg}" });
+        }
     }
 
     [HttpPost("{id}/aprovar")]

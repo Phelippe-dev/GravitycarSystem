@@ -1,15 +1,33 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { fetchVenda, getClienteDetalhes } from '../api';
-import type { VendaDto, Cliente } from '../api';
+import { fetchVenda, getClienteDetalhes, fetchVeiculos, API_BASE_URL } from '../api';
+import type { VendaDto, Cliente, Veiculo } from '../api';
 import { Printer, ArrowLeft } from 'lucide-react';
 import logoImg from '../assets/logo.png';
+
+interface EmpresaDados {
+    razaoSocial?: string;
+    nomeFantasia?: string;
+    cnpj?: string;
+    inscricaoEstadual?: string;
+    telefone?: string;
+    email?: string;
+    logradouro?: string;
+    numero?: string;
+    complemento?: string;
+    bairro?: string;
+    cidade?: string;
+    estado?: string;
+    cep?: string;
+}
 
 const ContratoVenda: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const [venda, setVenda] = useState<VendaDto | null>(null);
     const [cliente, setCliente] = useState<Cliente | null>(null);
+    const [veiculos, setVeiculos] = useState<Veiculo[]>([]);
+    const [empresa, setEmpresa] = useState<EmpresaDados | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -20,8 +38,22 @@ const ContratoVenda: React.FC = () => {
         if (!id) return;
         setLoading(true);
         try {
-            const vendaData = await fetchVenda(id);
+            const token = localStorage.getItem('@GravityCar:token');
+            const [vendaData, todosVeiculos, empresaResp] = await Promise.all([
+                fetchVenda(id),
+                fetchVeiculos(),
+                fetch(`${API_BASE_URL}/empresa/minha`, {
+                    headers: { 'Authorization': token ? `Bearer ${token}` : '' }
+                }).then(r => r.ok ? r.json() : null).catch(() => null)
+            ]);
+
             setVenda(vendaData);
+            setEmpresa(empresaResp);
+
+            if (vendaData && vendaData.veiculosIds) {
+                const veics = todosVeiculos.filter(v => vendaData.veiculosIds.includes(v.id));
+                setVeiculos(veics);
+            }
             
             if (vendaData && vendaData.clienteId) {
                 const clienteData = await getClienteDetalhes(vendaData.clienteId);
@@ -35,6 +67,16 @@ const ContratoVenda: React.FC = () => {
 
     if (loading) return <div style={{ padding: '32px' }}>Carregando dados do contrato...</div>;
     if (!venda || !cliente) return <div style={{ padding: '32px' }}>Contrato não encontrado.</div>;
+
+    const nomeVendedor = empresa?.razaoSocial || empresa?.nomeFantasia || 'GRAVITY CAR SYSTEM';
+    const cnpjVendedor = empresa?.cnpj || 'Consulte o cadastro da empresa';
+    const enderecoVendedor = empresa?.logradouro 
+        ? `${empresa.logradouro}, ${empresa.numero || 'S/N'}${empresa.complemento ? ` - ${empresa.complemento}` : ''} - Bairro ${empresa.bairro || ''}, ${empresa.cidade || ''}/${empresa.estado || 'MG'} - CEP: ${empresa.cep || ''}`
+        : 'Endereço da Concessionária';
+
+    const enderecoComprador = cliente.endereco 
+        ? `${cliente.endereco}, ${cliente.numero || 's/n'}${cliente.complemento ? ` - ${cliente.complemento}` : ''} - ${cliente.bairro || ''}, ${cliente.cidade || ''}/${cliente.estado || 'MG'} - CEP: ${cliente.cep || ''}`
+        : 'Endereço constante no cadastro oficial';
 
     return (
         <div style={{ maxWidth: '800px', margin: '0 auto', padding: '24px', background: 'var(--color-bg)', minHeight: '100vh' }}>
@@ -61,55 +103,87 @@ const ContratoVenda: React.FC = () => {
 
                 <div style={{ marginBottom: '24px' }}>
                     <h3 style={{ borderBottom: '1px solid #ccc', paddingBottom: '4px', marginBottom: '12px', fontSize: '1.1rem' }}>1. IDENTIFICAÇÃO DAS PARTES</h3>
-                    <p><strong>VENDEDOR:</strong> GRAVITY CAR SYSTEM AUTO LTDA, pessoa jurídica de direito privado, inscrita no CNPJ sob nº 12.345.678/0001-90, com sede nesta capital.</p>
-                    <p><strong>COMPRADOR:</strong> {cliente.nomeRazaoSocial || cliente.nome}, portador(a) do CPF/CNPJ nº {cliente.cpfCnpj}, residente e domiciliado(a) no endereço constante em nosso banco de dados, com telefone de contato: {cliente.celular || cliente.telefone || 'Não informado'}.</p>
+                    <p style={{ marginBottom: '8px', lineHeight: '1.5' }}>
+                        <strong>VENDEDOR:</strong> <strong>{nomeVendedor.toUpperCase()}</strong>, pessoa jurídica de direito privado, inscrita no CNPJ sob nº <strong>{cnpjVendedor}</strong>, com sede em {enderecoVendedor}, telefone: {empresa?.telefone || 'Não informado'}.
+                    </p>
+                    <p style={{ marginBottom: '8px', lineHeight: '1.5' }}>
+                        <strong>COMPRADOR:</strong> <strong>{(cliente.nomeRazaoSocial || cliente.nome).toUpperCase()}</strong>, portador(a) do CPF/CNPJ nº <strong>{cliente.cpfCnpj}</strong>, residente e domiciliado(a) em {enderecoComprador}, telefone de contato: {cliente.celular || cliente.telefone || 'Não informado'}, e-mail: {cliente.email || 'Não informado'}.
+                    </p>
                 </div>
 
                 <div style={{ marginBottom: '24px' }}>
                     <h3 style={{ borderBottom: '1px solid #ccc', paddingBottom: '4px', marginBottom: '12px', fontSize: '1.1rem' }}>2. OBJETO DO CONTRATO</h3>
-                    <p>O VENDEDOR vende e entrega ao COMPRADOR o(s) seguinte(s) veículo(s) automotor(es):</p>
-                    <ul style={{ listStyleType: 'none', padding: 0 }}>
-                        {venda.veiculosIds.map(vid => (
-                            <li key={vid} style={{ marginBottom: '8px' }}>
-                                - Veículo (ID: {vid}) - As características detalhadas encontram-se no laudo de vistoria anexo e certificado de registro.
-                            </li>
-                        ))}
-                    </ul>
+                    <p>O VENDEDOR vende e transfere ao COMPRADOR o(s) seguinte(s) veículo(s) automotor(es):</p>
+                    
+                    {veiculos.length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
+                            {veiculos.map(v => (
+                                <div key={v.id} style={{ border: '1px solid #e2e8f0', borderRadius: '6px', padding: '12px', background: '#f8fafc' }}>
+                                    <div style={{ fontWeight: 700, fontSize: '1.05rem', color: '#0f172a', marginBottom: '6px' }}>
+                                        {v.marca} {v.modelo} {v.versao || ''}
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', fontSize: '0.88rem', color: '#334155' }}>
+                                        <span><strong>Placa:</strong> {v.placa || 'N/A'}</span>
+                                        <span><strong>Ano Fab/Mod:</strong> {v.anoFabricacao}/{v.anoModelo}</span>
+                                        <span><strong>Cor:</strong> {v.cor || 'N/A'}</span>
+                                        <span><strong>Combustível:</strong> {v.combustivel || 'Flex'}</span>
+                                        <span><strong>Câmbio:</strong> {v.cambio || 'Manual'}</span>
+                                        <span><strong>KM:</strong> {v.quilometragem ? `${v.quilometragem.toLocaleString('pt-BR')} km` : 'Original'}</span>
+                                        {v.chassi && <span><strong>Chassi:</strong> {v.chassi}</span>}
+                                        {v.renavam && <span><strong>Renavam:</strong> {v.renavam}</span>}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <ul style={{ listStyleType: 'none', padding: 0 }}>
+                            {venda.veiculosIds.map(vid => (
+                                <li key={vid} style={{ marginBottom: '8px' }}>
+                                    - Veículo registrado sob ID: {vid} (conforme laudo e certificado de registro).
+                                </li>
+                            ))}
+                        </ul>
+                    )}
                 </div>
 
                 <div style={{ marginBottom: '24px' }}>
                     <h3 style={{ borderBottom: '1px solid #ccc', paddingBottom: '4px', marginBottom: '12px', fontSize: '1.1rem' }}>3. CONDIÇÕES FINANCEIRAS</h3>
-                    <p>O preço certo e ajustado para a presente venda é de <strong>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(venda.valorLiquido || 0)}</strong>, que será pago da seguinte forma:</p>
-                    <ul style={{ paddingLeft: '20px' }}>
+                    <p>O preço certo e ajustado para a presente venda é de <strong>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(venda.valorLiquido || 0)}</strong>, liquidado da seguinte forma:</p>
+                    <ul style={{ paddingLeft: '20px', marginTop: '8px' }}>
                         {venda.pagamentos.map((p, idx) => (
                             <li key={idx} style={{ marginBottom: '4px' }}>
-                                {p.tipoPagamento === 1 ? 'Pagamento à Vista' : `Financiamento (${p.bancoFinanciamento || 'Banco Parceiro'}) - ${p.parcelas} parcelas`}: <strong>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.valor)}</strong>
+                                {p.tipoPagamento === 1 ? 'Pagamento à Vista / TED / PIX' : 
+                                 p.tipoPagamento === 2 ? 'Cartão' :
+                                 p.tipoPagamento === 3 ? 'Cheque' :
+                                 `Financiamento Bancário (${p.bancoFinanciamento || 'Instituição Financeira'}) - ${p.parcelas}x parcelas`}: <strong>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.valor)}</strong>
                             </li>
                         ))}
                         {venda.trocas && venda.trocas.length > 0 && venda.trocas.map((t, idx) => (
                             <li key={`t-${idx}`} style={{ marginBottom: '4px' }}>
-                                Veículo na Troca ({t.marca} {t.modelo} {t.placa}): Abatimento de <strong>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(t.valorAvaliacao)}</strong>
+                                Veículo entregue como parte do pagamento: <strong>{t.marca} {t.modelo} (Placa {t.placa})</strong> — Avaliação: <strong>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(t.valorAvaliacao)}</strong>
                             </li>
                         ))}
                     </ul>
                     {venda.desconto > 0 && (
-                        <p style={{ marginTop: '8px' }}>Desconto concedido: <strong>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(venda.desconto)}</strong></p>
+                        <p style={{ marginTop: '8px' }}>Desconto comercial concedido: <strong>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(venda.desconto)}</strong></p>
                     )}
                 </div>
 
                 <div style={{ marginBottom: '40px' }}>
-                    <h3 style={{ borderBottom: '1px solid #ccc', paddingBottom: '4px', marginBottom: '12px', fontSize: '1.1rem' }}>4. DISPOSIÇÕES GERAIS</h3>
-                    <p style={{ textAlign: 'justify' }}>O veículo é entregue nas condições em que se encontra, tendo sido previamente vistoriado e testado pelo COMPRADOR. A transferência de propriedade deverá ser efetivada no prazo de 30 dias contados desta data, ficando o COMPRADOR responsável por todas as despesas, multas e tributos incidentes após a entrega das chaves.</p>
+                    <h3 style={{ borderBottom: '1px solid #ccc', paddingBottom: '4px', marginBottom: '12px', fontSize: '1.1rem' }}>4. DISPOSIÇÕES GERAIS E TRANSFERÊNCIA</h3>
+                    <p style={{ textAlign: 'justify', lineHeight: '1.5', fontSize: '0.92rem' }}>
+                        O COMPRADOR declara ter vistoriado o veículo e aceito no estado de conservação em que se encontra. A responsabilidade civil, criminal, débitos tributários, multas e infrações cometidas a partir da data e hora da entrega do veículo correrão exclusivamente por conta do COMPRADOR. A transferência de propriedade junto ao DETRAN deverá ser efetivada no prazo legal de até 30 (trinta) dias.
+                    </p>
                 </div>
 
                 <div style={{ marginTop: '60px', display: 'flex', justifyContent: 'space-between' }}>
                     <div style={{ width: '45%', textAlign: 'center', borderTop: '1px solid #000', paddingTop: '8px' }}>
-                        <strong>VENDEDOR</strong><br/>
-                        Gravity Car System
+                        <strong>{nomeVendedor.toUpperCase()}</strong><br/>
+                        <span style={{ fontSize: '0.85rem', color: '#555' }}>VENDEDOR</span>
                     </div>
                     <div style={{ width: '45%', textAlign: 'center', borderTop: '1px solid #000', paddingTop: '8px' }}>
-                        <strong>COMPRADOR</strong><br/>
-                        {cliente.nome}
+                        <strong>{(cliente.nomeRazaoSocial || cliente.nome).toUpperCase()}</strong><br/>
+                        <span style={{ fontSize: '0.85rem', color: '#555' }}>COMPRADOR</span>
                     </div>
                 </div>
 
@@ -144,3 +218,4 @@ const ContratoVenda: React.FC = () => {
 };
 
 export default ContratoVenda;
+

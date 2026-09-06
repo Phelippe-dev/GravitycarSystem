@@ -44,7 +44,7 @@ const Fiscal: React.FC = () => {
     <div style={{ maxWidth: '1400px', margin: '0 auto', width: '100%', padding: '24px' }}>
       <header className="page-header" style={{ marginBottom: '32px' }}>
         <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <FileText size={28} color="var(--color-blue-light)" /> Hub Fiscal
+          <FileText size={28} color="var(--color-blue-light)" /> Fiscal
         </h1>
         <p style={{ color: 'var(--color-gray-400)', marginTop: '8px' }}>Gestão de Notas Fiscais Eletrônicas, CFOPs e Impostos Apurados</p>
       </header>
@@ -83,7 +83,7 @@ const Fiscal: React.FC = () => {
 
       {/* Filtros */}
       <div className="glass-panel" style={{ padding: '20px', marginBottom: '24px', display: 'flex', gap: '16px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
-        <div className="form-group" style={{ flex: '1 1 200px' }}>
+        <div className="form-group" style={{ flex: '1 1 220px', marginBottom: 0 }}>
             <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Filter size={16}/> Buscar NF-e</label>
             <input 
                 type="text" 
@@ -92,35 +92,52 @@ const Fiscal: React.FC = () => {
                 value={busca}
                 onChange={e => setBusca(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleSearch(e as any)}
+                style={{ height: '42px' }}
             />
         </div>
-        <div className="form-group" style={{ width: '150px' }}>
+        <div className="form-group" style={{ width: '150px', marginBottom: 0 }}>
             <label className="form-label">Data Início</label>
-            <input type="date" className="form-input" value={dataInicio} onChange={e => setDataInicio(e.target.value)} />
+            <input type="date" className="form-input" value={dataInicio} onChange={e => setDataInicio(e.target.value)} style={{ height: '42px' }} />
         </div>
-        <div className="form-group" style={{ width: '150px' }}>
+        <div className="form-group" style={{ width: '150px', marginBottom: 0 }}>
             <label className="form-label">Data Fim</label>
-            <input type="date" className="form-input" value={dataFim} onChange={e => setDataFim(e.target.value)} />
+            <input type="date" className="form-input" value={dataFim} onChange={e => setDataFim(e.target.value)} style={{ height: '42px' }} />
         </div>
-        <div className="form-group" style={{ width: '150px' }}>
+        <div className="form-group" style={{ width: '150px', marginBottom: 0 }}>
             <label className="form-label">Tipo</label>
-            <select className="form-input" value={tipoFiltro} onChange={e => setTipoFiltro(e.target.value)}>
+            <select className="form-input" value={tipoFiltro} onChange={e => setTipoFiltro(e.target.value)} style={{ height: '42px' }}>
                 <option value="">Todos</option>
                 <option value="0">Entrada</option>
                 <option value="1">Saída</option>
             </select>
         </div>
-        <div className="form-group" style={{ width: '150px' }}>
+        <div className="form-group" style={{ width: '150px', marginBottom: 0 }}>
             <label className="form-label">Status</label>
-            <select className="form-input" value={statusFiltro} onChange={e => setStatusFiltro(e.target.value)}>
+            <select className="form-input" value={statusFiltro} onChange={e => setStatusFiltro(e.target.value)} style={{ height: '42px' }}>
                 <option value="">Todos</option>
                 <option value="1">Autorizada</option>
                 <option value="2">Cancelada</option>
             </select>
         </div>
-        <button className="btn btn-primary" onClick={handleSearch} style={{ height: '42px', padding: '0 24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Search size={18} /> Filtrar
-        </button>
+        <div style={{ marginBottom: 0 }}>
+            <button 
+                type="button"
+                className="btn btn-primary" 
+                onClick={handleSearch} 
+                style={{ 
+                    height: '42px', 
+                    padding: '0 24px', 
+                    display: 'inline-flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    gap: '8px',
+                    fontWeight: 600,
+                    boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)'
+                }}
+            >
+                <Search size={18} style={{ flexShrink: 0 }} /> <span>Filtrar</span>
+            </button>
+        </div>
       </div>
 
       <div className="table-modern-container">

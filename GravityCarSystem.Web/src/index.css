@@ -146,14 +146,22 @@ body.theme-light .glass-panel {
 }
 
 .sidebar-header {
-  padding: 32px 24px;
-  font-size: 1.4rem;
-  font-weight: 800;
-  color: var(--color-white);
+  padding: 24px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid rgba(255,255,255,0.03);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.sidebar-brand-name {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  text-shadow: 0 0 16px rgba(0, 98, 255, 0.5);
+  margin: 0;
+  line-height: 1.2;
 }
 
 .theme-toggle-btn {
@@ -693,21 +701,50 @@ body.theme-light .date-preset-pill.active {
   flex-direction: column;
   align-items: center;
   text-align: center; 
-  max-width: 500px; 
+  max-width: 480px;
+  gap: 20px;
 }
+
 .brand-logo-large { 
   width: 100%; 
-  max-width: 450px; 
-  margin-bottom: -60px; /* Stronger negative margin to kill the massive transparent gap */
+  max-width: 420px; 
   object-fit: contain;
-  /* Removed negative left margin since we are centering now */
 }
+
+.brand-system-name {
+  font-size: 2.6rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  text-shadow: 0 0 40px rgba(0, 98, 255, 0.5), 0 4px 8px rgba(0,0,0,0.6);
+  margin: 0;
+}
+
 .brand-tagline {
   color: var(--color-gray-400);
-  font-size: 1.1rem;
-  line-height: 1.6;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  margin: 0;
 }
-.brand-highlight { color: var(--color-blue); font-weight: 500; }
+.brand-highlight { color: var(--color-blue); font-weight: 600; }
+
+.brand-features {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.brand-feature-pill {
+  background: rgba(0, 98, 255, 0.08);
+  border: 1px solid rgba(0, 98, 255, 0.2);
+  border-radius: 50px;
+  padding: 8px 20px;
+  font-size: 0.85rem;
+  color: var(--color-gray-300);
+  letter-spacing: 0.02em;
+}
 
 /* Lado Direito (Form) */
 .login-form-side {
@@ -742,6 +779,35 @@ body.theme-light .date-preset-pill.active {
 .login-card-logo img { height: 24px; }
 .login-card-header h2 { font-size: 1.5rem; font-weight: 600; margin-bottom: 8px; color: var(--color-white); }
 .login-card-header p { font-size: 0.9rem; color: var(--color-gray-400); }
+
+.login-brand-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-bottom: 28px;
+  padding: 14px 24px;
+  background: rgba(0, 98, 255, 0.08);
+  border: 1px solid rgba(0, 98, 255, 0.25);
+  border-radius: 12px;
+  backdrop-filter: blur(4px);
+}
+
+.login-brand-logo {
+  height: 56px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 0 14px rgba(0, 98, 255, 0.9)) drop-shadow(0 0 6px rgba(255,255,255,0.4)) brightness(1.15);
+}
+
+.login-brand-name {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  text-shadow: 0 0 20px rgba(0, 98, 255, 0.6), 0 2px 4px rgba(0,0,0,0.5);
+}
 
 .login-form { display: flex; flex-direction: column; gap: 20px; }
 .login-form .form-group { display: flex; flex-direction: column; gap: 8px; }
@@ -997,4 +1063,52 @@ body.theme-light .date-preset-pill.active {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+/* ================= IMPRESSÃO E EXPORTAÇÃO EM PDF ================= */
+@media print {
+  body, html {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  .sidebar,
+  .sidebar-header,
+  .print-hidden,
+  .theme-toggle-btn,
+  header.page-header,
+  .modal-overlay-backdrop {
+    display: none !important;
+  }
+  
+  .main-content {
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  .app-container {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .dossie-printable {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    padding: 20px !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .dossie-printable * {
+    color: #000000 !important;
+    box-shadow: none !important;
+  }
 }

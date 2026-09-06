@@ -32,6 +32,14 @@ public class VendaPagamentoDto
     public int? Parcelas { get; set; }
     public decimal? ValorParcela { get; set; }
     public decimal? TaxaJuros { get; set; }
+
+    // Detalhes para pagamento com Cheque (individual ou em lote)
+    public string? Banco { get; set; }
+    public string? Agencia { get; set; }
+    public string? Conta { get; set; }
+    public string? NumeroCheque { get; set; }
+    public DateTime? DataBomPara { get; set; }
+    public string? Emitente { get; set; }
 }
 
 public class VendaTrocaDto

@@ -23,7 +23,19 @@ public class AvaliacaoService : IAvaliacaoService
 
     public async Task<AvaliacaoDto> CriarAvaliacaoAsync(AvaliacaoDto dto)
     {
-        var empresaId = _tenantService.GetEmpresaId();
+        var defaultTenantId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+        var empresaId = _tenantService.GetEmpresaId() ?? defaultTenantId;
+        if (empresaId == Guid.Empty) empresaId = defaultTenantId;
+
+        // Se clienteId não for informado, busca o primeiro cliente ou cria/usa default
+        if (dto.ClienteId == Guid.Empty)
+        {
+            var firstCliente = await _context.Clientes.FirstOrDefaultAsync();
+            if (firstCliente != null)
+            {
+                dto.ClienteId = firstCliente.Id;
+            }
+        }
 
         // Localizar veículo existente ou criar novo no estoque
         Veiculo? veiculo = null;
@@ -44,8 +56,8 @@ public class AvaliacaoService : IAvaliacaoService
             if (!string.IsNullOrWhiteSpace(dto.Marca)) veiculo.Marca = dto.Marca;
             if (!string.IsNullOrWhiteSpace(dto.Modelo)) veiculo.Modelo = dto.Modelo;
             if (!string.IsNullOrWhiteSpace(dto.Versao)) veiculo.Versao = dto.Versao;
-            if (dto.AnoFabricacao.HasValue) veiculo.AnoFabricacao = dto.AnoFabricacao;
-            if (dto.AnoModelo.HasValue) veiculo.AnoModelo = dto.AnoModelo;
+            if (dto.AnoFabricacao.HasValue) veiculo.AnoFabricacao = (short)dto.AnoFabricacao.Value;
+            if (dto.AnoModelo.HasValue) veiculo.AnoModelo = (short)dto.AnoModelo.Value;
             if (dto.Quilometragem.HasValue) veiculo.Quilometragem = dto.Quilometragem;
             if (!string.IsNullOrWhiteSpace(dto.Cor)) veiculo.Cor = dto.Cor;
             if (!string.IsNullOrWhiteSpace(dto.Combustivel)) veiculo.Combustivel = dto.Combustivel;
@@ -56,13 +68,13 @@ public class AvaliacaoService : IAvaliacaoService
             veiculo = new Veiculo
             {
                 Id = Guid.NewGuid(),
-                EmpresaId = empresaId ?? Guid.Empty,
+                EmpresaId = empresaId,
                 Marca = !string.IsNullOrWhiteSpace(dto.Marca) ? dto.Marca : "Não informada",
                 Modelo = !string.IsNullOrWhiteSpace(dto.Modelo) ? dto.Modelo : "Não informado",
                 Versao = dto.Versao ?? string.Empty,
                 Placa = dto.Placa,
-                AnoFabricacao = dto.AnoFabricacao,
-                AnoModelo = dto.AnoModelo,
+                AnoFabricacao = dto.AnoFabricacao.HasValue ? (short)dto.AnoFabricacao.Value : (short)DateTime.UtcNow.Year,
+                AnoModelo = dto.AnoModelo.HasValue ? (short)dto.AnoModelo.Value : (short)DateTime.UtcNow.Year,
                 Cor = dto.Cor,
                 Combustivel = dto.Combustivel,
                 Cambio = dto.Cambio,
@@ -76,12 +88,20 @@ public class AvaliacaoService : IAvaliacaoService
             _context.Veiculos.Add(veiculo);
         }
 
+        var usuarioId = _tenantService.GetUsuarioId();
+        if (!usuarioId.HasValue || usuarioId.Value == Guid.Empty)
+        {
+            var fallbackUser = await _context.Usuarios.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Ativo);
+            usuarioId = fallbackUser?.Id;
+        }
+
         var avaliacao = new Avaliacao
         {
             Id = Guid.NewGuid(),
-            EmpresaId = empresaId ?? Guid.Empty,
+            EmpresaId = empresaId,
             ClienteId = dto.ClienteId,
             VeiculoId = veiculo.Id,
+            UsuarioId = usuarioId,
             ValorMercado = dto.ValorMercado,
             ValorAvaliacao = dto.ValorAvaliacao,
             ValorAprovado = dto.ValorAprovado,
@@ -95,6 +115,7 @@ public class AvaliacaoService : IAvaliacaoService
             avaliacao.Itens.Add(new AvaliacaoItem
             {
                 Id = Guid.NewGuid(),
+                AvaliacaoId = avaliacao.Id,
                 Categoria = item.Categoria,
                 Item = item.Item,
                 Status = (StatusChecklist)item.Status,

@@ -96,7 +96,67 @@ public class ChequeService : IChequeService
         if (novoStatus == StatusCheque.Compensado)
         {
             cheque.DataCompensacao = DateTime.Now;
-            // IMPORTANTE: Aqui poderíamos disparar evento para alimentar a ContaBancaria com o saldo disponível
+            
+            // Localiza a Conta a Receber correspondente a este cheque para liquidação
+            var contaReceber = await _context.ContasReceber
+                .FirstOrDefaultAsync(cr => cr.ClienteId == cheque.ClienteId 
+                    && cr.Status == StatusConta.Aberto 
+                    && cr.ValorOriginal == cheque.Valor);
+
+            if (contaReceber != null)
+            {
+                contaReceber.Status = StatusConta.Pago;
+                contaReceber.ValorPago = cheque.Valor;
+                contaReceber.Saldo = 0;
+                contaReceber.DataPagamento = DateTime.Now;
+            }
+
+            // Registra Movimento Financeiro de Entrada por compensação do cheque
+            var contaPadrao = await _context.ContasFinanceiras.FirstOrDefaultAsync(c => c.Ativa);
+            if (contaPadrao == null)
+            {
+                contaPadrao = new GravityCarSystem.Domain.Entities.Financeiro.ContaFinanceira
+                {
+                    Id = Guid.NewGuid(),
+                    EmpresaId = cheque.EmpresaId,
+                    Nome = "Caixa Geral / Principal",
+                    Tipo = 1,
+                    SaldoInicial = 0,
+                    Ativa = true,
+                    DataCadastro = DateTime.UtcNow
+                };
+                _context.ContasFinanceiras.Add(contaPadrao);
+            }
+
+            var categoriaReceita = await _context.CategoriasFinanceiras.FirstOrDefaultAsync(c => c.Tipo == 1);
+            if (categoriaReceita == null)
+            {
+                categoriaReceita = new GravityCarSystem.Domain.Entities.Financeiro.CategoriaFinanceira
+                {
+                    Id = Guid.NewGuid(),
+                    EmpresaId = cheque.EmpresaId,
+                    Nome = "Vendas de Veículos",
+                    Tipo = 1,
+                    Ativa = true,
+                    DataCadastro = DateTime.UtcNow
+                };
+                _context.CategoriasFinanceiras.Add(categoriaReceita);
+            }
+
+            var mov = new GravityCarSystem.Domain.Entities.Financeiro.MovimentoFinanceiro
+            {
+                Id = Guid.NewGuid(),
+                EmpresaId = cheque.EmpresaId,
+                ContaFinanceira = contaPadrao,
+                Categoria = categoriaReceita,
+                Tipo = 1, // 1 = Entrada
+                Valor = cheque.Valor,
+                DataMovimento = DateTime.Now,
+                Descricao = $"Compensação Cheque Nº {cheque.NumeroCheque} ({cheque.Banco})",
+                ChequeId = cheque.Id,
+                ContaReceberId = contaReceber?.Id
+            };
+            _context.MovimentosFinanceiros.Add(mov);
         }
 
         await _context.SaveChangesAsync();

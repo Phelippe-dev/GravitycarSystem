@@ -84,44 +84,56 @@ public class NotaFiscalService : INotaFiscalService
         if (venda == null)
             throw new Exception("Venda não encontrada.");
 
+        var empresa = await _context.Empresas.FirstOrDefaultAsync(e => e.Id == venda.EmpresaId)
+            ?? await _context.Empresas.FirstOrDefaultAsync();
+
+        var emitenteCnpj = !string.IsNullOrWhiteSpace(empresa?.Cnpj) ? empresa.Cnpj : "00.000.000/0001-00";
+        var emitenteNome = !string.IsNullOrWhiteSpace(empresa?.RazaoSocial) ? empresa.RazaoSocial : (empresa?.NomeFantasia ?? "Concessionária");
+
+        var totalNotas = await _context.NotasFiscais.CountAsync();
+        var proximoNumero = (totalNotas + 1).ToString("D6");
+
         var valorBaseCalc = venda.ValorLiquido;
-        // Mock ICMS c/ Redução (Convênio 51/00 para carros usados, ex: 90% de redução na base, alíquota de 18% ou simulação de 5% efetivo)
-        var valorIcmsSimulado = valorBaseCalc * 0.05m; 
-        var valorPisSimulado = valorBaseCalc * 0.0065m;
-        var valorCofinsSimulado = valorBaseCalc * 0.03m;
+        // Tributação padrão de revenda de veículos
+        var valorIcms = valorBaseCalc * 0.05m; 
+        var valorPis = valorBaseCalc * 0.0065m;
+        var valorCofins = valorBaseCalc * 0.03m;
 
         var nota = new NotaFiscal
         {
             Id = Guid.NewGuid(),
-            ChaveAcesso = GerarChaveAcessoFake(),
-            Numero = new Random().Next(1000, 9999).ToString(),
+            ChaveAcesso = GerarChaveAcessoSefaz(emitenteCnpj, proximoNumero, 55, 1),
+            Numero = proximoNumero,
             Serie = "1",
             Tipo = 1, // 1 = Saída
             DataEmissao = DateTime.UtcNow,
-            EmitenteCnpj = "12.345.678/0001-90",
-            EmitenteNome = "Gravity Car System Auto",
-            DestinatarioCnpj = venda.Cliente?.CpfCnpj,
-            DestinatarioNome = venda.Cliente?.NomeRazaoSocial,
+            EmitenteCnpj = emitenteCnpj,
+            EmitenteNome = emitenteNome,
+            DestinatarioCnpj = venda.Cliente?.CpfCnpj ?? "",
+            DestinatarioNome = venda.Cliente?.NomeRazaoSocial ?? "",
             ValorTotal = venda.ValorLiquido,
-            NaturezaOperacao = dto.NaturezaOperacao,
+            NaturezaOperacao = !string.IsNullOrWhiteSpace(dto.NaturezaOperacao) ? dto.NaturezaOperacao : "Venda de Veículo Automotor Usado",
             Cfop = "5102", // Venda de mercadoria adquirida de terceiros
-            ValorIcms = valorIcmsSimulado,
-            ValorPis = valorPisSimulado,
-            ValorCofins = valorCofinsSimulado,
+            ValorIcms = valorIcms,
+            ValorPis = valorPis,
+            ValorCofins = valorCofins,
             Status = 1, // Autorizada
             DataImportacao = DateTime.UtcNow
         };
 
         foreach (var vv in venda.Veiculos)
         {
-            nota.Itens.Add(new NotaFiscalItem
+            if (vv.Veiculo != null)
             {
-                Id = Guid.NewGuid(),
-                Descricao = $"Veículo {vv.Veiculo?.Marca} {vv.Veiculo?.Modelo} Placa: {vv.Veiculo?.Placa}",
-                Quantidade = 1,
-                ValorUnitario = (vv.Veiculo?.ValorVenda ?? 0),
-                ValorTotal = (vv.Veiculo?.ValorVenda ?? 0)
-            });
+                nota.Itens.Add(new NotaFiscalItem
+                {
+                    Id = Guid.NewGuid(),
+                    Descricao = $"Veículo {vv.Veiculo.Marca} {vv.Veiculo.Modelo} {vv.Veiculo.Versao} - Ano {vv.Veiculo.AnoFabricacao}/{vv.Veiculo.AnoModelo} - Placa: {vv.Veiculo.Placa} - Chassi: {vv.Veiculo.Chassi}",
+                    Quantidade = 1,
+                    ValorUnitario = vv.Veiculo.ValorVenda ?? 0,
+                    ValorTotal = vv.Veiculo.ValorVenda ?? 0
+                });
+            }
         }
 
         _context.NotasFiscais.Add(nota);
@@ -136,24 +148,32 @@ public class NotaFiscalService : INotaFiscalService
         var veiculo = await _context.Veiculos.FindAsync(dto.VeiculoId);
 
         if (cliente == null) throw new Exception("Cliente não encontrado.");
-        
-        // Mock NFe de Entrada
+
+        var empresa = await _context.Empresas.FirstOrDefaultAsync(e => e.Id == cliente.EmpresaId)
+            ?? await _context.Empresas.FirstOrDefaultAsync();
+
+        var destCnpj = !string.IsNullOrWhiteSpace(empresa?.Cnpj) ? empresa.Cnpj : "00.000.000/0001-00";
+        var destNome = !string.IsNullOrWhiteSpace(empresa?.RazaoSocial) ? empresa.RazaoSocial : (empresa?.NomeFantasia ?? "Concessionária");
+
+        var totalNotas = await _context.NotasFiscais.CountAsync();
+        var proximoNumero = (totalNotas + 1).ToString("D6");
+
         var nota = new NotaFiscal
         {
             Id = Guid.NewGuid(),
-            ChaveAcesso = GerarChaveAcessoFake(),
-            Numero = new Random().Next(1000, 9999).ToString(),
+            ChaveAcesso = GerarChaveAcessoSefaz(destCnpj, proximoNumero, 55, 0),
+            Numero = proximoNumero,
             Serie = "1",
             Tipo = 0, // 0 = Entrada
             DataEmissao = DateTime.UtcNow,
-            EmitenteCnpj = cliente.CpfCnpj, // Na NFe de entrada, o emitente de fato é a concessionária, mas para registro simula-se a origem
+            EmitenteCnpj = cliente.CpfCnpj,
             EmitenteNome = cliente.NomeRazaoSocial,
-            DestinatarioCnpj = "12.345.678/0001-90", // Loja
-            DestinatarioNome = "Gravity Car System Auto",
+            DestinatarioCnpj = destCnpj,
+            DestinatarioNome = destNome,
             ValorTotal = dto.ValorCompra,
-            NaturezaOperacao = dto.NaturezaOperacao,
+            NaturezaOperacao = !string.IsNullOrWhiteSpace(dto.NaturezaOperacao) ? dto.NaturezaOperacao : "Entrada de Veículo por Compra / Troca",
             Cfop = "1102", // Compra para comercialização
-            ValorIcms = 0, // Pessoa física geralmente não destaca ICMS
+            ValorIcms = 0,
             ValorPis = 0,
             ValorCofins = 0,
             Status = 1, 
@@ -165,7 +185,7 @@ public class NotaFiscalService : INotaFiscalService
             nota.Itens.Add(new NotaFiscalItem
             {
                 Id = Guid.NewGuid(),
-                Descricao = $"Veículo {veiculo.Marca} {veiculo.Modelo} Placa: {veiculo.Placa}",
+                Descricao = $"Veículo {veiculo.Marca} {veiculo.Modelo} {veiculo.Versao} - Ano {veiculo.AnoFabricacao}/{veiculo.AnoModelo} - Placa: {veiculo.Placa} - Chassi: {veiculo.Chassi}",
                 Quantidade = 1,
                 ValorUnitario = dto.ValorCompra,
                 ValorTotal = dto.ValorCompra
@@ -202,14 +222,33 @@ public class NotaFiscalService : INotaFiscalService
         });
     }
 
-    private string GerarChaveAcessoFake()
+    private string GerarChaveAcessoSefaz(string cnpj, string numeroNota, int modelo = 55, int serie = 1)
     {
-        var random = new Random();
-        var num = new char[44];
-        for (int i = 0; i < 44; i++)
+        var cnpjNumeros = new string((cnpj ?? "").Where(char.IsDigit).ToArray()).PadLeft(14, '0');
+        var now = DateTime.UtcNow;
+        var cUf = "31"; // Minas Gerais (MG = 31)
+        var aamm = now.ToString("yyMM");
+        var mod = modelo.ToString("D2");
+        var ser = serie.ToString("D3");
+        var nNF = int.TryParse(numeroNota, out var n) ? n.ToString("D9") : numeroNota.PadLeft(9, '0');
+        var tpEmis = "1"; // Emissão normal
+        var cNF = Math.Abs(numeroNota.GetHashCode() % 100000000).ToString("D8");
+        
+        var chaveSemDv = $"{cUf}{aamm}{cnpjNumeros}{mod}{ser}{nNF}{tpEmis}{cNF}";
+        if (chaveSemDv.Length > 43) chaveSemDv = chaveSemDv.Substring(0, 43);
+        
+        // Cálculo do Dígito Verificador (Módulo 11 Padrão SEFAZ)
+        var pesos = new[] { 2, 3, 4, 5, 6, 7, 8, 9 };
+        var soma = 0;
+        var pIdx = 0;
+        for (int i = chaveSemDv.Length - 1; i >= 0; i--)
         {
-            num[i] = (char)('0' + random.Next(0, 10));
+            soma += (chaveSemDv[i] - '0') * pesos[pIdx % pesos.Length];
+            pIdx++;
         }
-        return new string(num);
+        var resto = soma % 11;
+        var dv = (resto == 0 || resto == 1) ? 0 : 11 - resto;
+
+        return $"{chaveSemDv}{dv}";
     }
 }

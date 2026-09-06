@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Text.Json;
 using GravityCarSystem.Application.Interfaces;
 using GravityCarSystem.Domain.Common;
+using GravityCarSystem.Domain.Entities.Acesso;
 using GravityCarSystem.Domain.Entities.Auditoria;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -36,8 +37,15 @@ public class AuditableEntitySaveChangesInterceptor : SaveChangesInterceptor
     {
         if (context == null) return;
 
-        var empresaId = _currentTenantService.GetEmpresaId();
-        var usuarioId = _currentTenantService.GetUsuarioId() ?? Guid.Empty; // System or background task might not have a user
+        var empresaId = _currentTenantService.GetEmpresaId() ?? Guid.Parse("00000000-0000-0000-0000-000000000001");
+        var resolvedUserId = _currentTenantService.GetUsuarioId();
+        if (!resolvedUserId.HasValue || resolvedUserId.Value == Guid.Empty)
+        {
+            // Tenta obter o primeiro usuário ativo cadastrado no banco para associar à auditoria
+            var fallbackUser = context.Set<Usuario>().IgnoreQueryFilters().FirstOrDefault(u => u.Ativo);
+            resolvedUserId = fallbackUser?.Id ?? Guid.Empty;
+        }
+        var usuarioId = resolvedUserId.Value;
         
         var auditoriaLogs = new List<AuditoriaLog>();
 
@@ -59,7 +67,7 @@ public class AuditableEntitySaveChangesInterceptor : SaveChangesInterceptor
                 {
                     Id = Guid.NewGuid(),
                     UsuarioId = usuarioId,
-                    EmpresaId = empresaId ?? Guid.Empty,
+                    EmpresaId = empresaId,
                     Entidade = entry.Entity.GetType().Name,
                     EntidadeId = entry.Property("Id").CurrentValue?.ToString() ?? "",
                     Acao = entry.State.ToString(),
@@ -119,7 +127,7 @@ public class AuditableEntitySaveChangesInterceptor : SaveChangesInterceptor
             {
                 if (entry.Entity.EmpresaId == Guid.Empty)
                 {
-                    entry.Entity.EmpresaId = empresaId ?? Guid.Empty;
+                    entry.Entity.EmpresaId = empresaId;
                 }
             }
         }

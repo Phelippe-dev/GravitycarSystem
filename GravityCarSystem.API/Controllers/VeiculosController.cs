@@ -140,6 +140,34 @@ public class VeiculosController : ControllerBase
         }
     }
 
+    [HttpDelete("{id:guid}/fotos/{fotoId:guid}")]
+    public async Task<IActionResult> RemoverFoto(Guid id, Guid fotoId)
+    {
+        try
+        {
+            await _veiculoService.RemoverFotoAsync(id, fotoId);
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpPatch("{id:guid}/fotos/{fotoId:guid}/principal")]
+    public async Task<IActionResult> DefinirFotoPrincipal(Guid id, Guid fotoId)
+    {
+        try
+        {
+            await _veiculoService.DefinirFotoPrincipalAsync(id, fotoId);
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
     [HttpPost("{id:guid}/documentos")]
     public async Task<IActionResult> AdicionarDocumento(Guid id, IFormFile file, [FromForm] string tipo = "Outro")
     {
@@ -149,6 +177,20 @@ public class VeiculosController : ControllerBase
             var url = await _fileStorageService.UploadFileAsync(stream, file.FileName, "documentos");
             var documento = await _veiculoService.AdicionarDocumentoAsync(id, file.FileName, url, tipo);
             return Ok(documento);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpDelete("{id:guid}/documentos/{documentoId:guid}")]
+    public async Task<IActionResult> RemoverDocumento(Guid id, Guid documentoId)
+    {
+        try
+        {
+            await _veiculoService.RemoverDocumentoAsync(id, documentoId);
+            return NoContent();
         }
         catch (Exception ex)
         {

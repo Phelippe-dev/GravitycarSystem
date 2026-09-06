@@ -73,6 +73,9 @@ const Login: React.FC = () => {
             <div className="login-form-side">
                 <div className="login-card-modern">
                     <div className="login-card-header">
+                        <div className="login-brand-badge">
+                            <span className="login-brand-name">Gravity Car System</span>
+                        </div>
                         <h2>Bem-vindo de volta!</h2>
                         <p>Acesse sua conta para continuar.</p>
                     </div>

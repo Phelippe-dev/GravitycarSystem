@@ -95,7 +95,8 @@ public class RelatorioService : IRelatorioService
             queryVendas = queryVendas.Where(v => v.DataVenda <= dataFim.Value);
         }
 
-        resumo.TotalEntradasVendas = await queryVendas.SumAsync(v => v.ValorLiquido);
+        var vendasLiquidas = await queryVendas.Select(v => v.ValorLiquido).ToListAsync();
+        resumo.TotalEntradasVendas = vendasLiquidas.Sum();
         
         // Vamos considerar como compra de veículos as contas a pagar que tenham "Veículo" na descrição (simplificação)
         // ou criar um agrupamento. Aqui faremos o total de saídas:

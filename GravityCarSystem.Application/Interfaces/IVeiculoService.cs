@@ -19,6 +19,9 @@ public interface IVeiculoService
     // Fase 2 - Gestão de Veículos
     Task<VeiculoDetalhesDto?> ObterDetalhesAsync(Guid id);
     Task<VeiculoFotoDto> AdicionarFotoAsync(Guid veiculoId, string url, bool isPrincipal);
+    Task RemoverFotoAsync(Guid veiculoId, Guid fotoId);
+    Task DefinirFotoPrincipalAsync(Guid veiculoId, Guid fotoId);
     Task<VeiculoDocumentoDto> AdicionarDocumentoAsync(Guid veiculoId, string nomeArquivo, string url, string tipo);
+    Task RemoverDocumentoAsync(Guid veiculoId, Guid documentoId);
     Task<VeiculoCustoDto> AdicionarCustoAsync(Guid veiculoId, VeiculoCustoDto custoDto);
 }
