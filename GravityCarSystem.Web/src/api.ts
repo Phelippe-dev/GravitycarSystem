@@ -43,10 +43,15 @@ export interface Cliente {
 export interface VendaPagamentoDto {
     tipoPagamento: number;
     valor: number;
+    // Financiamento
     bancoFinanciamento?: string;
+    modalidadeFinanciamento?: string; // CDC, Leasing, Consórcio, PF, FINAME
     parcelas?: number;
     valorParcela?: number;
     taxaJuros?: number;
+    valorEntrada?: number;
+    numeroContrato?: string;
+    // Cheque
     banco?: string;
     agencia?: string;
     conta?: string;
@@ -54,6 +59,7 @@ export interface VendaPagamentoDto {
     dataBomPara?: string;
     emitente?: string;
 }
+
 
 export interface VendaTrocaDto {
     marca: string;

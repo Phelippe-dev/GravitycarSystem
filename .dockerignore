@@ -1,0 +1,44 @@
+# Arquivos desnecessários no build Docker
+
+# Git
+.git
+.gitignore
+
+# Visual Studio
+.vs/
+.vscode/
+*.user
+*.suo
+
+# Build artifacts
+**/bin/
+**/obj/
+
+# Node
+**/node_modules/
+GravityCarSystem.Web/dist/
+
+# Projetos não usados em produção Web Local
+GravityCarSystem.Desktop/
+GravityCarSystem.Tests/
+GravityCarSystem.Integrations/
+
+# Scripts de geração de código
+Generate*.ps1
+
+# Banco SQLite (produção usa PostgreSQL via Docker)
+*.db
+*.db-shm
+*.db-wal
+
+# Arquivos de desenvolvimento
+*.csx
+test_*.cs
+fake.*
+stress_test.*
+scripts/
+
+# Arquivos de configuração sensíveis locais
+.env
+.env.local
+appsettings.Development.json

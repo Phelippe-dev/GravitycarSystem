@@ -22,10 +22,18 @@ const Vendas: React.FC = () => {
   const [desconto, setDesconto] = useState<number>(0);
   const [emitirNfe, setEmitirNfe] = useState(false);
 
-  // Vendas 2.0 - Pagamentos Dinâmicos
+  // Pagamentos Dinâmicos
   const [pagamentos, setPagamentos] = useState<VendaPagamentoDto[]>([]);
   const [novoPagamentoTipo, setNovoPagamentoTipo] = useState(1);
   const [novoPagamentoValor, setNovoPagamentoValor] = useState('');
+
+  // Estados específicos para Financiamento
+  const [financBanco, setFinancBanco] = useState('Banco Bradesco (237)');
+  const [financModalidade, setFinancModalidade] = useState('CDC');
+  const [financParcelas, setFinancParcelas] = useState(36);
+  const [financTaxaJuros, setFinancTaxaJuros] = useState('');
+  const [financNumContrato, setFinancNumContrato] = useState('');
+  const [financEntrada, setFinancEntrada] = useState('');
 
   // Estados específicos para Cheque
   const [modoCheque, setModoCheque] = useState<'unico' | 'multiplo'>('unico');
@@ -55,7 +63,7 @@ const Vendas: React.FC = () => {
   const [multiIntervaloDias, setMultiIntervaloDias] = useState(30);
   const [multiEmitente, setMultiEmitente] = useState('');
 
-  // Vendas 2.0 - Trocas Dinâmicas
+  // Trocas Dinâmicas
   const [trocas, setTrocas] = useState<VendaTrocaDto[]>([]);
   const [novaTroca, setNovaTroca] = useState({
       marca: '', modelo: '', placa: '', valorAvaliacao: ''
@@ -249,7 +257,7 @@ const Vendas: React.FC = () => {
       <header className="page-header" style={{ marginBottom: '40px' }}>
         <div>
           <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <DollarSign size={28} color="var(--color-success)" /> Terminal de Vendas 2.0
+            <DollarSign size={28} color="var(--color-success)" /> Terminal de Vendas
           </h1>
           <p style={{ color: 'var(--color-gray-400)', marginTop: '8px' }}>
             Operador Logado: <strong>{user?.nome}</strong>
@@ -403,8 +411,8 @@ const Vendas: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Se for PIX, Financiamento ou Cartão */}
-                {novoPagamentoTipo !== 3 && (
+                {/* PIX / Dinheiro / Cartão: campo simples */}
+                {(novoPagamentoTipo === 1 || novoPagamentoTipo === 4) && (
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 44px', gap: '8px', alignItems: 'center', marginBottom: '16px' }}>
                         <input
                             className="form-input"
@@ -434,6 +442,144 @@ const Vendas: React.FC = () => {
                         </button>
                     </div>
                 )}
+
+                {/* 🏦 FINANCIAMENTO — Painel Detalhado */}
+                {novoPagamentoTipo === 2 && (
+                    <div style={{ background: 'rgba(16, 185, 129, 0.06)', border: '1px solid rgba(16, 185, 129, 0.25)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', paddingBottom: '10px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                            <span style={{ fontSize: '1.1rem' }}>🏦</span>
+                            <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#34d399' }}>Dados do Financiamento</span>
+                        </div>
+
+                        {/* Linha 1: Banco + Modalidade */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                            <div>
+                                <label style={{ fontSize: '0.75rem', color: 'var(--color-gray-400)', display: 'block', marginBottom: '4px' }}>Banco / Financeira*</label>
+                                <select className="form-input" style={{ height: '38px', fontSize: '0.85rem' }} value={financBanco} onChange={e => setFinancBanco(e.target.value)}>
+                                    <optgroup label="Bancos Tradicionais">
+                                        <option value="Banco Bradesco (237)">Banco Bradesco (237)</option>
+                                        <option value="Banco Itaú (341)">Banco Itaú / Itaú Unibanco (341)</option>
+                                        <option value="Banco do Brasil (001)">Banco do Brasil (001)</option>
+                                        <option value="Santander (033)">Santander (033)</option>
+                                        <option value="Caixa Econômica (104)">Caixa Econômica Federal (104)</option>
+                                    </optgroup>
+                                    <optgroup label="Financeiras de Veículos">
+                                        <option value="BV Financeira (655)">BV Financeira / BV Bank (655)</option>
+                                        <option value="Banco Pan (623)">Banco Pan (623)</option>
+                                        <option value="Banco Votorantim (655)">Banco Votorantim (655)</option>
+                                        <option value="Santander Financiamentos">Santander Financiamentos</option>
+                                        <option value="Bradesco Financiamentos">Bradesco Financiamentos</option>
+                                        <option value="Itaú Financiamentos">Itaú Financiamentos</option>
+                                        <option value="Creditas">Creditas</option>
+                                        <option value="Omni Banco (613)">Omni Banco (613)</option>
+                                        <option value="Banco Safra (422)">Banco Safra (422)</option>
+                                    </optgroup>
+                                    <optgroup label="Cooperativas">
+                                        <option value="Sicredi (748)">Sicredi (748)</option>
+                                        <option value="Sicoob (756)">Sicoob (756)</option>
+                                        <option value="Cresol (133)">Cresol (133)</option>
+                                    </optgroup>
+                                    <option value="Outro">Outra Instituição</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style={{ fontSize: '0.75rem', color: 'var(--color-gray-400)', display: 'block', marginBottom: '4px' }}>Modalidade de Crédito*</label>
+                                <select className="form-input" style={{ height: '38px', fontSize: '0.85rem' }} value={financModalidade} onChange={e => setFinancModalidade(e.target.value)}>
+                                    <option value="CDC">CDC — Crédito Direto ao Consumidor</option>
+                                    <option value="Leasing">Leasing (Arrendamento Mercantil)</option>
+                                    <option value="Consórcio">Consórcio</option>
+                                    <option value="PF">PF — Pessoa Física (Crédito Pessoal)</option>
+                                    <option value="FINAME">FINAME / BNDES</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Linha 2: Parcelas + Taxa de Juros + Valor Entrada */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                            <div>
+                                <label style={{ fontSize: '0.75rem', color: 'var(--color-gray-400)', display: 'block', marginBottom: '4px' }}>Nº de Parcelas*</label>
+                                <select className="form-input" style={{ height: '38px', fontSize: '0.85rem' }} value={financParcelas} onChange={e => setFinancParcelas(Number(e.target.value))}>
+                                    {[6, 12, 18, 24, 30, 36, 42, 48, 60, 72].map(p => (
+                                        <option key={p} value={p}>{p}x meses</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label style={{ fontSize: '0.75rem', color: 'var(--color-gray-400)', display: 'block', marginBottom: '4px' }}>Taxa de Juros (% a.m.)</label>
+                                <input className="form-input" style={{ height: '38px', fontSize: '0.85rem' }} type="number" step="0.01" placeholder="Ex: 1.49" value={financTaxaJuros} onChange={e => setFinancTaxaJuros(e.target.value)} />
+                            </div>
+                            <div>
+                                <label style={{ fontSize: '0.75rem', color: 'var(--color-gray-400)', display: 'block', marginBottom: '4px' }}>Valor de Entrada (R$)</label>
+                                <input className="form-input" style={{ height: '38px', fontSize: '0.85rem' }} type="number" placeholder="Ex: 15000" value={financEntrada} onChange={e => setFinancEntrada(e.target.value)} />
+                            </div>
+                        </div>
+
+                        {/* Linha 3: Valor Financiado + Nº Contrato */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
+                            <div>
+                                <label style={{ fontSize: '0.75rem', color: 'var(--color-gray-400)', display: 'block', marginBottom: '4px' }}>Valor Financiado (R$)*</label>
+                                <div style={{ display: 'flex', gap: '6px' }}>
+                                    <input
+                                        className="form-input"
+                                        style={{ height: '38px', fontSize: '0.85rem' }}
+                                        type="number"
+                                        placeholder="Ex: 60000"
+                                        value={novoPagamentoValor}
+                                        onChange={e => setNovoPagamentoValor(e.target.value)}
+                                    />
+                                    {diferenca > 0 && (
+                                        <button type="button" onClick={() => setNovoPagamentoValor(String(Math.max(0, diferenca)))}
+                                            style={{ height: '38px', padding: '0 8px', fontSize: '0.72rem', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)', color: '#34d399', borderRadius: '6px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                                            Restante
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                            <div>
+                                <label style={{ fontSize: '0.75rem', color: 'var(--color-gray-400)', display: 'block', marginBottom: '4px' }}>Nº do Contrato / Proposta</label>
+                                <input className="form-input" style={{ height: '38px', fontSize: '0.85rem' }} type="text" placeholder="Ex: FIN-2024-00123" value={financNumContrato} onChange={e => setFinancNumContrato(e.target.value)} />
+                            </div>
+                        </div>
+
+                        {/* Preview parcela estimada */}
+                        {novoPagamentoValor && financParcelas && (
+                            <div style={{ padding: '8px 12px', background: 'rgba(16,185,129,0.1)', border: '1px dashed rgba(16,185,129,0.3)', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                <span style={{ fontSize: '0.8rem', color: 'var(--color-gray-300)' }}>
+                                    {financBanco} • {financModalidade} • {financParcelas}x
+                                    {financTaxaJuros && ` • ${financTaxaJuros}% a.m.`}
+                                </span>
+                                <strong style={{ color: '#34d399', fontSize: '0.9rem' }}>
+                                    ≈ {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(novoPagamentoValor) / financParcelas)}/mês
+                                </strong>
+                            </div>
+                        )}
+
+                        <button
+                            type="button"
+                            className="btn btn-primary"
+                            onClick={() => {
+                                const val = Number(novoPagamentoValor);
+                                if (val <= 0) return;
+                                setPagamentos([...pagamentos, {
+                                    tipoPagamento: 2,
+                                    valor: val,
+                                    bancoFinanciamento: financBanco,
+                                    modalidadeFinanciamento: financModalidade,
+                                    parcelas: financParcelas,
+                                    taxaJuros: financTaxaJuros ? Number(financTaxaJuros) : undefined,
+                                    valorEntrada: financEntrada ? Number(financEntrada) : undefined,
+                                    numeroContrato: financNumContrato || undefined,
+                                }]);
+                                setNovoPagamentoValor('');
+                                setFinancNumContrato('');
+                            }}
+                            style={{ width: '100%', height: '38px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                        >
+                            <PlusCircle size={16} /> Registrar Financiamento
+                        </button>
+                    </div>
+                )}
+
 
                 {/* Se for Cheque: Opção Único ou Múltiplos Cheques (Parcelamento) */}
                 {novoPagamentoTipo === 3 && (

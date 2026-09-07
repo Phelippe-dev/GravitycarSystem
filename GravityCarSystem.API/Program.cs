@@ -67,7 +67,7 @@ builder.Services.AddScoped<GravityCarSystem.Application.Interfaces.IAvaliacaoSer
 builder.Services.AddScoped<GravityCarSystem.Application.Interfaces.IChequeService, GravityCarSystem.Application.Services.Negocio.ChequeService>();
 builder.Services.AddScoped<GravityCarSystem.Application.Interfaces.Acesso.IEmpresaService, GravityCarSystem.Application.Services.Acesso.EmpresaService>();
 
-// Database Configuration (Suporte a SQLite e SQL Server)
+// Database Configuration (SQLite para dev, PostgreSQL para produção via Docker)
 var useSqlite = builder.Configuration.GetValue<bool>("UseSqlite", true);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
@@ -82,20 +82,46 @@ builder.Services.AddDbContext<AppDbContext>((sp, options) =>
     }
     else
     {
-        options.UseSqlServer(connectionString)
+        // PostgreSQL em produção (Docker)
+        options.UseNpgsql(connectionString)
                .AddInterceptors(interceptor);
     }
 });
 
 var app = builder.Build();
 
+// =====================================================================
 // Seed & Inicialização Automática do Banco
+// IMPORTANTE: Database.Migrate() cria/atualiza o banco automaticamente
+// ao iniciar uma nova versao — sem perda de dados!
+// =====================================================================
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.EnsureCreated();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
-    // 1. Empresa Padrão
+    try
+    {
+        // Migra o banco (cria tabelas se nao existirem, aplica migrations pendentes)
+        if (useSqlite)
+            db.Database.EnsureCreated(); // SQLite: EnsureCreated (nao suporta Migrate bem)
+        else
+            db.Database.Migrate();       // PostgreSQL: Migrate (preserva dados!)
+        
+        logger.LogInformation("Banco de dados inicializado com sucesso.");
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Erro ao inicializar o banco de dados.");
+    }
+
+    // Leitura das configuracoes da loja no appsettings.json
+    var lojaCfg = app.Configuration.GetSection("LojaCfg");
+    var lojaRazaoSocial = lojaCfg["RazaoSocial"] ?? "Gravity Motors Concessionária LTDA";
+    var lojaNomeFantasia = lojaCfg["NomeFantasia"] ?? "Gravity Motors";
+    var lojaCnpj = lojaCfg["Cnpj"] ?? "00.000.000/0001-00";
+
+    // 1. Empresa — criada a partir da config da loja (nao hardcoded!)
     var empresaId = Guid.Parse("00000000-0000-0000-0000-000000000001");
     var empresa = db.Empresas.FirstOrDefault(e => e.Id == empresaId);
     if (empresa == null)
@@ -103,13 +129,21 @@ using (var scope = app.Services.CreateScope())
         empresa = new GravityCarSystem.Domain.Entities.Acesso.Empresa
         {
             Id = empresaId,
-            RazaoSocial = "Gravity Motors Concessionária LTDA",
-            NomeFantasia = "Gravity Motors",
-            Cnpj = "12.345.678/0001-99",
+            RazaoSocial = lojaRazaoSocial,
+            NomeFantasia = lojaNomeFantasia,
+            Cnpj = lojaCnpj,
             Ativa = true,
             DataCadastro = DateTime.UtcNow
         };
         db.Empresas.Add(empresa);
+        db.SaveChanges();
+    }
+    else
+    {
+        // Atualiza dados da empresa na nova versao (ex: mudou CNPJ ou nome)
+        empresa.RazaoSocial = lojaRazaoSocial;
+        empresa.NomeFantasia = lojaNomeFantasia;
+        empresa.Cnpj = lojaCnpj;
         db.SaveChanges();
     }
 
