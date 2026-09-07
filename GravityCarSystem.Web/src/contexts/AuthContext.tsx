@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { jwtDecode } from 'jwt-decode';
+import { API_BASE_URL } from '../api';
 
-export type UserRole = 'SuperAdmin' | 'Admin' | 'Vendedor';
+export type UserRole = 'SuperAdmin' | 'Admin' | 'Gerente' | 'Vendedor';
 
 export interface User {
     id: string;
@@ -13,6 +14,11 @@ export interface User {
     comissaoPercent: number;
 }
 
+export interface SaldoCreditos {
+    saldoConsultas: number;
+    consultasRealizadas: number;
+}
+
 interface AuthContextType {
     user: User | null;
     token: string | null;
@@ -21,6 +27,8 @@ interface AuthContextType {
     isAuthenticated: boolean;
     activeRole: UserRole;
     setActiveRole: (role: UserRole) => void;
+    saldo: SaldoCreditos;
+    refreshSaldo: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,32 +36,57 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
     const [token, setToken] = useState<string | null>(localStorage.getItem('@GravityCar:token'));
-    
+    const [saldo, setSaldo] = useState<SaldoCreditos>({ saldoConsultas: 0, consultasRealizadas: 0 });
+
     const [activeRole, setActiveRoleState] = useState<UserRole>(() => {
         const saved = localStorage.getItem('@GravityCar:activeRole') as UserRole;
-        if (saved && (saved === 'SuperAdmin' || saved === 'Admin' || saved === 'Vendedor')) {
+        if (saved && ['SuperAdmin', 'Admin', 'Gerente', 'Vendedor'].includes(saved)) {
             return saved;
         }
-        return 'SuperAdmin'; // Padrão é o Desenvolvedor/Master (Você)
+        return 'SuperAdmin';
     });
 
     const getCargoLabel = (role: UserRole) => {
         switch (role) {
             case 'SuperAdmin': return 'Super Administrador (Master)';
-            case 'Admin': return 'Dono da Concessionária';
-            case 'Vendedor': return 'Consultor de Vendas';
-            default: return 'Administrador';
+            case 'Admin':      return 'Dono da Concessionária';
+            case 'Gerente':    return 'Gerente';
+            case 'Vendedor':   return 'Consultor de Vendas';
+            default:           return 'Usuário';
         }
     };
 
     const setActiveRole = (newRole: UserRole) => {
         localStorage.setItem('@GravityCar:activeRole', newRole);
         setActiveRoleState(newRole);
-        setUser(prev => prev ? {
-            ...prev,
-            role: newRole,
-            cargo: getCargoLabel(newRole)
-        } : null);
+        setUser(prev => prev ? { ...prev, role: newRole, cargo: getCargoLabel(newRole) } : null);
+    };
+
+    const refreshSaldo = useCallback(async () => {
+        const tk = localStorage.getItem('@GravityCar:token');
+        if (!tk) return;
+        try {
+            const res = await fetch(`${API_BASE_URL}/empresa/saldo`, {
+                headers: { 'Authorization': `Bearer ${tk}`, 'Content-Type': 'application/json' }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setSaldo({ saldoConsultas: data.saldoConsultas ?? 0, consultasRealizadas: data.consultasRealizadas ?? 0 });
+            }
+        } catch { /* sem saldo no dev */ }
+    }, []);
+
+    const login = (newToken: string) => {
+        localStorage.setItem('@GravityCar:token', newToken);
+        setToken(newToken);
+    };
+
+    const logout = () => {
+        localStorage.removeItem('@GravityCar:token');
+        localStorage.removeItem('@GravityCar:activeRole');
+        setToken(null);
+        setUser(null);
+        setSaldo({ saldoConsultas: 0, consultasRealizadas: 0 });
     };
 
     useEffect(() => {
@@ -72,45 +105,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     empresaId: empresaId,
                     role: activeRole,
                     cargo: getCargoLabel(activeRole),
-                    comissaoPercent: 2.0 // 2% de comissão padrão do vendedor
+                    comissaoPercent: 2.0
                 });
+
+                // Buscar saldo ao fazer login
+                refreshSaldo();
             } catch (error) {
                 console.error("Invalid token:", error);
                 logout();
             }
         }
-    }, [token, activeRole]);
-
-    const login = (newToken: string) => {
-        localStorage.setItem('@GravityCar:token', newToken);
-        setToken(newToken);
-    };
-
-    const logout = () => {
-        localStorage.removeItem('@GravityCar:token');
-        setToken(null);
-        setUser(null);
-    };
+    }, [token]);
 
     return (
-        <AuthContext.Provider value={{ 
-            user, 
-            token, 
-            login, 
-            logout, 
-            isAuthenticated: !!token,
-            activeRole,
-            setActiveRole
-        }}>
+        <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated: !!token, activeRole, setActiveRole, saldo, refreshSaldo }}>
             {children}
         </AuthContext.Provider>
     );
 };
 
 export const useAuth = () => {
-    const context = useContext(AuthContext);
-    if (context === undefined) {
-        throw new Error('useAuth must be used within an AuthProvider');
-    }
-    return context;
+    const ctx = useContext(AuthContext);
+    if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+    return ctx;
 };

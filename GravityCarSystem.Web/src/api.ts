@@ -750,3 +750,25 @@ export const salvarAvaliacao = async (avaliacao: any): Promise<any> => {
     }
     return await response.json();
 };
+
+// ─── SALDO DE CRÉDITOS ────────────────────────────────────────────────────────
+export const fetchSaldoCreditos = async (): Promise<{ saldoConsultas: number; consultasRealizadas: number }> => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/empresa/saldo`, { headers: getHeaders() });
+        if (!response.ok) return { saldoConsultas: 0, consultasRealizadas: 0 };
+        return await response.json();
+    } catch {
+        return { saldoConsultas: 0, consultasRealizadas: 0 };
+    }
+};
+
+export const adicionarCreditosEmpresa = async (empresaId: string, quantidade: number, valorPago: number, observacao?: string): Promise<{ message: string; novoSaldo: number }> => {
+    const response = await fetch(`${API_BASE_URL}/empresa/${empresaId}/creditos`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ quantidade, valorPago, observacao: observacao || 'Recarga manual' })
+    });
+    if (!response.ok) throw new Error(await response.text());
+    return response.json();
+};
+

@@ -10,7 +10,7 @@ using BCrypt.Net;
 
 namespace GravityCarSystem.API.Controllers;
 
-// DTO para configuracoes da empresa
+// DTOs
 public record EmpresaConfigDto(
     string RazaoSocial,
     string NomeFantasia,
@@ -31,8 +31,8 @@ public record EmpresaConfigDto(
     string ResponsavelTecnico
 );
 
-// DTO para troca de senha
 public record TrocaSenhaDto(string SenhaAtual, string NovaSenha);
+public record AdicionarCreditosDto(int Quantidade, decimal ValorPago, string Observacao = "Recarga manual");
 
 [Authorize]
 [ApiController]
@@ -53,6 +53,7 @@ public class EmpresaConfigController : ControllerBase
         return Guid.Parse("00000000-0000-0000-0000-000000000001");
     }
 
+    // ─── GET /api/empresa/minha ────────────────────────────────────────────
     [HttpGet("minha")]
     public async Task<IActionResult> ObterMinhaEmpresa()
     {
@@ -85,10 +86,39 @@ public class EmpresaConfigController : ControllerBase
             estado = GetProp("Estado"),
             cep = GetProp("Cep"),
             regimeTributario = GetProp("RegimeTributario", "Simples Nacional"),
-            responsavelTecnico = GetProp("ResponsavelTecnico")
+            responsavelTecnico = GetProp("ResponsavelTecnico"),
+            saldoConsultas = empresa.SaldoConsultas,
+            consultasRealizadas = empresa.ConsultasRealizadas
         });
     }
 
+    // ─── GET /api/empresa/saldo (leve — só retorna créditos) ──────────────
+    [HttpGet("saldo")]
+    public async Task<IActionResult> ObterSaldo()
+    {
+        var empresaId = GetEmpresaId();
+        var empresa = await _context.Empresas.FirstOrDefaultAsync(e => e.Id == empresaId);
+        if (empresa == null) return NotFound();
+        return Ok(new
+        {
+            saldoConsultas = empresa.SaldoConsultas,
+            consultasRealizadas = empresa.ConsultasRealizadas
+        });
+    }
+
+    // ─── POST /api/empresa/{id}/creditos (só SuperAdmin) ──────────────────
+    [HttpPost("{empresaId:guid}/creditos")]
+    [Authorize(Roles = "SuperAdmin")]
+    public async Task<IActionResult> AdicionarCreditos(Guid empresaId, [FromBody] AdicionarCreditosDto dto)
+    {
+        var empresa = await _context.Empresas.FindAsync(empresaId);
+        if (empresa == null) return NotFound("Empresa não encontrada.");
+        empresa.SaldoConsultas += dto.Quantidade;
+        await _context.SaveChangesAsync();
+        return Ok(new { message = $"{dto.Quantidade} créditos adicionados.", novoSaldo = empresa.SaldoConsultas });
+    }
+
+    // ─── PUT /api/empresa/minha ────────────────────────────────────────────
     [HttpPut("minha")]
     public async Task<IActionResult> AtualizarMinhaEmpresa([FromBody] EmpresaConfigDto dto)
     {
@@ -100,7 +130,6 @@ public class EmpresaConfigController : ControllerBase
         empresa.NomeFantasia = dto.NomeFantasia;
         empresa.Cnpj = dto.Cnpj;
 
-        // Usando reflexao segura para campos que podem ou nao estar mapeados na entidade base
         var tipo = empresa.GetType();
         void SetProp(string name, object val) {
             var prop = tipo.GetProperty(name);
