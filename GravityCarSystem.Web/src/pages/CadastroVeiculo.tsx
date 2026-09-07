@@ -198,9 +198,7 @@ const CadastroVeiculo: React.FC = () => {
         style={{ 
           padding: '24px', 
           marginBottom: '28px',
-          border: '1px solid rgba(59, 130, 246, 0.4)',
-          background: 'linear-gradient(135deg, rgba(30, 58, 138, 0.2) 0%, rgba(15, 23, 42, 0.7) 100%)',
-          boxShadow: '0 8px 32px -4px rgba(0, 0, 0, 0.3)',
+          border: '1px solid rgba(59, 130, 246, 0.25)',
           borderRadius: '16px'
         }}
       >
@@ -291,9 +289,7 @@ const CadastroVeiculo: React.FC = () => {
                 display: 'flex', 
                 alignItems: 'center', 
                 gap: '8px', 
-                padding: '0 20px',
-                background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-                boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)'
+                padding: '0 20px'
               }}
             >
               {loadingBusca ? (
@@ -358,12 +354,12 @@ const CadastroVeiculo: React.FC = () => {
       </div>
 
       {/* WIDGET FIPE REAL - BrasilAPI */}
-      <div className="glass-panel" style={{ padding: '20px', marginBottom: '24px', border: '1px solid rgba(139, 92, 246, 0.3)', background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(15, 23, 42, 0.7) 100%)', borderRadius: '16px' }}>
+      <div className="glass-panel" style={{ padding: '20px', marginBottom: '24px', border: '1px solid rgba(59, 130, 246, 0.25)', borderRadius: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: showFipeWidget ? '16px' : '0' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span style={{ fontSize: '1.2rem' }}>📊</span>
             <div>
-              <h3 style={{ margin: 0, fontSize: '1rem', color: '#a78bfa', fontWeight: 600 }}>Consulta FIPE Oficial (BrasilAPI)</h3>
+              <h3 style={{ margin: 0, fontSize: '1rem', color: '#60a5fa', fontWeight: 600 }}>Consulta FIPE Oficial (BrasilAPI)</h3>
               <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: '#94a3b8' }}>Selecione Marca, Modelo e Ano para buscar o valor FIPE real e oficial — gratuito, sem sair do sistema</p>
             </div>
           </div>
@@ -430,7 +426,7 @@ const CadastroVeiculo: React.FC = () => {
 
             <div>
               <button type="button" className="btn btn-primary" disabled={!codigoAnoFipe || loadingFipe}
-                style={{ height: '42px', whiteSpace: 'nowrap', background: 'linear-gradient(135deg, #7c3aed, #6d28d9)', boxShadow: '0 4px 14px rgba(124,58,237,0.4)' }}
+                style={{ height: '42px', whiteSpace: 'nowrap' }}
                 onClick={async () => {
                   if (!codigoMarcaFipe || !codigoModeloFipe || !codigoAnoFipe) return;
                   setLoadingFipe(true);
@@ -457,7 +453,7 @@ const CadastroVeiculo: React.FC = () => {
         )}
 
         {fipeStatus && (
-          <div style={{ marginTop: '12px', padding: '10px 16px', background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.35)', borderRadius: '8px', color: '#c4b5fd', fontSize: '0.85rem' }}>
+          <div style={{ marginTop: '12px', padding: '10px 16px', background: 'rgba(59,130,246,0.10)', border: '1px solid rgba(59,130,246,0.3)', borderRadius: '8px', color: '#93c5fd', fontSize: '0.85rem' }}>
             📊 {fipeStatus}
           </div>
         )}

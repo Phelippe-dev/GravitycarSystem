@@ -1,5 +1,5 @@
 import React from 'react';
-import { Car, User, LogOut, DollarSign, LayoutDashboard, PlusCircle, Sun, Moon, FileText,
+import { Car, User, LogOut, DollarSign, LayoutDashboard, PlusCircle, FileText,
          CreditCard, ShieldAlert, Settings, KeyRound, CheckCircle, Users, Zap, AlertTriangle } from 'lucide-react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
@@ -62,6 +62,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [senhaMsg, setSenhaMsg] = React.useState<{ tipo: 'ok' | 'erro'; texto: string } | null>(null);
   const [mostrarSenha, setMostrarSenha] = React.useState(false);
 
+  // Forçar sempre modo escuro
+  React.useEffect(() => {
+    document.body.classList.remove('theme-light');
+  }, []);
+
   const handleTrocarSenha = async () => {
     if (!novaSenha || novaSenha !== confirmarSenha) { setSenhaMsg({ tipo: 'erro', texto: 'As senhas não coincidem ou estão vazias.' }); return; }
     if (novaSenha.length < 6) { setSenhaMsg({ tipo: 'erro', texto: 'A nova senha deve ter pelo menos 6 caracteres.' }); return; }
@@ -102,10 +107,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           <div className="logo-container">
             <h2 className="sidebar-brand-name">Gravity Car System</h2>
           </div>
-          <button onClick={toggleTheme} className="btn-theme-toggle" title={theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}
-            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--color-gray-400)', display: 'flex', alignItems: 'center' }}>
-            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
         </div>
 
         <nav className="sidebar-nav">

@@ -14,6 +14,10 @@ public class Usuario : TenantEntity
     public bool Ativo { get; set; } = true;
     public DateTime? UltimoLogin { get; set; }
     
+    // Dados profissionais
+    public string? Cargo { get; set; }
+    public double ComissaoPercent { get; set; } = 2.0;
+    
     public string? ResetToken { get; set; }
     public DateTime? ResetTokenExpiry { get; set; }
     
