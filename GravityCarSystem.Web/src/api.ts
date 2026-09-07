@@ -45,12 +45,18 @@ export interface VendaPagamentoDto {
     valor: number;
     // Financiamento
     bancoFinanciamento?: string;
-    modalidadeFinanciamento?: string; // CDC, Leasing, Consórcio, PF, FINAME
+    modalidadeFinanciamento?: string;
     parcelas?: number;
     valorParcela?: number;
     taxaJuros?: number;
     valorEntrada?: number;
     numeroContrato?: string;
+    // Cartão
+    bandeira?: string;
+    tipoCartao?: 'credito' | 'debito';
+    maquininha?: string;
+    taxaAdm?: number;
+    numeroAutorizacao?: string;
     // Cheque
     banco?: string;
     agencia?: string;

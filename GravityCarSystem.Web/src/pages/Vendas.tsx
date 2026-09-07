@@ -35,6 +35,14 @@ const Vendas: React.FC = () => {
   const [financNumContrato, setFinancNumContrato] = useState('');
   const [financEntrada, setFinancEntrada] = useState('');
 
+  // Estados específicos para Cartão
+  const [cartaoBandeira, setCartaoBandeira] = useState('Visa');
+  const [cartaoTipo, setCartaoTipo] = useState<'credito' | 'debito'>('credito');
+  const [cartaoParcelas, setCartaoParcelas] = useState(1);
+  const [cartaoNumAutorizacao, setCartaoNumAutorizacao] = useState('');
+  const [cartaoTaxaAdm, setCartaoTaxaAdm] = useState('');
+  const [cartaoMaquina, setCartaoMaquina] = useState('PagSeguro');
+
   // Estados específicos para Cheque
   const [modoCheque, setModoCheque] = useState<'unico' | 'multiplo'>('unico');
   const [chequeBanco, setChequeBanco] = useState('Banco Itaú (341)');
@@ -411,14 +419,14 @@ const Vendas: React.FC = () => {
                     </div>
                 </div>
 
-                {/* PIX / Dinheiro / Cartão: campo simples */}
-                {(novoPagamentoTipo === 1 || novoPagamentoTipo === 4) && (
+                {/* 💰 PIX / Dinheiro: campo simples */}
+                {novoPagamentoTipo === 1 && (
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 44px', gap: '8px', alignItems: 'center', marginBottom: '16px' }}>
                         <input
                             className="form-input"
                             style={{ height: '42px' }}
                             type="number"
-                            placeholder="Valor (R$)"
+                            placeholder="Valor recebido em Dinheiro / PIX (R$)"
                             value={novoPagamentoValor}
                             onChange={e => setNovoPagamentoValor(e.target.value)}
                         />
@@ -442,6 +450,150 @@ const Vendas: React.FC = () => {
                         </button>
                     </div>
                 )}
+
+                {/* 💳 CARTÃO — Painel Detalhado */}
+                {novoPagamentoTipo === 4 && (
+                    <div style={{ background: 'rgba(99, 102, 241, 0.06)', border: '1px solid rgba(99, 102, 241, 0.3)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', paddingBottom: '10px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                            <span style={{ fontSize: '1.1rem' }}>💳</span>
+                            <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#a5b4fc' }}>Dados do Cartão</span>
+                        </div>
+
+                        {/* Crédito / Débito */}
+                        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                            {(['credito', 'debito'] as const).map(tipo => (
+                                <button
+                                    key={tipo}
+                                    type="button"
+                                    onClick={() => { setCartaoTipo(tipo); if (tipo === 'debito') setCartaoParcelas(1); }}
+                                    style={{
+                                        flex: 1, padding: '8px', fontSize: '0.85rem', fontWeight: cartaoTipo === tipo ? 700 : 400,
+                                        borderRadius: '8px', cursor: 'pointer', transition: 'all 0.15s',
+                                        border: cartaoTipo === tipo ? '2px solid #818cf8' : '1px solid rgba(255,255,255,0.1)',
+                                        background: cartaoTipo === tipo ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.03)',
+                                        color: cartaoTipo === tipo ? '#c7d2fe' : 'var(--color-gray-400)',
+                                    }}
+                                >
+                                    {tipo === 'credito' ? '💳 Crédito' : '🏧 Débito'}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Bandeira + Máquina */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                            <div>
+                                <label style={{ fontSize: '0.75rem', color: 'var(--color-gray-400)', display: 'block', marginBottom: '4px' }}>Bandeira do Cartão*</label>
+                                <select className="form-input" style={{ height: '38px', fontSize: '0.85rem', background: 'var(--glass-bg)', color: 'var(--color-gray-100)' }} value={cartaoBandeira} onChange={e => setCartaoBandeira(e.target.value)}>
+                                    <option value="Visa">Visa</option>
+                                    <option value="Mastercard">Mastercard</option>
+                                    <option value="Elo">Elo</option>
+                                    <option value="American Express">American Express</option>
+                                    <option value="Hipercard">Hipercard</option>
+                                    <option value="Cabal">Cabal</option>
+                                    <option value="Diners">Diners Club</option>
+                                    <option value="Discover">Discover</option>
+                                    <option value="PIX Maquininha">PIX Maquininha</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style={{ fontSize: '0.75rem', color: 'var(--color-gray-400)', display: 'block', marginBottom: '4px' }}>Maquininha / Operadora</label>
+                                <select className="form-input" style={{ height: '38px', fontSize: '0.85rem', background: 'var(--glass-bg)', color: 'var(--color-gray-100)' }} value={cartaoMaquina} onChange={e => setCartaoMaquina(e.target.value)}>
+                                    <option value="PagSeguro">PagSeguro</option>
+                                    <option value="Cielo">Cielo</option>
+                                    <option value="Rede">Rede (Itaú)</option>
+                                    <option value="Stone">Stone</option>
+                                    <option value="Getnet">Getnet (Santander)</option>
+                                    <option value="Mercado Pago">Mercado Pago</option>
+                                    <option value="InfinitePay">InfinitePay</option>
+                                    <option value="SumUp">SumUp</option>
+                                    <option value="Ton">Ton</option>
+                                    <option value="Vero">Vero</option>
+                                    <option value="Outra">Outra</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Parcelas (só crédito) + Taxa Adm */}
+                        <div style={{ display: 'grid', gridTemplateColumns: cartaoTipo === 'credito' ? '1fr 1fr' : '1fr', gap: '10px', marginBottom: '10px' }}>
+                            {cartaoTipo === 'credito' && (
+                                <div>
+                                    <label style={{ fontSize: '0.75rem', color: 'var(--color-gray-400)', display: 'block', marginBottom: '4px' }}>Parcelas no Crédito</label>
+                                    <select className="form-input" style={{ height: '38px', fontSize: '0.85rem', background: 'var(--glass-bg)', color: 'var(--color-gray-100)' }} value={cartaoParcelas} onChange={e => setCartaoParcelas(Number(e.target.value))}>
+                                        <option value={1}>1x (à vista no crédito)</option>
+                                        {[2,3,4,5,6,7,8,9,10,11,12].map(p => (
+                                            <option key={p} value={p}>{p}x</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+                            <div>
+                                <label style={{ fontSize: '0.75rem', color: 'var(--color-gray-400)', display: 'block', marginBottom: '4px' }}>Taxa Administrativa (%)</label>
+                                <input className="form-input" style={{ height: '38px', fontSize: '0.85rem' }} type="number" step="0.01" placeholder="Ex: 2.5" value={cartaoTaxaAdm} onChange={e => setCartaoTaxaAdm(e.target.value)} />
+                            </div>
+                        </div>
+
+                        {/* Valor + Nº Autorização */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
+                            <div>
+                                <label style={{ fontSize: '0.75rem', color: 'var(--color-gray-400)', display: 'block', marginBottom: '4px' }}>Valor (R$)*</label>
+                                <div style={{ display: 'flex', gap: '6px' }}>
+                                    <input className="form-input" style={{ height: '38px', fontSize: '0.85rem' }} type="number" placeholder="Ex: 30000" value={novoPagamentoValor} onChange={e => setNovoPagamentoValor(e.target.value)} />
+                                    {diferenca > 0 && (
+                                        <button type="button" onClick={() => setNovoPagamentoValor(String(Math.max(0, diferenca)))}
+                                            style={{ height: '38px', padding: '0 8px', fontSize: '0.72rem', background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.3)', color: '#a5b4fc', borderRadius: '6px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                                            Restante
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                            <div>
+                                <label style={{ fontSize: '0.75rem', color: 'var(--color-gray-400)', display: 'block', marginBottom: '4px' }}>Nº de Autorização / NSU</label>
+                                <input className="form-input" style={{ height: '38px', fontSize: '0.85rem' }} type="text" placeholder="Ex: 123456" value={cartaoNumAutorizacao} onChange={e => setCartaoNumAutorizacao(e.target.value)} />
+                            </div>
+                        </div>
+
+                        {/* Preview */}
+                        {novoPagamentoValor && (
+                            <div style={{ padding: '8px 12px', background: 'rgba(99,102,241,0.1)', border: '1px dashed rgba(99,102,241,0.35)', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                <span style={{ fontSize: '0.8rem', color: 'var(--color-gray-300)' }}>
+                                    {cartaoBandeira} • {cartaoMaquina} • {cartaoTipo === 'credito' ? `${cartaoParcelas}x crédito` : 'Débito'}
+                                    {cartaoTaxaAdm && ` • Taxa ${cartaoTaxaAdm}%`}
+                                </span>
+                                <strong style={{ color: '#a5b4fc', fontSize: '0.9rem' }}>
+                                    {cartaoTipo === 'credito' && cartaoParcelas > 1
+                                        ? `${cartaoParcelas}x de ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(novoPagamentoValor) / cartaoParcelas)}`
+                                        : new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(novoPagamentoValor))
+                                    }
+                                </strong>
+                            </div>
+                        )}
+
+                        <button
+                            type="button"
+                            className="btn btn-primary"
+                            onClick={() => {
+                                const val = Number(novoPagamentoValor);
+                                if (val <= 0) return;
+                                setPagamentos([...pagamentos, {
+                                    tipoPagamento: 4,
+                                    valor: val,
+                                    bandeira: cartaoBandeira,
+                                    tipoCartao: cartaoTipo,
+                                    maquininha: cartaoMaquina,
+                                    parcelas: cartaoTipo === 'credito' ? cartaoParcelas : 1,
+                                    taxaAdm: cartaoTaxaAdm ? Number(cartaoTaxaAdm) : undefined,
+                                    numeroAutorizacao: cartaoNumAutorizacao || undefined,
+                                }]);
+                                setNovoPagamentoValor('');
+                                setCartaoNumAutorizacao('');
+                            }}
+                            style={{ width: '100%', height: '38px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: 'rgba(99,102,241,0.8)' }}
+                        >
+                            <PlusCircle size={16} /> Registrar Pagamento no Cartão
+                        </button>
+                    </div>
+                )}
+
 
                 {/* 🏦 FINANCIAMENTO — Painel Detalhado */}
                 {novoPagamentoTipo === 2 && (
