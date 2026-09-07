@@ -26,6 +26,7 @@ public class AppDbContext : DbContext, IAppDbContext
 
     // Acesso
     public DbSet<Empresa> Empresas => Set<Empresa>();
+    public DbSet<HistoricoRecarga> HistoricoRecargas => Set<HistoricoRecarga>();
     public DbSet<Usuario> Usuarios => Set<Usuario>();
     public DbSet<Perfil> Perfis => Set<Perfil>();
     public DbSet<Permissao> Permissoes => Set<Permissao>();
