@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { fetchEmpresas, createEmpresa, toggleStatusEmpresa } from '../api';
+import { fetchEmpresas, createEmpresa, toggleStatusEmpresa, adicionarCreditosEmpresa } from '../api';
 import type { Empresa } from '../api';
-import { Building2, Search, PlusCircle, CheckCircle, XCircle } from 'lucide-react';
+import { Building2, Search, PlusCircle, CheckCircle, XCircle, Coins } from 'lucide-react';
 
 const AdminPortal: React.FC = () => {
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
@@ -13,6 +13,12 @@ const AdminPortal: React.FC = () => {
     cnpj: '',
     email: ''
   });
+
+  // Saldo
+  const [showCreditosModal, setShowCreditosModal] = useState(false);
+  const [empresaSelecionada, setEmpresaSelecionada] = useState<Empresa | null>(null);
+  const [qtdCreditos, setQtdCreditos] = useState<number>(10);
+  const [valorPago, setValorPago] = useState<number>(0);
 
   useEffect(() => {
     carregarDados();
@@ -42,6 +48,21 @@ const AdminPortal: React.FC = () => {
         await carregarDados();
     } catch (e) {
         console.error("Erro ao criar empresa", e);
+    }
+  };
+
+  const handleAdicionarCreditos = async () => {
+    if (!empresaSelecionada) return;
+    try {
+        await adicionarCreditosEmpresa(empresaSelecionada.id!, qtdCreditos, valorPago);
+        setShowCreditosModal(false);
+        setQtdCreditos(10);
+        setValorPago(0);
+        await carregarDados();
+        alert('Créditos adicionados com sucesso!');
+    } catch (e) {
+        console.error("Erro ao adicionar créditos", e);
+        alert('Erro ao adicionar créditos. Verifique se o usuário tem permissão SuperAdmin.');
     }
   };
 
@@ -109,6 +130,7 @@ const AdminPortal: React.FC = () => {
                     <th>CNPJ</th>
                     <th>Data Entrada</th>
                     <th>Status Assinatura</th>
+                    <th>Saldo</th>
                     <th style={{ textAlign: 'right' }}>Ações</th>
                   </tr>
                 </thead>
@@ -124,13 +146,26 @@ const AdminPortal: React.FC = () => {
                             ? <span className="badge badge-success"><CheckCircle size={14}/> Ativo</span> 
                             : <span className="badge badge-danger"><XCircle size={14}/> Bloqueado</span>}
                       </td>
-                      <td style={{ textAlign: 'right' }}>
+                      <td style={{ fontWeight: 'bold', color: 'var(--color-blue-light)' }}>
+                        {empresa.saldoConsultas ?? 0}
+                      </td>
+                      <td style={{ textAlign: 'right', display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                          <button 
+                            className="btn btn-outline" 
+                            style={{ padding: '6px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+                            onClick={() => {
+                              setEmpresaSelecionada(empresa);
+                              setShowCreditosModal(true);
+                            }}
+                          >
+                              <Coins size={14} /> Recarregar
+                          </button>
                           <button 
                             className={`btn ${empresa.ativa ? 'btn-danger' : 'btn-success'}`} 
                             style={{ padding: '6px 12px', fontSize: '0.8rem' }}
                             onClick={() => handleToggleStatus(empresa.id!)}
                           >
-                              {empresa.ativa ? 'Bloquear Acesso' : 'Desbloquear'}
+                              {empresa.ativa ? 'Bloquear' : 'Desbloquear'}
                           </button>
                       </td>
                     </tr>
@@ -168,6 +203,47 @@ const AdminPortal: React.FC = () => {
               <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancelar</button>
               <button className="btn btn-primary" onClick={handleSalvar}>
                 Criar Workspace
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Créditos */}
+      {showCreditosModal && empresaSelecionada && (
+        <div className="modal-overlay">
+          <div className="modal-content glass-panel" style={{ maxWidth: '400px' }}>
+            <h2 style={{ marginBottom: '8px' }}>Adicionar Créditos</h2>
+            <p style={{ color: 'var(--color-gray-400)', fontSize: '0.9rem', marginBottom: '20px' }}>
+              Loja: <strong>{empresaSelecionada.nomeFantasia}</strong>
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
+                <div className="form-group">
+                  <label>Quantidade de Consultas (FIPE/DETRAN)</label>
+                  <input 
+                    type="number" 
+                    className="form-input" 
+                    value={qtdCreditos} 
+                    onChange={e => setQtdCreditos(Number(e.target.value))} 
+                    min="1"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Valor Pago R$ (Opcional, p/ histórico)</label>
+                  <input 
+                    type="number" 
+                    className="form-input" 
+                    value={valorPago} 
+                    onChange={e => setValorPago(Number(e.target.value))} 
+                    min="0"
+                  />
+                </div>
+            </div>
+            
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button className="btn btn-secondary" onClick={() => setShowCreditosModal(false)}>Cancelar</button>
+              <button className="btn btn-primary" onClick={handleAdicionarCreditos}>
+                Confirmar
               </button>
             </div>
           </div>
