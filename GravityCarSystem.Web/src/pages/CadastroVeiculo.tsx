@@ -1,18 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { adicionarVeiculo, consultarSenatran } from '../api';
-import type { Veiculo, SenatranVeiculoResultDto } from '../api';
+import { adicionarVeiculo } from '../api';
+import type { Veiculo } from '../api';
 import { buscarMarcasFipe, buscarModelosFipe, buscarAnosFipe, buscarPrecoFipeCompleto, fipeValorParaNumero } from '../services/brasilapi';
 import type { FipeMarca, FipeModelo } from '../services/brasilapi';
 
 const CadastroVeiculo: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [loadingBusca, setLoadingBusca] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [autoFillSuccess, setAutoFillSuccess] = useState<string | null>(null);
-  const [autoFillWarning, setAutoFillWarning] = useState<string | null>(null);
-  const [detranResult, setDetranResult] = useState<SenatranVeiculoResultDto | null>(null);
 
   // FIPE estados
   const [marcasFipe, setMarcasFipe] = useState<FipeMarca[]>([]);
@@ -29,10 +25,6 @@ const CadastroVeiculo: React.FC = () => {
     buscarMarcasFipe(1).then(setMarcasFipe);
   }, []);
 
-  // Campos da busca rápida no topo
-  const [buscaPlaca, setBuscaPlaca] = useState('');
-  const [buscaRenavam, setBuscaRenavam] = useState('');
-  
   // Estado para controlar o que é exibido no input de dinheiro formatado
   const [displayValorVenda, setDisplayValorVenda] = useState<string>('');
   const [displayValorCompra, setDisplayValorCompra] = useState<string>('');
@@ -59,78 +51,6 @@ const CadastroVeiculo: React.FC = () => {
     return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val);
   };
 
-  // Função central para buscar e autopreencher os campos por Placa ou Renavam
-  const handlePuxarDados = async (placaParam?: string, renavamParam?: string) => {
-    const p = (placaParam !== undefined ? placaParam : (buscaPlaca || formData.placa || '')).trim().toUpperCase();
-    const r = (renavamParam !== undefined ? renavamParam : (buscaRenavam || formData.renavam || '')).trim();
-
-    if (!p && !r) {
-      setError('Por favor, informe a Placa ou o Renavam para realizar a busca automática.');
-      return;
-    }
-
-    setLoadingBusca(true);
-    setError(null);
-    setAutoFillSuccess(null);
-    setAutoFillWarning(null);
-
-    try {
-      const data = await consultarSenatran(p, r);
-      if (!data) {
-        throw new Error('Veículo não encontrado nas bases DETRAN / SENATRAN.');
-      }
-
-      setDetranResult(data);
-
-      // Sincroniza campos de busca do topo
-      if (data.placa) setBuscaPlaca(data.placa);
-      if (data.renavam) setBuscaRenavam(data.renavam);
-
-      // Sugestão de valores com base na FIPE
-      const fipeVal = data.valorFipe || 0;
-      const compraSugerida = fipeVal > 0 ? Math.round(fipeVal * 0.85) : (formData.valorCompra || 0);
-      const vendaSugerida = fipeVal > 0 ? fipeVal : (formData.valorVenda || 0);
-
-      if (compraSugerida > 0) setDisplayValorCompra(formatBRL(compraSugerida));
-      if (vendaSugerida > 0) setDisplayValorVenda(formatBRL(vendaSugerida));
-
-      // Preenche automaticamente todos os campos do formulário
-      setFormData(prev => ({
-        ...prev,
-        marca: data.marca || prev.marca || '',
-        modelo: data.modelo || prev.modelo || '',
-        versao: data.versao || prev.versao || '',
-        anoFabricacao: data.anoFabricacao || prev.anoFabricacao || new Date().getFullYear(),
-        anoModelo: data.anoModelo || prev.anoModelo || new Date().getFullYear(),
-        cor: data.cor || prev.cor || '',
-        combustivel: data.combustivel || prev.combustivel || '',
-        cambio: data.cambio || prev.cambio || '',
-        placa: data.placa || prev.placa || '',
-        renavam: data.renavam || prev.renavam || '',
-        chassi: data.chassi || prev.chassi || '',
-        valorCompra: compraSugerida,
-        valorVenda: vendaSugerida
-      }));
-
-      setAutoFillSuccess(`✓ Veículo identificado: ${data.marcaModelo || `${data.marca} ${data.modelo}`}. Lacunas preenchidas automaticamente via ${data.origem || 'DETRAN / SENATRAN & FIPE'}!`);
-
-      // Avisos de débitos ou restrições se houver
-      const avisos: string[] = [];
-      if (data.possuiRestricaoRouboFurto) avisos.push('Alerta: Consta restrição de Roubo/Furto!');
-      if (data.possuiRestricaoJudicial) avisos.push('Alerta: Consta restrição Judicial/Renajud!');
-      if (data.possuiAlienacaoFiduciaria) avisos.push('Consta Alienação Fiduciária ativa.');
-      if (data.totalDebitosPendentes > 0) avisos.push(`Constam débitos pendentes de R$ ${formatBRL(data.totalDebitosPendentes)} (${data.descricaoDebitos || 'multas/IPVA'}).`);
-      
-      if (avisos.length > 0) {
-        setAutoFillWarning(avisos.join(' '));
-      }
-
-    } catch (err: any) {
-      setError(err.message || 'Erro ao consultar veículo pela Placa/Renavam.');
-    } finally {
-      setLoadingBusca(false);
-    }
-  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -140,9 +60,6 @@ const CadastroVeiculo: React.FC = () => {
       ...prev,
       [name]: type === 'number' ? Number(formattedVal) : formattedVal
     }));
-
-    if (name === 'placa') setBuscaPlaca(formattedVal);
-    if (name === 'renavam') setBuscaRenavam(formattedVal);
   };
 
   const handleCurrencyChange = (e: React.ChangeEvent<HTMLInputElement>, isCompra: boolean = false) => {
@@ -187,171 +104,10 @@ const CadastroVeiculo: React.FC = () => {
         <div>
           <h1 className="page-title">Cadastrar Novo Veículo</h1>
           <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem', marginTop: '4px' }}>
-            Consulte pela Placa ou Renavam para autopreenchimento instantâneo ou informe manualmente.
+            Preencha os dados do veículo manualmente. Use a Consulta FIPE abaixo para buscar o valor de mercado.
           </p>
         </div>
       </header>
-
-      {/* CARD DE CONSULTA EXPRESSA E AUTOPREENCHIMENTO */}
-      <div 
-        className="glass-panel" 
-        style={{ 
-          padding: '24px', 
-          marginBottom: '28px',
-          border: '1px solid rgba(59, 130, 246, 0.25)',
-          borderRadius: '16px'
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '1.4rem' }}>⚡</span>
-            <div>
-              <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#60a5fa', fontWeight: 600 }}>
-                Busca Rápida por Placa ou Renavam
-              </h3>
-              <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: '#94a3b8' }}>
-                Preenche automaticamente com dados da base da loja. Para veículos novos, use a consulta FIPE abaixo.
-              </p>
-            </div>
-          </div>
-          <span style={{ 
-            fontSize: '0.75rem', 
-            padding: '4px 10px', 
-            borderRadius: '9999px', 
-            background: 'rgba(59, 130, 246, 0.15)', 
-            color: '#93c5fd', 
-            border: '1px solid rgba(59, 130, 246, 0.3)',
-            fontWeight: 500
-          }}>
-            Integração Ativa
-          </span>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr)) auto', gap: '16px', alignItems: 'flex-end' }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '6px', fontWeight: 500 }}>
-              Placa do Veículo
-            </label>
-            <input 
-              type="text"
-              className="form-input"
-              placeholder="Ex: KWT-2394 ou BRA2E19"
-              value={buscaPlaca}
-              maxLength={8}
-              onChange={(e) => {
-                const val = e.target.value.toUpperCase();
-                setBuscaPlaca(val);
-                setFormData(prev => ({ ...prev, placa: val }));
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handlePuxarDados();
-                }
-              }}
-              style={{ fontWeight: 600, letterSpacing: '0.05em' }}
-            />
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '6px', fontWeight: 500 }}>
-              Renavam (opcional ou alternativo)
-            </label>
-            <input 
-              type="text"
-              className="form-input"
-              placeholder="Ex: 01234567890"
-              value={buscaRenavam}
-              maxLength={11}
-              onChange={(e) => {
-                const val = e.target.value.replace(/\D/g, '');
-                setBuscaRenavam(val);
-                setFormData(prev => ({ ...prev, renavam: val }));
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handlePuxarDados();
-                }
-              }}
-            />
-          </div>
-
-          <div>
-            <button 
-              type="button" 
-              className="btn btn-primary"
-              onClick={() => handlePuxarDados()}
-              disabled={loadingBusca || (!buscaPlaca && !buscaRenavam)}
-              style={{ 
-                height: '42px', 
-                whiteSpace: 'nowrap', 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '8px', 
-                padding: '0 20px'
-              }}
-            >
-              {loadingBusca ? (
-                <>
-                  <span className="spinner-border spinner-border-sm" style={{ width: '16px', height: '16px', border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 1s linear infinite' }} />
-                  Puxando Dados...
-                </>
-              ) : (
-                <>
-                  <span>🔍</span> Puxar Dados Automáticos
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* FEEDBACK DE AUTOPREENCHIMENTO */}
-        {autoFillSuccess && (
-          <div style={{ 
-            marginTop: '16px', 
-            padding: '12px 16px', 
-            background: 'rgba(16, 185, 129, 0.12)', 
-            border: '1px solid rgba(16, 185, 129, 0.35)', 
-            borderRadius: '10px', 
-            color: '#34d399', 
-            fontSize: '0.875rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '12px'
-          }}>
-            <span>{autoFillSuccess}</span>
-            {detranResult && (
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {detranResult.valorFipe && (
-                  <span style={{ background: 'rgba(16, 185, 129, 0.25)', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600 }}>
-                    FIPE: R$ {formatBRL(detranResult.valorFipe)}
-                  </span>
-                )}
-                <span style={{ background: 'rgba(59, 130, 246, 0.25)', color: '#93c5fd', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600 }}>
-                  RENAVE: {detranResult.statusRenave || 'REGISTRADO'}
-                </span>
-              </div>
-            )}
-          </div>
-        )}
-
-        {autoFillWarning && (
-          <div style={{ 
-            marginTop: '10px', 
-            padding: '10px 16px', 
-            background: 'rgba(234, 179, 8, 0.12)', 
-            border: '1px solid rgba(234, 179, 8, 0.35)', 
-            borderRadius: '10px', 
-            color: '#facc15', 
-            fontSize: '0.825rem' 
-          }}>
-            ⚠️ {autoFillWarning}
-          </div>
-        )}
-      </div>
 
       {/* WIDGET FIPE REAL - BrasilAPI */}
       <div className="glass-panel" style={{ padding: '20px', marginBottom: '24px', border: '1px solid rgba(59, 130, 246, 0.25)', borderRadius: '16px' }}>
@@ -405,7 +161,30 @@ const CadastroVeiculo: React.FC = () => {
                   setFipeStatus(null);
                   if (cod) {
                     const modelo = modelosFipe.find(m => String(m.valor) === cod);
-                    if (modelo) setFormData(prev => ({ ...prev, modelo: modelo.nome }));
+                    if (modelo) {
+                      const mNome = modelo.nome;
+                      
+                      let combustivel = '';
+                      const mLower = mNome.toLowerCase();
+                      if (mLower.includes('flex')) combustivel = 'Flex';
+                      else if (mLower.includes('hibrido') || mLower.includes('híbrido')) combustivel = 'Híbrido';
+                      else if (mLower.includes('eletrico') || mLower.includes('elétrico')) combustivel = 'Elétrico';
+                      else if (mLower.includes('diesel')) combustivel = 'Diesel';
+                      else if (mLower.includes('gasolina')) combustivel = 'Gasolina';
+                      else if (mLower.includes('etanol')) combustivel = 'Etanol';
+
+                      let cambio = '';
+                      if (mLower.includes('aut') || mLower.includes('cvt')) cambio = 'Automático';
+                      else if (mLower.includes('man')) cambio = 'Manual';
+
+                      setFormData(prev => ({ 
+                        ...prev, 
+                        modelo: mNome.split(' ')[0], // Pega a primeira palavra pro modelo geral (ex: Focus)
+                        versao: mNome, // Põe o texto completo na versão
+                        combustivel: combustivel || prev.combustivel,
+                        cambio: cambio || prev.cambio
+                      }));
+                    }
                     const anos = await buscarAnosFipe(1, codigoMarcaFipe, cod);
                     setAnosFipe(anos);
                   }
@@ -418,7 +197,32 @@ const CadastroVeiculo: React.FC = () => {
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '6px' }}>Ano</label>
               <select className="form-input" value={codigoAnoFipe} disabled={!codigoModeloFipe}
-                onChange={(e) => { setCodigoAnoFipe(e.target.value); setFipeStatus(null); }}>
+                onChange={(e) => { 
+                  const val = e.target.value;
+                  setCodigoAnoFipe(val); 
+                  setFipeStatus(null); 
+                  
+                  const anoObj = anosFipe.find(a => String(a.valor) === val);
+                  if (anoObj) {
+                    const nomeStr = anoObj.nome; // Ex: "2009 Gasolina" ou "2015 Diesel"
+                    const anoMatch = nomeStr.match(/^(\d{4})/);
+                    const anoNum = anoMatch ? parseInt(anoMatch[1], 10) : new Date().getFullYear();
+                    
+                    let combustivel = '';
+                    const aLower = nomeStr.toLowerCase();
+                    if (aLower.includes('gasolina')) combustivel = 'Gasolina';
+                    else if (aLower.includes('diesel')) combustivel = 'Diesel';
+                    else if (aLower.includes('etanol')) combustivel = 'Etanol';
+                    else if (aLower.includes('flex')) combustivel = 'Flex';
+
+                    setFormData(prev => ({
+                      ...prev,
+                      anoFabricacao: anoNum,
+                      anoModelo: anoNum,
+                      combustivel: combustivel || prev.combustivel
+                    }));
+                  }
+                }}>
                 <option value="">-- Selecione o Ano --</option>
                 {anosFipe.map(a => <option key={a.valor} value={a.valor}>{a.nome}</option>)}
               </select>
@@ -578,11 +382,6 @@ const CadastroVeiculo: React.FC = () => {
             <div className="form-group">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                 <label className="form-label" style={{ margin: 0 }}>Valor de Compra (R$)</label>
-                {detranResult?.valorFipe && (
-                  <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                    Sugerido: ~85% FIPE
-                  </span>
-                )}
               </div>
               <input 
                 type="text" 
@@ -596,11 +395,6 @@ const CadastroVeiculo: React.FC = () => {
             <div className="form-group">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                 <label className="form-label" style={{ margin: 0 }}>Valor de Venda (R$)</label>
-                {detranResult?.valorFipe && (
-                  <span style={{ fontSize: '0.75rem', color: '#60a5fa' }}>
-                    FIPE: R$ {formatBRL(detranResult.valorFipe)}
-                  </span>
-                )}
               </div>
               <input 
                 type="text" 
