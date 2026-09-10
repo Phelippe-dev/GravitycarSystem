@@ -82,7 +82,8 @@ public class RelatorioService : IRelatorioService
                     DataVenda = venda.DataVenda,
                     VendedorNome = vendedorNome,
                     ClienteNome = clienteNome,
-                    FormaPagamento = formaPagamento
+                    FormaPagamento = formaPagamento,
+                    VendaId = venda.Id
                 });
             }
         }

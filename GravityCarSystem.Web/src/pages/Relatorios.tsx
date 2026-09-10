@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { fetchRentabilidade, fetchResumoFinanceiro } from '../api';
 import type { RentabilidadeVeiculoDto, ResumoFinanceiroDto } from '../api';
 import { 
@@ -11,11 +12,13 @@ import {
   Printer,
   X,
   User,
-  CreditCard
+  CreditCard,
+  FileText
 } from 'lucide-react';
 import logoImg from '../assets/logo.png';
 
 const Relatorios: React.FC = () => {
+  const navigate = useNavigate();
   const [rentabilidade, setRentabilidade] = useState<RentabilidadeVeiculoDto[]>([]);
   const [resumo, setResumo] = useState<ResumoFinanceiroDto | null>(null);
   const [loading, setLoading] = useState(true);
@@ -290,12 +293,13 @@ const Relatorios: React.FC = () => {
                                   <th style={{ textAlign: 'right' }}>Custo Total</th>
                                   <th style={{ textAlign: 'right' }}>Margem Líquida</th>
                                   <th style={{ textAlign: 'right' }}>Margem %</th>
+                                  <th style={{ textAlign: 'center' }}>Comprovante</th>
                               </tr>
                           </thead>
                           <tbody>
                               {rentabilidade.length === 0 && (
                                   <tr>
-                                      <td colSpan={9} style={{ textAlign: 'center', padding: '32px', color: 'var(--color-gray-400)' }}>
+                                      <td colSpan={10} style={{ textAlign: 'center', padding: '32px', color: 'var(--color-gray-400)' }}>
                                           Nenhum dado encontrado para o período selecionado.
                                       </td>
                                   </tr>
@@ -336,6 +340,33 @@ const Relatorios: React.FC = () => {
                                               <span className={`badge ${r.percentualMargem >= 10 ? 'badge-success' : 'badge-warning'}`}>
                                                   {r.percentualMargem.toFixed(2)}%
                                               </span>
+                                          </td>
+                                          <td style={{ textAlign: 'center' }}>
+                                              {r.vendaId ? (
+                                                  <button
+                                                      type="button"
+                                                      className="btn"
+                                                      onClick={() => navigate(`/contrato/${r.vendaId}`)}
+                                                      style={{
+                                                          display: 'inline-flex',
+                                                          alignItems: 'center',
+                                                          gap: '6px',
+                                                          padding: '4px 10px',
+                                                          fontSize: '0.78rem',
+                                                          background: 'rgba(56, 189, 248, 0.12)',
+                                                          color: '#38bdf8',
+                                                          border: '1px solid rgba(56, 189, 248, 0.25)',
+                                                          borderRadius: '6px',
+                                                          cursor: 'pointer',
+                                                          fontWeight: 600
+                                                      }}
+                                                      title="Emitir 2ª Via do Comprovante de Venda Oficial"
+                                                  >
+                                                      <FileText size={13} /> 2ª Via
+                                                  </button>
+                                              ) : (
+                                                  <span style={{ fontSize: '0.75rem', color: 'var(--color-gray-400)' }}>-</span>
+                                              )}
                                           </td>
                                       </tr>
                                   );

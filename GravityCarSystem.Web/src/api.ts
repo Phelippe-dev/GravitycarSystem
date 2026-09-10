@@ -522,6 +522,7 @@ export interface RentabilidadeVeiculoDto {
     vendedorNome?: string;
     clienteNome?: string;
     formaPagamento?: string;
+    vendaId?: string;
 }
 
 export interface ResumoFinanceiroDto {

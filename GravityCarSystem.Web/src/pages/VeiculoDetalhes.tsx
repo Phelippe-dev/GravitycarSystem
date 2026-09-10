@@ -241,9 +241,10 @@ const VeiculoDetalhesPage: React.FC = () => {
             <button
               className="btn btn-primary"
               onClick={() => setShowModalDossiePdf(true)}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 18px', fontSize: '0.9rem', background: 'linear-gradient(135deg, #0284c7 0%, #2563eb 100%)', boxShadow: '0 4px 14px rgba(37,99,235,0.35)', fontWeight: 600 }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 18px', fontSize: '0.9rem', background: 'linear-gradient(135deg, #0284c7 0%, #2563eb 100%)', boxShadow: '0 4px 14px rgba(37,99,235,0.35)', fontWeight: 600, cursor: 'pointer' }}
+              title="Gerar Ficha Técnica do Produto em PDF"
             >
-              <FileDown size={18} /> Comprovante de Venda
+              <FileText size={18} /> Ficha Técnica do Veículo
             </button>
             <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--color-blue-light)' }}>
               R$ {veiculo.valorVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
@@ -1047,7 +1048,7 @@ const VeiculoDetalhesPage: React.FC = () => {
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0284c7' }}>COMPROVANTE DE VENDA</div>
+                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0284c7' }}>FICHA TÉCNICA DO PRODUTO</div>
                 <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Data: {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
               </div>
             </div>
@@ -1192,27 +1193,27 @@ const VeiculoDetalhesPage: React.FC = () => {
               </table>
             </div>
 
-            {/* Termo e Assinaturas */}
+            {/* Responsáveis Técnicos */}
             <div style={{ marginTop: '40px', paddingTop: '20px', borderTop: '1px dashed #cbd5e1' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px', textAlign: 'center' }}>
                 <div>
                   <div style={{ borderTop: '1px solid #0f172a', margin: '30px auto 8px auto', width: '80%' }}></div>
-                  <div style={{ fontSize: '0.8rem', fontWeight: 700 }}>Responsável da Concessionária</div>
-                  <div style={{ fontSize: '0.7rem', color: '#64748b' }}>Gravity Car System</div>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 700 }}>Responsável Técnico / Estoque</div>
+                  <div style={{ fontSize: '0.7rem', color: '#64748b' }}>Conferência e Inspeção</div>
                 </div>
                 <div>
                   <div style={{ borderTop: '1px solid #0f172a', margin: '30px auto 8px auto', width: '80%' }}></div>
-                  <div style={{ fontSize: '0.8rem', fontWeight: 700 }}>Cliente / Comprador</div>
-                  <div style={{ fontSize: '0.7rem', color: '#64748b' }}>Ciência e Conferência</div>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 700 }}>Gerência de Vendas / Pátio</div>
+                  <div style={{ fontSize: '0.7rem', color: '#64748b' }}>Gravity Car System</div>
                 </div>
               </div>
             </div>
 
-            {/* Rodapé / Nota Comercial Legal */}
+            {/* Rodapé da Ficha Técnica */}
             <div style={{ marginTop: '30px', textAlign: 'center', fontSize: '0.72rem', color: '#64748b', borderTop: '1px solid #e2e8f0', paddingTop: '12px', lineHeight: 1.5 }}>
-              <div><strong>GRAVITY CAR SYSTEM • COMPROVANTE COMERCIAL DE VENDA & FICHA TÉCNICA</strong></div>
+              <div><strong>GRAVITY CAR SYSTEM • FICHA TÉCNICA DO PRODUTO & ESPECIFICAÇÕES DE ESTOQUE</strong></div>
               <div style={{ marginTop: '4px', color: '#94a3b8' }}>
-                Este comprovante é emitido para registro e controle comercial entre as partes. Não substitui a documentação oficial de transferência (ATPV-e) emitida pelo órgão de trânsito nem a Nota Fiscal Eletrônica (NF-e).
+                Documento gerado para controle interno de pátio, ficha de apresentação comercial e especificação das características do veículo.
               </div>
             </div>
           </div>

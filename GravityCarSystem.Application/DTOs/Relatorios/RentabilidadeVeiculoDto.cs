@@ -16,4 +16,5 @@ public class RentabilidadeVeiculoDto
     public string? VendedorNome { get; set; }
     public string? ClienteNome { get; set; }
     public string? FormaPagamento { get; set; }
+    public Guid? VendaId { get; set; }
 }

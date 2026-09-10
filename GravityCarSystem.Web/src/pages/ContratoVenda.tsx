@@ -85,8 +85,8 @@ const ContratoVenda: React.FC = () => {
                 <button className="btn" style={{ background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => navigate('/vendas')}>
                     <ArrowLeft size={18} /> Voltar para Vendas
                 </button>
-                <button className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => window.print()}>
-                    <Printer size={18} /> Imprimir Contrato
+                <button className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }} onClick={() => window.print()}>
+                    <Printer size={18} /> Imprimir Comprovante de Venda (PDF)
                 </button>
             </div>
 
@@ -95,7 +95,7 @@ const ContratoVenda: React.FC = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #000', paddingBottom: '16px', marginBottom: '24px' }}>
                     <img src={logoImg} alt="Gravity Car System" style={{ height: '60px' }} />
                     <div style={{ textAlign: 'right' }}>
-                        <h2 style={{ margin: 0, fontSize: '1.4rem' }}>CONTRATO DE COMPRA E VENDA DE VEÍCULO</h2>
+                        <h2 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 800 }}>COMPROVANTE DE VENDA & CONTRATO COMERCIAL</h2>
                         <p style={{ margin: '4px 0 0 0', color: '#555' }}>Venda Nº: {venda.numeroVenda || venda.id?.split('-')[0]}</p>
                         <p style={{ margin: 0, color: '#555' }}>Data: {new Date(venda.dataVenda || new Date()).toLocaleDateString('pt-BR')}</p>
                     </div>
@@ -185,6 +185,13 @@ const ContratoVenda: React.FC = () => {
                         <strong>{(cliente.nomeRazaoSocial || cliente.nome).toUpperCase()}</strong><br/>
                         <span style={{ fontSize: '0.85rem', color: '#555' }}>COMPRADOR</span>
                     </div>
+                </div>
+
+                <div style={{ marginTop: '36px', textAlign: 'center', fontSize: '0.72rem', color: '#64748b', borderTop: '1px solid #e2e8f0', paddingTop: '12px', lineHeight: 1.5 }}>
+                  <div><strong>GRAVITY CAR SYSTEM • COMPROVANTE COMERCIAL DE VENDA</strong></div>
+                  <div style={{ marginTop: '4px', color: '#94a3b8' }}>
+                    Comprovante comercial emitido para registro e controle da transação entre as partes. Não substitui o documento oficial de transferência (ATPV-e) emitido pelo órgão de trânsito nem a Nota Fiscal Eletrônica (NF-e).
+                  </div>
                 </div>
 
             </div>
