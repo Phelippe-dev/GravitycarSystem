@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using GravityCarSystem.Application.DTOs.Relatorios;
 using GravityCarSystem.Application.Interfaces;
 using GravityCarSystem.Application.Interfaces.Relatorios;
+using GravityCarSystem.Domain.Enums;
 
 namespace GravityCarSystem.Application.Services.Relatorios;
 
@@ -28,7 +29,7 @@ public class RelatorioService : IRelatorioService
             .Include(v => v.Veiculos)
                 .ThenInclude(vv => vv.Veiculo)
                     .ThenInclude(veiculo => veiculo.Custos)
-            .Where(v => v.Status == GravityCarSystem.Domain.Enums.StatusVenda.Concluida);
+            .Where(v => v.Status == StatusVenda.Concluida);
 
         if (dataInicio.HasValue)
             query = query.Where(v => v.DataVenda >= dataInicio.Value);
@@ -45,14 +46,29 @@ public class RelatorioService : IRelatorioService
             int numVeiculos = venda.Veiculos.Count == 0 ? 1 : venda.Veiculos.Count;
             decimal descontoPorVeiculo = venda.Desconto / numVeiculos;
 
-            var vendedorNome = venda.Usuario?.Nome ?? "Vendedor Padrão";
-            var clienteNome = venda.Cliente?.Nome ?? "Cliente Não Informado";
+            var vendedorNome = !string.IsNullOrWhiteSpace(venda.Usuario?.Nome) ? venda.Usuario.Nome : "Equipe Comercial";
+            var clienteNome = !string.IsNullOrWhiteSpace(venda.Cliente?.NomeRazaoSocial) ? venda.Cliente.NomeRazaoSocial : "Cliente Balcão";
 
-            var formasList = venda.Pagamentos.Select(p => ObterNomeFormaPagamento(p.TipoPagamento)).Distinct().ToList();
+            // Agrupamento detalhado das formas de pagamento com contagem de cheques
+            var formasList = new List<string>();
+            var cheques = venda.Pagamentos.Where(p => p.TipoPagamento == TipoPagamento.Cheque).ToList();
+            if (cheques.Any())
+            {
+                int qtd = cheques.Count;
+                formasList.Add(qtd == 1 ? "Cheque (1x)" : $"Cheque ({qtd}x)");
+            }
+
+            var outros = venda.Pagamentos
+                .Where(p => p.TipoPagamento != TipoPagamento.Cheque)
+                .Select(p => ObterNomeFormaPagamento(p.TipoPagamento))
+                .Distinct();
+            formasList.AddRange(outros);
+
             if (venda.Trocas.Any() && !formasList.Contains("Veículo na Troca"))
             {
                 formasList.Add("Veículo na Troca");
             }
+
             var formaPagamento = formasList.Any() ? string.Join(", ", formasList) : "À Vista";
 
             foreach (var vendaVeiculo in venda.Veiculos)
@@ -72,7 +88,7 @@ public class RelatorioService : IRelatorioService
                 relatorio.Add(new RentabilidadeVeiculoDto
                 {
                     VeiculoId = veiculo.Id,
-                    VeiculoDescricao = $"{veiculo.Marca} {veiculo.Modelo} {veiculo.Placa}",
+                    VeiculoDescricao = $"{veiculo.Marca} {veiculo.Modelo} {veiculo.Placa}".Trim(),
                     ValorCompra = valorCompra,
                     ValorVenda = valorVenda,
                     TotalCustosAdicionais = totalCustos,
@@ -91,17 +107,17 @@ public class RelatorioService : IRelatorioService
         return relatorio.OrderByDescending(r => r.DataVenda);
     }
 
-    private static string ObterNomeFormaPagamento(GravityCarSystem.Domain.Enums.TipoPagamento tipo) => tipo switch
+    private static string ObterNomeFormaPagamento(TipoPagamento tipo) => tipo switch
     {
-        GravityCarSystem.Domain.Enums.TipoPagamento.Dinheiro => "Dinheiro",
-        GravityCarSystem.Domain.Enums.TipoPagamento.Pix => "Pix",
-        GravityCarSystem.Domain.Enums.TipoPagamento.CartaoCredito => "Cartão de Crédito",
-        GravityCarSystem.Domain.Enums.TipoPagamento.CartaoDebito => "Cartão de Débito",
-        GravityCarSystem.Domain.Enums.TipoPagamento.Cheque => "Cheque",
-        GravityCarSystem.Domain.Enums.TipoPagamento.Financiamento => "Financiamento Bancário",
-        GravityCarSystem.Domain.Enums.TipoPagamento.Boleto => "Boleto",
-        GravityCarSystem.Domain.Enums.TipoPagamento.Transferencia => "Transferência",
-        GravityCarSystem.Domain.Enums.TipoPagamento.Troca => "Veículo na Troca",
+        TipoPagamento.Dinheiro => "Dinheiro",
+        TipoPagamento.Pix => "Pix",
+        TipoPagamento.CartaoCredito => "Cartão de Crédito",
+        TipoPagamento.CartaoDebito => "Cartão de Débito",
+        TipoPagamento.Cheque => "Cheque",
+        TipoPagamento.Financiamento => "Financiamento Bancário",
+        TipoPagamento.Boleto => "Boleto",
+        TipoPagamento.Transferencia => "Transferência",
+        TipoPagamento.Troca => "Veículo na Troca",
         _ => "Outro"
     };
 
@@ -109,8 +125,8 @@ public class RelatorioService : IRelatorioService
     {
         var resumo = new ResumoFinanceiroDto();
 
-        var queryPagar = _context.ContasPagar.Where(c => c.Status == GravityCarSystem.Domain.Enums.StatusConta.Pago);
-        var queryVendas = _context.Vendas.Where(v => v.Status == GravityCarSystem.Domain.Enums.StatusVenda.Concluida);
+        var queryPagar = _context.ContasPagar.Where(c => c.Status == StatusConta.Pago);
+        var queryVendas = _context.Vendas.Where(v => v.Status == StatusVenda.Concluida);
 
         if (dataInicio.HasValue)
         {
@@ -127,8 +143,6 @@ public class RelatorioService : IRelatorioService
         var vendasLiquidas = await queryVendas.Select(v => v.ValorLiquido).ToListAsync();
         resumo.TotalEntradasVendas = vendasLiquidas.Sum();
         
-        // Vamos considerar como compra de veículos as contas a pagar que tenham "Veículo" na descrição (simplificação)
-        // ou criar um agrupamento. Aqui faremos o total de saídas:
         var contasPagas = await queryPagar.ToListAsync();
         
         resumo.TotalSaidasComprasVeiculos = contasPagas

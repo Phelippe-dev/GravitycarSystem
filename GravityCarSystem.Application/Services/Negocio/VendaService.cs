@@ -310,10 +310,45 @@ public class VendaService : IVendaService
     {
         var venda = await _context.Vendas
             .Include(v => v.Veiculos)
+            .Include(v => v.Pagamentos)
+            .Include(v => v.Trocas)
             .AsNoTracking()
             .FirstOrDefaultAsync(v => v.Id == id);
 
         if (venda == null) return null;
+
+        var pagamentosIds = venda.Pagamentos.Select(p => p.Id).ToList();
+        var cheques = await _context.Cheques
+            .Where(c => c.VendaPagamentoId.HasValue && pagamentosIds.Contains(c.VendaPagamentoId.Value))
+            .AsNoTracking()
+            .ToListAsync();
+
+        var pagamentosDto = venda.Pagamentos.Select(p => {
+            var chq = cheques.FirstOrDefault(c => c.VendaPagamentoId == p.Id);
+            return new VendaPagamentoDto
+            {
+                TipoPagamento = p.TipoPagamento,
+                Valor = p.Valor,
+                BancoFinanciamento = p.BancoFinanciamento,
+                Parcelas = p.Parcelas,
+                ValorParcela = p.ValorParcela,
+                TaxaJuros = p.TaxaJuros,
+                Banco = chq?.Banco,
+                Agencia = chq?.Agencia,
+                Conta = chq?.Conta,
+                NumeroCheque = chq?.NumeroCheque,
+                DataBomPara = chq?.DataBomPara,
+                Emitente = chq?.Observacao
+            };
+        }).ToList();
+
+        var trocasDto = venda.Trocas.Select(t => new VendaTrocaDto
+        {
+            ValorAvaliacao = t.ValorAvaliacao,
+            Marca = t.Veiculo?.Marca ?? "Veículo",
+            Modelo = t.Veiculo?.Modelo ?? "Troca",
+            Placa = t.Veiculo?.Placa ?? ""
+        }).ToList();
 
         return new VendaDto
         {
@@ -327,7 +362,9 @@ public class VendaService : IVendaService
             ValorLiquido = venda.ValorLiquido,
             Status = venda.Status,
             Observacoes = venda.Observacoes,
-            VeiculosIds = venda.Veiculos.Select(v => v.VeiculoId).ToList()
+            VeiculosIds = venda.Veiculos.Select(v => v.VeiculoId).ToList(),
+            Pagamentos = pagamentosDto,
+            Trocas = trocasDto
         };
     }
 

@@ -1128,6 +1128,18 @@ const VeiculoDetalhesPage: React.FC = () => {
               </div>
             </div>
 
+            {/* Observações Técnicas / Inspeção Comercial */}
+            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', marginBottom: '20px' }}>
+              <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span>📋</span> Observações Técnicas / Inspeção Comercial
+              </div>
+              <div style={{ fontSize: '0.85rem', color: '#334155', lineHeight: '1.5', background: '#ffffff', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0', whiteSpace: 'pre-wrap' }}>
+                {veiculo.observacoes && veiculo.observacoes.trim().length > 0 
+                  ? veiculo.observacoes 
+                  : 'Veículo periciado e inspecionado pela equipe técnica. Sem apontamentos estruturais, avarias ou restrições.'}
+              </div>
+            </div>
+
             {/* Documentos Anexados */}
             <div style={{ marginBottom: '20px' }}>
               <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a', marginBottom: '8px' }}>

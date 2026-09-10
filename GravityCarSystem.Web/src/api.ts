@@ -763,10 +763,15 @@ export const salvarAvaliacao = async (avaliacao: any): Promise<any> => {
     if (!response.ok) {
         let errText = 'Erro ao salvar avaliação';
         try {
-            const errJson = await response.json();
-            errText = errJson.message || errJson.erro || errText;
+            const rawText = await response.text();
+            try {
+                const errJson = JSON.parse(rawText);
+                errText = errJson.message || errJson.erro || errText;
+            } catch {
+                if (rawText) errText = rawText;
+            }
         } catch {
-            errText = await response.text() || errText;
+            // fallback
         }
         throw new Error(errText);
     }

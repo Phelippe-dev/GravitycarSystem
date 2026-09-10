@@ -24,7 +24,7 @@ const Vendas: React.FC = () => {
 
   // Pagamentos Dinâmicos
   const [pagamentos, setPagamentos] = useState<VendaPagamentoDto[]>([]);
-  const [novoPagamentoTipo, setNovoPagamentoTipo] = useState(1);
+  const [novoPagamentoTipo, setNovoPagamentoTipo] = useState(2); // 2 = PIX padrão
   const [novoPagamentoValor, setNovoPagamentoValor] = useState('');
 
   // Estados específicos para Financiamento
@@ -130,7 +130,7 @@ const Vendas: React.FC = () => {
     setPagamentos([
       ...pagamentos,
       {
-        tipoPagamento: 3,
+        tipoPagamento: 5,
         valor: val,
         banco: chequeBanco,
         agencia: chequeAgencia,
@@ -166,7 +166,7 @@ const Vendas: React.FC = () => {
       const numChequeStr = String(baseNum + i).padStart(multiNumeroInicial.length > 4 ? multiNumeroInicial.length : 6, '0');
 
       novosCheques.push({
-        tipoPagamento: 3,
+        tipoPagamento: 5,
         valor: valAtual,
         banco: multiBanco,
         agencia: multiAgencia,
@@ -390,11 +390,12 @@ const Vendas: React.FC = () => {
 
                 <div style={{ marginBottom: '14px' }}>
                     <label style={{ fontSize: '0.8rem', color: 'var(--color-gray-400)', display: 'block', marginBottom: '6px' }}>Tipo de Pagamento</label>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px' }}>
                         {[
-                            { id: 1, label: '💰 PIX / Dinheiro' },
-                            { id: 2, label: '🏦 Financiamento' },
-                            { id: 3, label: '📑 Cheque(s)' },
+                            { id: 2, label: '⚡ PIX' },
+                            { id: 1, label: '💵 Dinheiro' },
+                            { id: 5, label: '📑 Cheque(s)' },
+                            { id: 6, label: '🏦 Financiamento' },
                             { id: 4, label: '💳 Cartão' }
                         ].map(t => (
                             <button
@@ -403,14 +404,16 @@ const Vendas: React.FC = () => {
                                 onClick={() => setNovoPagamentoTipo(t.id)}
                                 style={{
                                     padding: '8px 4px',
-                                    fontSize: '0.82rem',
+                                    fontSize: '0.8rem',
                                     fontWeight: novoPagamentoTipo === t.id ? 600 : 400,
                                     borderRadius: '6px',
                                     border: novoPagamentoTipo === t.id ? '1px solid var(--color-primary)' : '1px solid rgba(255,255,255,0.08)',
                                     background: novoPagamentoTipo === t.id ? 'rgba(59, 130, 246, 0.15)' : 'rgba(255,255,255,0.03)',
                                     color: novoPagamentoTipo === t.id ? '#60a5fa' : 'var(--color-gray-300)',
                                     cursor: 'pointer',
-                                    transition: 'all 0.15s'
+                                    transition: 'all 0.15s',
+                                    whiteSpace: 'nowrap',
+                                    textAlign: 'center'
                                 }}
                             >
                                 {t.label}
@@ -419,14 +422,14 @@ const Vendas: React.FC = () => {
                     </div>
                 </div>
 
-                {/* 💰 PIX / Dinheiro: campo simples */}
-                {novoPagamentoTipo === 1 && (
+                {/* 💰 PIX ou Dinheiro em Espécie: campo simples */}
+                {(novoPagamentoTipo === 1 || novoPagamentoTipo === 2) && (
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 44px', gap: '8px', alignItems: 'center', marginBottom: '16px' }}>
                         <input
                             className="form-input"
                             style={{ height: '42px' }}
                             type="number"
-                            placeholder="Valor recebido em Dinheiro / PIX (R$)"
+                            placeholder={novoPagamentoTipo === 2 ? 'Valor recebido via PIX (R$)' : 'Valor em Dinheiro espécie (R$)'}
                             value={novoPagamentoValor}
                             onChange={e => setNovoPagamentoValor(e.target.value)}
                         />
@@ -575,7 +578,7 @@ const Vendas: React.FC = () => {
                                 const val = Number(novoPagamentoValor);
                                 if (val <= 0) return;
                                 setPagamentos([...pagamentos, {
-                                    tipoPagamento: 4,
+                                    tipoPagamento: cartaoTipo === 'credito' ? 3 : 4,
                                     valor: val,
                                     bandeira: cartaoBandeira,
                                     tipoCartao: cartaoTipo,
@@ -596,7 +599,7 @@ const Vendas: React.FC = () => {
 
 
                 {/* 🏦 FINANCIAMENTO — Painel Detalhado */}
-                {novoPagamentoTipo === 2 && (
+                {novoPagamentoTipo === 6 && (
                     <div style={{ background: 'rgba(16, 185, 129, 0.06)', border: '1px solid rgba(16, 185, 129, 0.25)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', paddingBottom: '10px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                             <span style={{ fontSize: '1.1rem' }}>🏦</span>
@@ -713,7 +716,7 @@ const Vendas: React.FC = () => {
                                 const val = Number(novoPagamentoValor);
                                 if (val <= 0) return;
                                 setPagamentos([...pagamentos, {
-                                    tipoPagamento: 2,
+                                    tipoPagamento: 6,
                                     valor: val,
                                     bancoFinanciamento: financBanco,
                                     modalidadeFinanciamento: financModalidade,
@@ -734,7 +737,7 @@ const Vendas: React.FC = () => {
 
 
                 {/* Se for Cheque: Opção Único ou Múltiplos Cheques (Parcelamento) */}
-                {novoPagamentoTipo === 3 && (
+                {novoPagamentoTipo === 5 && (
                     <div style={{ background: 'rgba(30, 41, 59, 0.5)', border: '1px solid rgba(59, 130, 246, 0.25)', borderRadius: '10px', padding: '14px', marginBottom: '16px' }}>
                         {/* Seletor de Modo do Cheque */}
                         <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
@@ -1084,12 +1087,12 @@ const Vendas: React.FC = () => {
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
                                 padding: '10px 14px',
-                                background: p.tipoPagamento === 3 ? 'rgba(168, 85, 247, 0.08)' : 'rgba(255,255,255,0.04)',
-                                border: p.tipoPagamento === 3 ? '1px solid rgba(168, 85, 247, 0.25)' : '1px solid rgba(255,255,255,0.06)',
+                                background: p.tipoPagamento === 5 ? 'rgba(168, 85, 247, 0.08)' : 'rgba(255,255,255,0.04)',
+                                border: p.tipoPagamento === 5 ? '1px solid rgba(168, 85, 247, 0.25)' : '1px solid rgba(255,255,255,0.06)',
                                 borderRadius: '8px'
                             }}
                         >
-                            {p.tipoPagamento === 3 ? (
+                            {p.tipoPagamento === 5 ? (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                         <span style={{ fontSize: '0.9rem' }}>📑</span>
@@ -1106,11 +1109,36 @@ const Vendas: React.FC = () => {
                                         {p.agencia && <span> • Ag: {p.agencia} / CC: {p.conta}</span>}
                                     </div>
                                 </div>
+                            ) : p.tipoPagamento === 6 ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <span style={{ fontSize: '0.9rem' }}>🏦</span>
+                                        <strong style={{ fontSize: '0.88rem', color: '#34d399' }}>
+                                            Financiamento {p.parcelas ? `(${p.parcelas}x)` : ''}
+                                        </strong>
+                                        <span style={{ fontSize: '0.75rem', color: 'var(--color-gray-400)', background: 'rgba(255,255,255,0.06)', padding: '1px 6px', borderRadius: '4px' }}>
+                                            {p.bancoFinanciamento || 'Financeira'}
+                                        </span>
+                                    </div>
+                                    {p.numeroContrato && <div style={{ fontSize: '0.76rem', color: 'var(--color-gray-400)' }}>Contrato: {p.numeroContrato}</div>}
+                                </div>
+                            ) : (p.tipoPagamento === 3 || p.tipoPagamento === 4) ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <span style={{ fontSize: '0.9rem' }}>💳</span>
+                                        <strong style={{ fontSize: '0.88rem', color: '#c7d2fe' }}>
+                                            Cartão {p.tipoPagamento === 3 ? `Crédito ${p.parcelas ? `(${p.parcelas}x)` : ''}` : 'Débito'}
+                                        </strong>
+                                        <span style={{ fontSize: '0.75rem', color: 'var(--color-gray-400)', background: 'rgba(255,255,255,0.06)', padding: '1px 6px', borderRadius: '4px' }}>
+                                            {p.bandeira || 'Cartão'}
+                                        </span>
+                                    </div>
+                                </div>
                             ) : (
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <span>{p.tipoPagamento === 1 ? '💰' : p.tipoPagamento === 2 ? '🏦' : '💳'}</span>
+                                    <span>{p.tipoPagamento === 2 ? '⚡' : '💵'}</span>
                                     <span style={{ fontWeight: 500, fontSize: '0.88rem' }}>
-                                        {p.tipoPagamento === 1 ? 'PIX / Dinheiro' : p.tipoPagamento === 2 ? 'Financiamento' : 'Cartão de Crédito'}
+                                        {p.tipoPagamento === 2 ? 'PIX' : 'Dinheiro em Espécie'}
                                     </span>
                                 </div>
                             )}

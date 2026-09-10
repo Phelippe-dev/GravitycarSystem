@@ -21,14 +21,14 @@ public class ApiBrasilService : ISenatranService
     private readonly HttpClient _httpClient;
     private readonly string _token;
     private readonly string _baseUrl;
-    private readonly ITenantService _tenantService;
+    private readonly ICurrentTenantService _tenantService;
 
     public ApiBrasilService(
         IAppDbContext context,
         ILogger<ApiBrasilService> logger,
         HttpClient httpClient,
         IConfiguration configuration,
-        ITenantService tenantService)
+        ICurrentTenantService tenantService)
     {
         _context = context;
         _logger = logger;
@@ -51,8 +51,8 @@ public class ApiBrasilService : ISenatranService
             throw new ArgumentException("Placa é obrigatória para consultar a API Brasil");
 
         // 1. Obter a Empresa atual para checar Saldo
-        var empresaId = _tenantService.GetTenantId();
-        var empresa = await _context.Empresas.FirstOrDefaultAsync(e => e.Id.ToString() == empresaId || e.NomeFantasia == empresaId);
+        var empresaId = _tenantService.GetEmpresaId();
+        var empresa = await _context.Empresas.FirstOrDefaultAsync(e => e.Id == empresaId);
         
         if (empresa == null)
             throw new Exception("Empresa não identificada.");

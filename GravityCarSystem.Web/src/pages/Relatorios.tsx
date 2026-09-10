@@ -12,7 +12,6 @@ import {
   Printer,
   X,
   User,
-  CreditCard,
   FileText
 } from 'lucide-react';
 import logoImg from '../assets/logo.png';
@@ -27,6 +26,43 @@ const Relatorios: React.FC = () => {
   const [dataFim, setDataFim] = useState<string>('');
   const [presetAtivo, setPresetAtivo] = useState<string>('');
   const [showModalPdf, setShowModalPdf] = useState(false);
+
+  const getFormaPagamentoBadge = (fp?: string) => {
+    const text = fp || 'À Vista';
+    if (text.includes('Cheque')) {
+      return (
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'rgba(168, 85, 247, 0.15)', color: '#c084fc', border: '1px solid rgba(168, 85, 247, 0.3)', padding: '2px 8px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: 600 }}>
+          📑 {text}
+        </span>
+      );
+    }
+    if (text.includes('PIX') || text.includes('Pix')) {
+      return (
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.3)', padding: '2px 8px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: 600 }}>
+          ⚡ {text}
+        </span>
+      );
+    }
+    if (text.includes('Financiamento')) {
+      return (
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '2px 8px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: 600 }}>
+          🏦 {text}
+        </span>
+      );
+    }
+    if (text.includes('Cartão')) {
+      return (
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'rgba(99, 102, 241, 0.15)', color: '#a5b4fc', border: '1px solid rgba(99, 102, 241, 0.3)', padding: '2px 8px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: 600 }}>
+          💳 {text}
+        </span>
+      );
+    }
+    return (
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '4px', fontSize: '0.78rem', color: '#e2e8f0' }}>
+        💰 {text}
+      </span>
+    );
+  };
 
   useEffect(() => {
     carregarRelatorios();
@@ -323,9 +359,7 @@ const Relatorios: React.FC = () => {
                                               </span>
                                           </td>
                                           <td>
-                                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '4px', fontSize: '0.78rem', color: '#e2e8f0' }}>
-                                                  <CreditCard size={12} /> {r.formaPagamento || 'À Vista'}
-                                              </span>
+                                              {getFormaPagamentoBadge(r.formaPagamento)}
                                           </td>
                                           <td style={{ textAlign: 'right', fontWeight: 600, color: 'var(--color-success)' }}>
                                               {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(r.valorVenda)}
@@ -521,7 +555,11 @@ const Relatorios: React.FC = () => {
                         <td style={{ padding: '7px 8px', color: '#64748b' }}>{r.dataVenda ? new Date(r.dataVenda).toLocaleDateString('pt-BR') : '-'}</td>
                         <td style={{ padding: '7px 8px' }}>{r.clienteNome || 'Cliente Não Informado'}</td>
                         <td style={{ padding: '7px 8px', color: '#0369a1' }}>{r.vendedorNome || 'Vendedor Padrão'}</td>
-                        <td style={{ padding: '7px 8px', color: '#475569' }}>{r.formaPagamento || 'À Vista'}</td>
+                        <td style={{ padding: '7px 8px' }}>
+                          <span style={{ fontWeight: 600, color: (r.formaPagamento || '').includes('Cheque') ? '#7c3aed' : (r.formaPagamento || '').includes('PIX') ? '#0284c7' : '#334155' }}>
+                            {r.formaPagamento || 'À Vista'}
+                          </span>
+                        </td>
                         <td style={{ padding: '7px 8px', textAlign: 'right', fontWeight: 600, color: '#16a34a' }}>
                           R$ {r.valorVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </td>

@@ -71,7 +71,7 @@ public class FuncionariosController : ControllerBase
                 role = u.Perfis.FirstOrDefault() != null ? u.Perfis.First().Perfil!.Nome : "Vendedor",
                 comissaoPercent = u.ComissaoPercent,
                 ativo = u.Ativo,
-                criadoEm = u.CreatedAt
+                criadoEm = u.UltimoLogin
             })
             .ToListAsync();
 
