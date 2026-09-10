@@ -176,7 +176,7 @@ const AvaliacaoVeiculo: React.FC = () => {
                     <ClipboardList size={28} color="var(--color-blue-light)" /> Avaliação de Veículo (Troca/Compra)
                 </h1>
                 <p style={{ color: 'var(--color-gray-400)', marginTop: '8px' }}>
-                    Preencha o checklist e consulte a base nacional DETRAN / SENATRAN & FIPE com automação instantânea.
+                    Preencha o checklist e consulte a tabela FIPE com automação instantânea.
                 </p>
             </header>
 
@@ -200,7 +200,7 @@ const AvaliacaoVeiculo: React.FC = () => {
                         <div className="form-group">
                             <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <span>Placa do Veículo</span>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--color-blue-light)' }}>Automação DETRAN / SENATRAN</span>
+                                <span style={{ fontSize: '0.75rem', color: 'var(--color-blue-light)' }}>Consulta Automática FIPE</span>
                             </label>
                             <div style={{ display: 'flex', gap: '8px' }}>
                                 <input 
@@ -219,7 +219,7 @@ const AvaliacaoVeiculo: React.FC = () => {
                                     onClick={() => handleConsultarPlaca()}
                                     disabled={searchingPlaca || !placa}
                                     style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap', padding: '0 14px' }}
-                                    title="Consultar base do sistema e integração DETRAN/SENATRAN"
+                                    title="Consultar base do sistema e integração FIPE"
                                 >
                                     {searchingPlaca ? (
                                         <span>Consultando...</span>
@@ -301,103 +301,33 @@ const AvaliacaoVeiculo: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Dossiê DETRAN / SENATRAN & PRF (Consulta Nacional em Tempo Real) */}
                 {detranData && (
                     <div className="glass-panel" style={{
                         padding: '20px 24px',
                         background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(30, 41, 59, 0.6) 100%)',
                         border: '1px solid rgba(56, 189, 248, 0.3)',
                         borderRadius: '12px',
-                        boxShadow: '0 8px 24px rgba(0,0,0,0.3)'
+                        boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
                     }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(56, 189, 248, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <ShieldCheck size={22} color="#38bdf8" />
-                                </div>
-                                <div>
-                                    <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#fff' }}>
-                                        Dossiê Nacional DETRAN • SENATRAN • PRF
-                                    </h4>
-                                    <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--color-gray-400)' }}>
-                                        Consulta oficial vinculada à placa <strong style={{ color: 'var(--color-blue-light)' }}>{detranData.placa}</strong> • {detranData.origem}
-                                    </p>
-                                </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(56, 189, 248, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <ShieldCheck size={22} color="#38bdf8" />
                             </div>
-                            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#38bdf8', background: 'rgba(56, 189, 248, 0.12)', padding: '4px 10px', borderRadius: '6px', border: '1px solid rgba(56, 189, 248, 0.25)' }}>
-                                FIPE: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(detranData.valorFipe || 0)}
-                            </span>
-                        </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', fontSize: '0.82rem' }}>
-                            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                                <div style={{ color: 'var(--color-gray-400)', fontSize: '0.72rem', textTransform: 'uppercase', marginBottom: '2px' }}>Status RENAVE</div>
-                                <div style={{ fontWeight: 700, color: detranData.statusRenave === 'REGISTRADO' ? '#10b981' : '#f59e0b', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    {detranData.statusRenave === 'REGISTRADO' ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
-                                    {detranData.statusRenave}
-                                </div>
-                            </div>
-                            
-                            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                                <div style={{ color: 'var(--color-gray-400)', fontSize: '0.72rem', textTransform: 'uppercase', marginBottom: '2px' }}>Sinistro / PRF</div>
-                                <div style={{ fontWeight: 700, color: detranData.possuiRestricaoRouboFurto ? '#ef4444' : '#10b981', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    {detranData.possuiRestricaoRouboFurto ? <AlertTriangle size={16} /> : <CheckCircle2 size={16} />}
-                                    {detranData.possuiRestricaoRouboFurto ? 'CONSTA ROUBO/FURTO' : 'NADA CONSTA'}
-                                </div>
-                            </div>
-
-                            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                                <div style={{ color: 'var(--color-gray-400)', fontSize: '0.72rem', textTransform: 'uppercase', marginBottom: '2px' }}>RENAJUD / Judicial</div>
-                                <div style={{ fontWeight: 700, color: detranData.possuiRestricaoJudicial ? '#ef4444' : '#10b981', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    {detranData.possuiRestricaoJudicial ? <AlertTriangle size={16} /> : <CheckCircle2 size={16} />}
-                                    {detranData.possuiRestricaoJudicial ? 'CONSTA RESTRIÇÃO' : 'NADA CONSTA'}
-                                </div>
-                            </div>
-
-                            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                                <div style={{ color: 'var(--color-gray-400)', fontSize: '0.72rem', textTransform: 'uppercase', marginBottom: '2px' }}>Gravame / Alienação</div>
-                                <div style={{ fontWeight: 700, color: detranData.possuiAlienacaoFiduciaria ? '#f59e0b' : '#10b981', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    {detranData.possuiAlienacaoFiduciaria ? <AlertTriangle size={16} /> : <CheckCircle2 size={16} />}
-                                    {detranData.possuiAlienacaoFiduciaria ? 'ALIENAÇÃO ATIVA' : 'QUITADO / LIVRE'}
-                                </div>
+                            <div>
+                                <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#fff' }}>
+                                    Resultado FIPE / Tabela de Referência
+                                </h4>
+                                <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--color-gray-400)' }}>
+                                    Placa pesquisada: <strong style={{ color: 'var(--color-blue-light)' }}>{detranData.placa}</strong>
+                                </p>
                             </div>
                         </div>
-
-                        {detranData.totalDebitosPendentes > 0 ? (
-                            <div style={{
-                                marginTop: '14px',
-                                padding: '10px 14px',
-                                background: 'rgba(239, 68, 68, 0.12)',
-                                border: '1px solid rgba(239, 68, 68, 0.3)',
-                                borderRadius: '8px',
-                                fontSize: '0.82rem',
-                                color: '#fca5a5',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                flexWrap: 'wrap',
-                                gap: '8px'
-                            }}>
-                                <div>
-                                    <strong>⚠️ Débitos identificados no DETRAN:</strong> {detranData.descricaoDebitos}
-                                </div>
-                                <span style={{ fontWeight: 700, color: '#ef4444', background: 'rgba(0,0,0,0.3)', padding: '2px 8px', borderRadius: '4px' }}>
-                                    - {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(detranData.totalDebitosPendentes)} (já abatido no cálculo)
-                                </span>
-                            </div>
-                        ) : (
-                            <div style={{
-                                marginTop: '14px',
-                                padding: '8px 14px',
-                                background: 'rgba(16, 185, 129, 0.08)',
-                                border: '1px solid rgba(16, 185, 129, 0.25)',
-                                borderRadius: '8px',
-                                fontSize: '0.8rem',
-                                color: '#6ee7b7'
-                            }}>
-                                ✓ {detranData.descricaoDebitos || 'Veículo 100% regular perante o DETRAN. Sem débitos de IPVA, multas ou licenciamento pendentes.'}
-                            </div>
-                        )}
+                        <span style={{ fontSize: '1.1rem', fontWeight: 700, color: '#38bdf8', background: 'rgba(56, 189, 248, 0.12)', padding: '8px 16px', borderRadius: '6px', border: '1px solid rgba(56, 189, 248, 0.25)' }}>
+                            FIPE: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(detranData.valorFipe || 0)}
+                        </span>
                     </div>
                 )}
 

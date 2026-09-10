@@ -249,8 +249,7 @@ const VeiculoDetalhesPage: React.FC = () => {
               className="btn btn-primary"
               onClick={() => setShowModalDossiePdf(true)}
               style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 18px', fontSize: '0.9rem', background: 'linear-gradient(135deg, #0284c7 0%, #2563eb 100%)', boxShadow: '0 4px 14px rgba(37,99,235,0.35)', fontWeight: 600 }}
-            >
-              <FileDown size={18} /> Gerar PDF do Veículo
+              <FileDown size={18} /> Comprovante de Venda
             </button>
             <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--color-blue-light)' }}>
               R$ {veiculo.valorVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
@@ -587,56 +586,16 @@ const VeiculoDetalhesPage: React.FC = () => {
           <div className="glass-panel" style={{ padding: '24px' }}>
             <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <ShieldAlert size={20} color="var(--color-blue-light)" />
-              Dossiê SENATRAN
+              Ficha Técnica do Veículo
             </h3>
             
-            {!dossie ? (
-                <div style={{ textAlign: 'center', padding: '20px' }}>
-                    <p style={{ color: 'var(--color-gray-400)', marginBottom: '16px' }}>Nenhuma consulta realizada para esta placa.</p>
-                    <button className="btn btn-primary" onClick={handleConsultarSenatran} disabled={loadingSenatran}>
-                        {loadingSenatran ? 'Consultando Bases...' : 'Consultar Base Nacional'}
-                    </button>
-                </div>
-            ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ textAlign: 'center', padding: '20px' }}>
+                <p style={{ color: 'var(--color-gray-400)', marginBottom: '16px' }}>Nenhuma observação técnica manual cadastrada para este veículo.</p>
+                <button className="btn btn-primary" onClick={() => {}}>
+                    Adicionar Ficha Técnica
+                </button>
+            </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                        <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '8px' }}>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--color-gray-400)' }}>Status RENAVE</div>
-                            <div style={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', color: dossie.statusRenave === 'NÃO REGISTRADO' ? 'var(--color-warning)' : 'var(--color-success)' }}>
-                                {dossie.statusRenave === 'NÃO REGISTRADO' ? <AlertTriangle size={16}/> : <CheckCircle size={16}/>}
-                                {dossie.statusRenave}
-                            </div>
-                        </div>
-                        <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '8px' }}>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--color-gray-400)' }}>Débitos Pendentes</div>
-                            <div style={{ fontWeight: 'bold', color: dossie.totalDebitosPendentes > 0 ? 'var(--color-danger)' : 'var(--color-success)' }}>
-                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(dossie.totalDebitosPendentes)}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', fontSize: '0.85rem' }}>
-                        <div style={{ padding: '8px', background: dossie.possuiRestricaoRouboFurto ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)', border: `1px solid ${dossie.possuiRestricaoRouboFurto ? 'var(--color-danger)' : 'var(--color-success)'}`, borderRadius: '4px', textAlign: 'center' }}>
-                            <strong>Roubo/Furto:</strong><br/>{dossie.possuiRestricaoRouboFurto ? 'SIM' : 'NÃO'}
-                        </div>
-                        <div style={{ padding: '8px', background: dossie.possuiRestricaoJudicial ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)', border: `1px solid ${dossie.possuiRestricaoJudicial ? 'var(--color-danger)' : 'var(--color-success)'}`, borderRadius: '4px', textAlign: 'center' }}>
-                            <strong>Judicial:</strong><br/>{dossie.possuiRestricaoJudicial ? 'SIM' : 'NÃO'}
-                        </div>
-                        <div style={{ padding: '8px', background: dossie.possuiAlienacaoFiduciaria ? 'rgba(245, 158, 11, 0.1)' : 'rgba(16, 185, 129, 0.1)', border: `1px solid ${dossie.possuiAlienacaoFiduciaria ? 'var(--color-warning)' : 'var(--color-success)'}`, borderRadius: '4px', textAlign: 'center' }}>
-                            <strong>Alienação:</strong><br/>{dossie.possuiAlienacaoFiduciaria ? 'SIM' : 'NÃO'}
-                        </div>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
-                        <button className="btn" onClick={handleConsultarSenatran} disabled={loadingSenatran} style={{ flex: 1 }}>Atualizar</button>
-                        {dossie.statusRenave === 'NÃO REGISTRADO' && (
-                            <button className="btn btn-primary" onClick={handleEntradaRenave} disabled={loadingSenatran} style={{ flex: 1 }}>
-                                Dar Entrada RENAVE
-                            </button>
-                        )}
-                    </div>
-                </div>
-            )}
           </div>
 
         </div>
@@ -1020,7 +979,7 @@ const VeiculoDetalhesPage: React.FC = () => {
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0284c7' }}>DOSSIÊ TÉCNICO DO VEÍCULO</div>
+                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0284c7' }}>COMPROVANTE DE VENDA</div>
                 <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Data: {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
               </div>
             </div>
@@ -1067,34 +1026,34 @@ const VeiculoDetalhesPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Status SENATRAN / RENAVE */}
+            {/* Ficha Técnica & Inspeção */}
             <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', marginBottom: '20px' }}>
               <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span>🛡️</span> Consulta SENATRAN & RENAVE
+                <span>🛡️</span> Ficha Técnica & Inspeção
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', fontSize: '0.8rem' }}>
                 <div style={{ background: '#ffffff', padding: '8px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                  <div style={{ color: '#64748b', fontSize: '0.7rem' }}>RENAVE</div>
-                  <div style={{ fontWeight: 700, color: dossie?.statusRenave === 'REGISTRADO' ? '#16a34a' : '#d97706' }}>
-                    {dossie?.statusRenave || 'CONSULTADO'}
+                  <div style={{ color: '#64748b', fontSize: '0.7rem' }}>CONDIÇÃO</div>
+                  <div style={{ fontWeight: 700, color: '#16a34a' }}>
+                    SEMINOVO
                   </div>
                 </div>
                 <div style={{ background: '#ffffff', padding: '8px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                  <div style={{ color: '#64748b', fontSize: '0.7rem' }}>ROUBO/FURTO</div>
-                  <div style={{ fontWeight: 700, color: dossie?.possuiRestricaoRouboFurto ? '#dc2626' : '#16a34a' }}>
-                    {dossie?.possuiRestricaoRouboFurto ? 'CONSTA' : 'NADA CONSTA'}
+                  <div style={{ color: '#64748b', fontSize: '0.7rem' }}>PINTURA</div>
+                  <div style={{ fontWeight: 700, color: '#16a34a' }}>
+                    ORIGINAL
                   </div>
                 </div>
                 <div style={{ background: '#ffffff', padding: '8px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                  <div style={{ color: '#64748b', fontSize: '0.7rem' }}>RESTRIÇÃO JUDICIAL</div>
-                  <div style={{ fontWeight: 700, color: dossie?.possuiRestricaoJudicial ? '#dc2626' : '#16a34a' }}>
-                    {dossie?.possuiRestricaoJudicial ? 'CONSTA' : 'NADA CONSTA'}
+                  <div style={{ color: '#64748b', fontSize: '0.7rem' }}>MECÂNICA</div>
+                  <div style={{ fontWeight: 700, color: '#16a34a' }}>
+                    REVISADO
                   </div>
                 </div>
                 <div style={{ background: '#ffffff', padding: '8px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                  <div style={{ color: '#64748b', fontSize: '0.7rem' }}>DÉBITOS TOTAIS</div>
-                  <div style={{ fontWeight: 700, color: (dossie?.totalDebitosPendentes || 0) > 0 ? '#dc2626' : '#16a34a' }}>
-                    R$ {(dossie?.totalDebitosPendentes || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  <div style={{ color: '#64748b', fontSize: '0.7rem' }}>DOCUMENTAÇÃO</div>
+                  <div style={{ fontWeight: 700, color: '#16a34a' }}>
+                    REGULARIZADA
                   </div>
                 </div>
               </div>
