@@ -449,6 +449,23 @@ export const adicionarCustoVeiculo = async (id: string, custo: VeiculoCusto): Pr
     return response.json();
 };
 
+export const atualizarObservacoesVeiculo = async (veiculoId: string, observacoes: string): Promise<boolean> => {
+    try {
+        const token = localStorage.getItem('@GravityCar:token');
+        const response = await fetch(`${API_BASE_URL}/veiculos/${veiculoId}/observacoes`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            },
+            body: JSON.stringify({ observacoes })
+        });
+        return response.ok;
+    } catch {
+        return false;
+    }
+};
+
 // --- FASE 3: FINANCEIRO E DASHBOARDS ---
 
 export interface ContaPagarDto {
@@ -502,6 +519,9 @@ export interface RentabilidadeVeiculoDto {
     margemLucroLiquido: number;
     percentualMargem: number;
     dataVenda?: string;
+    vendedorNome?: string;
+    clienteNome?: string;
+    formaPagamento?: string;
 }
 
 export interface ResumoFinanceiroDto {

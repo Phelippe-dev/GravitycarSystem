@@ -24,4 +24,5 @@ public interface IVeiculoService
     Task<VeiculoDocumentoDto> AdicionarDocumentoAsync(Guid veiculoId, string nomeArquivo, string url, string tipo);
     Task RemoverDocumentoAsync(Guid veiculoId, Guid documentoId);
     Task<VeiculoCustoDto> AdicionarCustoAsync(Guid veiculoId, VeiculoCustoDto custoDto);
+    Task AtualizarObservacoesAsync(Guid veiculoId, string observacoes);
 }

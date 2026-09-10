@@ -394,4 +394,13 @@ public class VeiculoService : IVeiculoService
         custoDto.Id = custo.Id;
         return custoDto;
     }
+
+    public async Task AtualizarObservacoesAsync(Guid veiculoId, string observacoes)
+    {
+        var veiculo = await _context.Veiculos.FindAsync(veiculoId);
+        if (veiculo == null) throw new KeyNotFoundException("Veículo não encontrado.");
+
+        veiculo.Observacoes = observacoes;
+        await _context.SaveChangesAsync();
+    }
 }

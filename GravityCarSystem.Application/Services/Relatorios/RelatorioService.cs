@@ -21,6 +21,10 @@ public class RelatorioService : IRelatorioService
     public async Task<IEnumerable<RentabilidadeVeiculoDto>> ObterRentabilidadeVeiculosAsync(DateTime? dataInicio, DateTime? dataFim)
     {
         var query = _context.Vendas
+            .Include(v => v.Cliente)
+            .Include(v => v.Usuario)
+            .Include(v => v.Pagamentos)
+            .Include(v => v.Trocas)
             .Include(v => v.Veiculos)
                 .ThenInclude(vv => vv.Veiculo)
                     .ThenInclude(veiculo => veiculo.Custos)
@@ -38,11 +42,18 @@ public class RelatorioService : IRelatorioService
 
         foreach (var venda in vendas)
         {
-            // Para simplificar a demonstração, se houver mais de um veículo na mesma venda, 
-            // ratearemos o desconto da venda proporcionalmente, ou dividiremos igualmente.
-            // Aqui vamos apenas mostrar o 1 para 1 para facilitar o exemplo:
             int numVeiculos = venda.Veiculos.Count == 0 ? 1 : venda.Veiculos.Count;
             decimal descontoPorVeiculo = venda.Desconto / numVeiculos;
+
+            var vendedorNome = venda.Usuario?.Nome ?? "Vendedor Padrão";
+            var clienteNome = venda.Cliente?.Nome ?? "Cliente Não Informado";
+
+            var formasList = venda.Pagamentos.Select(p => ObterNomeFormaPagamento(p.TipoPagamento)).Distinct().ToList();
+            if (venda.Trocas.Any() && !formasList.Contains("Veículo na Troca"))
+            {
+                formasList.Add("Veículo na Troca");
+            }
+            var formaPagamento = formasList.Any() ? string.Join(", ", formasList) : "À Vista";
 
             foreach (var vendaVeiculo in venda.Veiculos)
             {
@@ -51,7 +62,7 @@ public class RelatorioService : IRelatorioService
 
                 var totalCustos = veiculo.Custos.Sum(c => c.Valor);
                 var valorCompra = veiculo.ValorCompra ?? 0;
-                var valorVenda = veiculo.ValorVenda ?? 0; // Ou o valor real rateado da venda se houver lógica específica
+                var valorVenda = veiculo.ValorVenda ?? 0;
                 var desconto = descontoPorVeiculo;
                 
                 var margemLiquida = valorVenda - desconto - valorCompra - totalCustos;
@@ -68,13 +79,30 @@ public class RelatorioService : IRelatorioService
                     DescontoNaVenda = desconto,
                     MargemLucroLiquido = margemLiquida,
                     PercentualMargem = percentual,
-                    DataVenda = venda.DataVenda
+                    DataVenda = venda.DataVenda,
+                    VendedorNome = vendedorNome,
+                    ClienteNome = clienteNome,
+                    FormaPagamento = formaPagamento
                 });
             }
         }
 
         return relatorio.OrderByDescending(r => r.DataVenda);
     }
+
+    private static string ObterNomeFormaPagamento(GravityCarSystem.Domain.Enums.TipoPagamento tipo) => tipo switch
+    {
+        GravityCarSystem.Domain.Enums.TipoPagamento.Dinheiro => "Dinheiro",
+        GravityCarSystem.Domain.Enums.TipoPagamento.Pix => "Pix",
+        GravityCarSystem.Domain.Enums.TipoPagamento.CartaoCredito => "Cartão de Crédito",
+        GravityCarSystem.Domain.Enums.TipoPagamento.CartaoDebito => "Cartão de Débito",
+        GravityCarSystem.Domain.Enums.TipoPagamento.Cheque => "Cheque",
+        GravityCarSystem.Domain.Enums.TipoPagamento.Financiamento => "Financiamento Bancário",
+        GravityCarSystem.Domain.Enums.TipoPagamento.Boleto => "Boleto",
+        GravityCarSystem.Domain.Enums.TipoPagamento.Transferencia => "Transferência",
+        GravityCarSystem.Domain.Enums.TipoPagamento.Troca => "Veículo na Troca",
+        _ => "Outro"
+    };
 
     public async Task<ResumoFinanceiroDto> ObterResumoFinanceiroAsync(DateTime? dataInicio, DateTime? dataFim)
     {

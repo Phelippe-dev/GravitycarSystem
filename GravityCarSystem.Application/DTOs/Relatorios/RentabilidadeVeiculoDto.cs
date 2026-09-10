@@ -13,4 +13,7 @@ public class RentabilidadeVeiculoDto
     public decimal MargemLucroLiquido { get; set; } // ValorVenda - Desconto - ValorCompra - Custos
     public decimal PercentualMargem { get; set; } // MargemLucroLiquido / (ValorVenda - Desconto)
     public DateTime? DataVenda { get; set; }
+    public string? VendedorNome { get; set; }
+    public string? ClienteNome { get; set; }
+    public string? FormaPagamento { get; set; }
 }

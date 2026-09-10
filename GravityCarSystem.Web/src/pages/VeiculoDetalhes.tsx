@@ -1,21 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  ArrowLeft, 
-  Upload, 
-  FileText, 
-  DollarSign, 
-  Clock, 
-  ChevronLeft, 
-  ChevronRight, 
-  ShieldAlert, 
-  Printer, 
-  FileDown, 
-  Download, 
-  Trash2, 
-  X, 
-  Eye, 
-  Star 
+import {
+  ArrowLeft,
+  Upload,
+  FileText,
+  DollarSign,
+  Clock,
+  ChevronLeft,
+  ChevronRight,
+  ShieldAlert,
+  Printer,
+  FileDown,
+  Download,
+  Trash2,
+  X,
+  Eye,
+  Star,
+  Edit2,
+  Check
 } from 'lucide-react';
 import {
   getVeiculoDetalhes,
@@ -25,6 +27,7 @@ import {
   uploadDocumentoVeiculo,
   removerDocumentoVeiculo,
   adicionarCustoVeiculo,
+  atualizarObservacoesVeiculo,
   API_BASE_URL
 } from '../api';
 import type { VeiculoDetalhes } from '../api';
@@ -33,7 +36,7 @@ import logoImg from '../assets/logo.png';
 const VeiculoDetalhesPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  
+
   const [veiculo, setVeiculo] = useState<VeiculoDetalhes | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,8 +52,31 @@ const VeiculoDetalhesPage: React.FC = () => {
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [showModalDossiePdf, setShowModalDossiePdf] = useState(false);
 
+  // Estados para Observações Técnicas Editáveis
+  const [editandoObs, setEditandoObs] = useState(false);
+  const [textoObs, setTextoObs] = useState('');
+  const [salvandoObs, setSalvandoObs] = useState(false);
+
+  const handleSalvarObs = async () => {
+    if (!id) return;
+    try {
+      setSalvandoObs(true);
+      const sucesso = await atualizarObservacoesVeiculo(id, textoObs);
+      if (sucesso) {
+        setVeiculo(prev => prev ? { ...prev, observacoes: textoObs } : null);
+        setEditandoObs(false);
+      } else {
+        alert('Falha ao salvar observações do veículo.');
+      }
+    } catch {
+      alert('Erro de conexão ao salvar observações.');
+    } finally {
+      setSalvandoObs(false);
+    }
+  };
+
   const getStatusLabel = (status: number) => {
-    switch(status) {
+    switch (status) {
       case 1: return 'Em Avaliação';
       case 2: return 'Em Compra';
       case 3: return 'Em Preparação';
@@ -212,7 +238,7 @@ const VeiculoDetalhesPage: React.FC = () => {
             </p>
           </div>
           <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
-            <button 
+            <button
               className="btn btn-primary"
               onClick={() => setShowModalDossiePdf(true)}
               style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 18px', fontSize: '0.9rem', background: 'linear-gradient(135deg, #0284c7 0%, #2563eb 100%)', boxShadow: '0 4px 14px rgba(37,99,235,0.35)', fontWeight: 600 }}
@@ -231,7 +257,7 @@ const VeiculoDetalhesPage: React.FC = () => {
 
       <div className="print-hidden" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          
+
           <div className="glass-panel" style={{ padding: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <div>
@@ -255,14 +281,14 @@ const VeiculoDetalhesPage: React.FC = () => {
             ) : (
               <div>
                 {/* Visualizador Principal de Foto */}
-                <div 
-                  style={{ 
-                    position: 'relative', 
-                    width: '100%', 
-                    aspectRatio: '16/9', 
-                    maxHeight: '420px', 
-                    background: '#090d16', 
-                    borderRadius: '10px', 
+                <div
+                  style={{
+                    position: 'relative',
+                    width: '100%',
+                    aspectRatio: '16/9',
+                    maxHeight: '420px',
+                    background: '#090d16',
+                    borderRadius: '10px',
                     overflow: 'hidden',
                     display: 'flex',
                     alignItems: 'center',
@@ -271,34 +297,34 @@ const VeiculoDetalhesPage: React.FC = () => {
                   }}
                 >
                   {/* Barra Superior Flutuante de Ações com fundo escuro e espaçamento perfeito */}
-                  <div 
-                    style={{ 
-                      position: 'absolute', 
-                      top: 0, 
-                      left: 0, 
-                      right: 0, 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      alignItems: 'center', 
-                      padding: '12px 16px', 
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '12px 16px',
                       background: 'linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 70%, transparent 100%)',
-                      zIndex: 10 
+                      zIndex: 10
                     }}
                   >
                     {/* Lado Esquerdo: Foto Principal */}
                     {veiculo.fotos[currentPhotoIndex].isPrincipal ? (
-                      <span 
-                        style={{ 
-                          background: 'rgba(16, 185, 129, 0.95)', 
-                          color: '#fff', 
-                          padding: '6px 12px', 
-                          borderRadius: '6px', 
-                          fontSize: '0.8rem', 
-                          fontWeight: 600, 
-                          display: 'inline-flex', 
-                          alignItems: 'center', 
-                          gap: '6px', 
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.4)' 
+                      <span
+                        style={{
+                          background: 'rgba(16, 185, 129, 0.95)',
+                          color: '#fff',
+                          padding: '6px 12px',
+                          borderRadius: '6px',
+                          fontSize: '0.8rem',
+                          fontWeight: 600,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.4)'
                         }}
                       >
                         <Star size={14} fill="#fff" /> Foto de Capa (Principal)
@@ -361,24 +387,24 @@ const VeiculoDetalhesPage: React.FC = () => {
                   {/* Setas de Navegação */}
                   {veiculo.fotos.length > 1 && (
                     <>
-                      <button 
-                        type="button" 
-                        onClick={prevPhoto} 
-                        style={{ 
-                          position: 'absolute', 
-                          left: '14px', 
-                          top: '50%', 
-                          transform: 'translateY(-50%)', 
-                          zIndex: 8, 
-                          width: '42px', 
-                          height: '42px', 
-                          borderRadius: '50%', 
-                          background: 'rgba(0,0,0,0.65)', 
-                          color: '#fff', 
-                          border: '1px solid rgba(255,255,255,0.2)', 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'center', 
+                      <button
+                        type="button"
+                        onClick={prevPhoto}
+                        style={{
+                          position: 'absolute',
+                          left: '14px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          zIndex: 8,
+                          width: '42px',
+                          height: '42px',
+                          borderRadius: '50%',
+                          background: 'rgba(0,0,0,0.65)',
+                          color: '#fff',
+                          border: '1px solid rgba(255,255,255,0.2)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
                           cursor: 'pointer',
                           backdropFilter: 'blur(4px)',
                           transition: 'all 0.15s'
@@ -387,24 +413,24 @@ const VeiculoDetalhesPage: React.FC = () => {
                       >
                         <ChevronLeft size={24} />
                       </button>
-                      <button 
-                        type="button" 
-                        onClick={nextPhoto} 
-                        style={{ 
-                          position: 'absolute', 
-                          right: '14px', 
-                          top: '50%', 
-                          transform: 'translateY(-50%)', 
-                          zIndex: 8, 
-                          width: '42px', 
-                          height: '42px', 
-                          borderRadius: '50%', 
-                          background: 'rgba(0,0,0,0.65)', 
-                          color: '#fff', 
-                          border: '1px solid rgba(255,255,255,0.2)', 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'center', 
+                      <button
+                        type="button"
+                        onClick={nextPhoto}
+                        style={{
+                          position: 'absolute',
+                          right: '14px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          zIndex: 8,
+                          width: '42px',
+                          height: '42px',
+                          borderRadius: '50%',
+                          background: 'rgba(0,0,0,0.65)',
+                          color: '#fff',
+                          border: '1px solid rgba(255,255,255,0.2)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
                           cursor: 'pointer',
                           backdropFilter: 'blur(4px)',
                           transition: 'all 0.15s'
@@ -417,26 +443,26 @@ const VeiculoDetalhesPage: React.FC = () => {
                   )}
 
                   {/* Imagem em Destaque */}
-                  <img 
-                    src={resolvePhotoUrl(veiculo.fotos[currentPhotoIndex].url)} 
-                    alt={`Foto ${currentPhotoIndex + 1}`} 
-                    style={{ 
-                      width: '100%', 
-                      height: '100%', 
-                      objectFit: 'contain' 
+                  <img
+                    src={resolvePhotoUrl(veiculo.fotos[currentPhotoIndex].url)}
+                    alt={`Foto ${currentPhotoIndex + 1}`}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'contain'
                     }}
                   />
 
                   {/* Indicador de Posição Flutuante no Rodapé */}
-                  <div 
-                    style={{ 
-                      position: 'absolute', 
-                      bottom: '12px', 
-                      background: 'rgba(0,0,0,0.7)', 
-                      color: '#e2e8f0', 
-                      padding: '4px 12px', 
-                      borderRadius: '20px', 
-                      fontSize: '0.8rem', 
+                  <div
+                    style={{
+                      position: 'absolute',
+                      bottom: '12px',
+                      background: 'rgba(0,0,0,0.7)',
+                      color: '#e2e8f0',
+                      padding: '4px 12px',
+                      borderRadius: '20px',
+                      fontSize: '0.8rem',
                       fontWeight: 500,
                       backdropFilter: 'blur(4px)',
                       border: '1px solid rgba(255,255,255,0.1)'
@@ -455,13 +481,13 @@ const VeiculoDetalhesPage: React.FC = () => {
                       </span>
                     </div>
 
-                    <div 
-                      style={{ 
-                        display: 'flex', 
-                        gap: '10px', 
-                        overflowX: 'auto', 
+                    <div
+                      style={{
+                        display: 'flex',
+                        gap: '10px',
+                        overflowX: 'auto',
                         paddingBottom: '6px',
-                        scrollbarWidth: 'thin' 
+                        scrollbarWidth: 'thin'
                       }}
                     >
                       {veiculo.fotos.map((f, idx) => {
@@ -494,16 +520,16 @@ const VeiculoDetalhesPage: React.FC = () => {
 
                             {/* Badge de Principal na Miniatura */}
                             {f.isPrincipal && (
-                              <span 
-                                style={{ 
-                                  position: 'absolute', 
-                                  bottom: '3px', 
-                                  left: '3px', 
-                                  background: 'rgba(16, 185, 129, 0.95)', 
-                                  borderRadius: '4px', 
-                                  padding: '1px 5px', 
-                                  fontSize: '0.62rem', 
-                                  color: '#fff', 
+                              <span
+                                style={{
+                                  position: 'absolute',
+                                  bottom: '3px',
+                                  left: '3px',
+                                  background: 'rgba(16, 185, 129, 0.95)',
+                                  borderRadius: '4px',
+                                  padding: '1px 5px',
+                                  fontSize: '0.62rem',
+                                  color: '#fff',
                                   fontWeight: 'bold',
                                   boxShadow: '0 1px 4px rgba(0,0,0,0.5)'
                                 }}
@@ -556,7 +582,7 @@ const VeiculoDetalhesPage: React.FC = () => {
               <ShieldAlert size={20} color="var(--color-blue-light)" />
               Ficha Técnica do Veículo
             </h3>
-            
+
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px', fontSize: '0.85rem' }}>
               <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
                 <span style={{ color: 'var(--color-gray-400)', fontSize: '0.72rem', display: 'block', textTransform: 'uppercase' }}>Versão</span>
@@ -585,17 +611,65 @@ const VeiculoDetalhesPage: React.FC = () => {
             </div>
 
             <div style={{ marginTop: '16px', background: 'rgba(255,255,255,0.03)', padding: '14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <span style={{ color: 'var(--color-gray-400)', fontSize: '0.72rem', display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Observações Técnicas / Inspeção Comercial</span>
-              <p style={{ color: '#cbd5e1', fontSize: '0.85rem', margin: 0, lineHeight: 1.5 }}>
-                {veiculo.observacoes || 'Nenhuma observação técnica registrada. Veículo em conformidade para o estoque.'}
-              </p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <span style={{ color: 'var(--color-gray-400)', fontSize: '0.72rem', textTransform: 'uppercase' }}>Observações Técnicas / Inspeção Comercial</span>
+                {!editandoObs && (
+                  <button 
+                    type="button" 
+                    onClick={() => { setTextoObs(veiculo.observacoes || ''); setEditandoObs(true); }}
+                    className="btn"
+                    style={{ padding: '4px 10px', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.3)', cursor: 'pointer' }}
+                    title="Editar observações técnicas do veículo"
+                  >
+                    <Edit2 size={12} /> Editar
+                  </button>
+                )}
+              </div>
+
+              {editandoObs ? (
+                <div>
+                  <textarea
+                    className="form-input"
+                    rows={4}
+                    value={textoObs}
+                    onChange={e => setTextoObs(e.target.value)}
+                    placeholder="Descreva detalhes de pintura, mecânica, garantia de fábrica, pneus, histórico ou avarias..."
+                    style={{ width: '100%', fontSize: '0.85rem', lineHeight: 1.5, resize: 'vertical', background: 'rgba(15, 23, 42, 0.9)' }}
+                    autoFocus
+                  />
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '10px' }}>
+                    <button 
+                      type="button" 
+                      onClick={() => setEditandoObs(false)}
+                      disabled={salvandoObs}
+                      className="btn"
+                      style={{ padding: '6px 12px', fontSize: '0.8rem', background: 'rgba(255,255,255,0.05)', cursor: 'pointer' }}
+                    >
+                      <X size={13} /> Cancelar
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={handleSalvarObs}
+                      disabled={salvandoObs}
+                      className="btn btn-primary"
+                      style={{ padding: '6px 14px', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
+                    >
+                      <Check size={14} /> {salvandoObs ? 'Salvando...' : 'Salvar Observações'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <p style={{ color: '#cbd5e1', fontSize: '0.85rem', margin: 0, lineHeight: 1.5 }}>
+                  {veiculo.observacoes || 'Nenhuma observação técnica registrada. Veículo em conformidade para o estoque.'}
+                </p>
+              )}
             </div>
           </div>
 
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          
+
           <div className="glass-panel" style={{ padding: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -603,15 +677,15 @@ const VeiculoDetalhesPage: React.FC = () => {
                 Documentos & PDFs
               </h3>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <button 
-                  className="btn" 
+                <button
+                  className="btn"
                   onClick={() => setShowModalDossiePdf(true)}
                   style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 12px', fontSize: '0.82rem', background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.3)' }}
                 >
                   <FileDown size={14} /> Ficha em PDF
                 </button>
-                <button 
-                  className="btn btn-primary" 
+                <button
+                  className="btn btn-primary"
                   onClick={() => setShowModalUpload(true)}
                   style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 12px', fontSize: '0.82rem' }}
                 >
@@ -626,14 +700,14 @@ const VeiculoDetalhesPage: React.FC = () => {
                 return (
                   <div key={doc.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', gap: '12px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
-                      <div style={{ 
-                        width: '36px', 
-                        height: '36px', 
-                        borderRadius: '6px', 
-                        background: isPdf ? 'rgba(239, 68, 68, 0.15)' : 'rgba(56, 189, 248, 0.15)', 
+                      <div style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '6px',
+                        background: isPdf ? 'rgba(239, 68, 68, 0.15)' : 'rgba(56, 189, 248, 0.15)',
                         border: `1px solid ${isPdf ? 'rgba(239, 68, 68, 0.3)' : 'rgba(56, 189, 248, 0.3)'}`,
-                        display: 'flex', 
-                        alignItems: 'center', 
+                        display: 'flex',
+                        alignItems: 'center',
                         justifyContent: 'center',
                         flexShrink: 0
                       }}>
@@ -653,26 +727,26 @@ const VeiculoDetalhesPage: React.FC = () => {
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-                      <a 
-                        href={fileUrl} 
-                        target="_blank" 
-                        rel="noreferrer" 
-                        className="btn" 
+                      <a
+                        href={fileUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn"
                         title="Visualizar documento"
                         style={{ padding: '6px 10px', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'rgba(255,255,255,0.06)' }}
                       >
                         <Eye size={14} /> Ver
                       </a>
-                      <a 
-                        href={fileUrl} 
-                        download={doc.nomeArquivo} 
-                        className="btn" 
+                      <a
+                        href={fileUrl}
+                        download={doc.nomeArquivo}
+                        className="btn"
                         title="Baixar arquivo"
                         style={{ padding: '6px 10px', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'rgba(255,255,255,0.06)' }}
                       >
                         <Download size={14} />
                       </a>
-                      <button 
+                      <button
                         onClick={() => handleDeleteDoc(doc.id, doc.tipoDocumento || doc.nomeArquivo)}
                         className="btn"
                         title="Excluir documento"
@@ -688,9 +762,9 @@ const VeiculoDetalhesPage: React.FC = () => {
                 <div style={{ textAlign: 'center', color: 'var(--color-gray-400)', fontSize: '0.9rem', padding: '20px 0', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '8px' }}>
                   Nenhum documento ou PDF anexado ainda.
                   <div style={{ marginTop: '10px' }}>
-                    <button 
+                    <button
                       onClick={() => setShowModalUpload(true)}
-                      className="btn" 
+                      className="btn"
                       style={{ fontSize: '0.82rem', padding: '6px 14px', background: 'rgba(255,255,255,0.06)' }}
                     >
                       + Anexar Documento PDF
@@ -799,7 +873,7 @@ const VeiculoDetalhesPage: React.FC = () => {
                   <p style={{ fontSize: '0.8rem', color: 'var(--color-gray-400)', margin: 0 }}>Vincular CRLV, Laudo ou Contrato ao veículo</p>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => setShowModalUpload(false)}
                 className="btn"
                 style={{ padding: '6px', background: 'transparent', border: 'none', color: 'var(--color-gray-400)', cursor: 'pointer' }}
@@ -813,8 +887,8 @@ const VeiculoDetalhesPage: React.FC = () => {
                 <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 500, color: 'var(--color-gray-300)' }}>
                   Tipo do Documento
                 </label>
-                <select 
-                  className="form-input" 
+                <select
+                  className="form-input"
                   value={tipoDocumento}
                   onChange={(e) => setTipoDocumento(e.target.value)}
                   style={{ width: '100%', cursor: 'pointer' }}
@@ -842,10 +916,10 @@ const VeiculoDetalhesPage: React.FC = () => {
                   cursor: 'pointer',
                   transition: 'border-color 0.2s'
                 }}>
-                  <input 
-                    type="file" 
-                    id="modal-file-doc" 
-                    accept=".pdf,application/pdf,image/*" 
+                  <input
+                    type="file"
+                    id="modal-file-doc"
+                    accept=".pdf,application/pdf,image/*"
                     style={{ display: 'none' }}
                     onChange={(e) => {
                       if (e.target.files && e.target.files[0]) {
@@ -875,17 +949,17 @@ const VeiculoDetalhesPage: React.FC = () => {
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
-                <button 
-                  type="button" 
-                  className="btn" 
+                <button
+                  type="button"
+                  className="btn"
                   onClick={() => { setShowModalUpload(false); setArquivoDoc(null); }}
                   disabled={uploadingDoc}
                   style={{ background: 'rgba(255, 255, 255, 0.05)' }}
                 >
                   Cancelar
                 </button>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   className="btn btn-primary"
                   disabled={!arquivoDoc || uploadingDoc}
                   style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
@@ -933,14 +1007,14 @@ const VeiculoDetalhesPage: React.FC = () => {
               <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>Visualização para Impressão & Exportação PDF</span>
             </div>
             <div style={{ display: 'flex', gap: '10px' }}>
-              <button 
+              <button
                 onClick={() => window.print()}
                 className="btn btn-primary"
                 style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 18px', fontSize: '0.9rem', background: '#2563eb' }}
               >
                 <Printer size={16} /> Imprimir / Salvar como PDF
               </button>
-              <button 
+              <button
                 onClick={() => setShowModalDossiePdf(false)}
                 className="btn"
                 style={{ padding: '8px 14px', fontSize: '0.9rem', background: 'rgba(255,255,255,0.1)' }}
@@ -1007,9 +1081,9 @@ const VeiculoDetalhesPage: React.FC = () => {
                   R$ {veiculo.valorVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </div>
                 {veiculo.fotos && veiculo.fotos.length > 0 ? (
-                  <img 
-                    src={resolvePhotoUrl(veiculo.fotos[0].url)} 
-                    alt="Foto do Veículo" 
+                  <img
+                    src={resolvePhotoUrl(veiculo.fotos[0].url)}
+                    alt="Foto do Veículo"
                     style={{ width: '100%', height: '110px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #cbd5e1' }}
                   />
                 ) : (

@@ -211,4 +211,24 @@ public class VeiculosController : ControllerBase
             return BadRequest(ex.Message);
         }
     }
+
+    [HttpPatch("{id:guid}/observacoes")]
+    public async Task<IActionResult> AtualizarObservacoes(Guid id, [FromBody] AtualizarObservacoesRequest request)
+    {
+        try
+        {
+            await _veiculoService.AtualizarObservacoesAsync(id, request.Observacoes ?? string.Empty);
+            return Ok(new { sucesso = true, observacoes = request.Observacoes });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
 }
+
+public record AtualizarObservacoesRequest(string? Observacoes);
