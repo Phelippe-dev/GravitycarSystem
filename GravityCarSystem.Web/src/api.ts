@@ -678,6 +678,7 @@ export interface Empresa {
     cidade?: string;
     estado?: string;
     ativa: boolean;
+    saldoConsultas?: number;
     criadoEm: string;
 }
 

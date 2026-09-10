@@ -9,15 +9,13 @@ import {
   ChevronLeft, 
   ChevronRight, 
   ShieldAlert, 
-  CheckCircle, 
-  AlertTriangle,
-  Printer,
-  FileDown,
-  Download,
-  Trash2,
-  X,
-  Eye,
-  Star
+  Printer, 
+  FileDown, 
+  Download, 
+  Trash2, 
+  X, 
+  Eye, 
+  Star 
 } from 'lucide-react';
 import {
   getVeiculoDetalhes,
@@ -27,11 +25,9 @@ import {
   uploadDocumentoVeiculo,
   removerDocumentoVeiculo,
   adicionarCustoVeiculo,
-  consultarSenatran,
-  registrarEntradaRenave,
   API_BASE_URL
 } from '../api';
-import type { VeiculoDetalhes, SenatranVeiculoResultDto } from '../api';
+import type { VeiculoDetalhes } from '../api';
 import logoImg from '../assets/logo.png';
 
 const VeiculoDetalhesPage: React.FC = () => {
@@ -45,10 +41,6 @@ const VeiculoDetalhesPage: React.FC = () => {
   const [descCusto, setDescCusto] = useState('');
   const [valorCusto, setValorCusto] = useState('');
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
-
-  // Estados Senatran
-  const [dossie, setDossie] = useState<SenatranVeiculoResultDto | null>(null);
-  const [loadingSenatran, setLoadingSenatran] = useState(false);
 
   // Estados para Documentos e PDF
   const [showModalUpload, setShowModalUpload] = useState(false);
@@ -91,31 +83,6 @@ const VeiculoDetalhesPage: React.FC = () => {
   useEffect(() => {
     carregarVeiculo();
   }, [id]);
-
-  const handleConsultarSenatran = async () => {
-    if (!veiculo?.placa) return;
-    setLoadingSenatran(true);
-    const result = await consultarSenatran(veiculo.placa, veiculo.renavam || '');
-    if (result) {
-        setDossie(result);
-    } else {
-        alert('Erro ao comunicar com a base da SENATRAN.');
-    }
-    setLoadingSenatran(false);
-  };
-
-  const handleEntradaRenave = async () => {
-    if (!id) return;
-    setLoadingSenatran(true);
-    const sucesso = await registrarEntradaRenave(id);
-    if (sucesso) {
-        alert('Veículo registrado no RENAVE com sucesso!');
-        handleConsultarSenatran(); // Recarrega dossiê para atualizar status (mockado)
-    } else {
-        alert('Falha ao registrar entrada no RENAVE.');
-    }
-    setLoadingSenatran(false);
-  };
 
   const handleUploadFoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0 || !id) return;
@@ -249,6 +216,7 @@ const VeiculoDetalhesPage: React.FC = () => {
               className="btn btn-primary"
               onClick={() => setShowModalDossiePdf(true)}
               style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 18px', fontSize: '0.9rem', background: 'linear-gradient(135deg, #0284c7 0%, #2563eb 100%)', boxShadow: '0 4px 14px rgba(37,99,235,0.35)', fontWeight: 600 }}
+            >
               <FileDown size={18} /> Comprovante de Venda
             </button>
             <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--color-blue-light)' }}>
@@ -589,13 +557,39 @@ const VeiculoDetalhesPage: React.FC = () => {
               Ficha Técnica do Veículo
             </h3>
             
-            <div style={{ textAlign: 'center', padding: '20px' }}>
-                <p style={{ color: 'var(--color-gray-400)', marginBottom: '16px' }}>Nenhuma observação técnica manual cadastrada para este veículo.</p>
-                <button className="btn btn-primary" onClick={() => {}}>
-                    Adicionar Ficha Técnica
-                </button>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px', fontSize: '0.85rem' }}>
+              <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <span style={{ color: 'var(--color-gray-400)', fontSize: '0.72rem', display: 'block', textTransform: 'uppercase' }}>Versão</span>
+                <strong style={{ color: '#fff', fontSize: '0.9rem' }}>{veiculo.versao || 'Padrão'}</strong>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <span style={{ color: 'var(--color-gray-400)', fontSize: '0.72rem', display: 'block', textTransform: 'uppercase' }}>Câmbio</span>
+                <strong style={{ color: '#fff', fontSize: '0.9rem' }}>{veiculo.cambio || 'Automático'}</strong>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <span style={{ color: 'var(--color-gray-400)', fontSize: '0.72rem', display: 'block', textTransform: 'uppercase' }}>Combustível</span>
+                <strong style={{ color: '#fff', fontSize: '0.9rem' }}>{veiculo.combustivel || 'Flex'}</strong>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <span style={{ color: 'var(--color-gray-400)', fontSize: '0.72rem', display: 'block', textTransform: 'uppercase' }}>Quilometragem</span>
+                <strong style={{ color: '#fff', fontSize: '0.9rem' }}>{veiculo.quilometragem ? `${veiculo.quilometragem.toLocaleString('pt-BR')} km` : '0 km'}</strong>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <span style={{ color: 'var(--color-gray-400)', fontSize: '0.72rem', display: 'block', textTransform: 'uppercase' }}>Cor</span>
+                <strong style={{ color: '#fff', fontSize: '0.9rem' }}>{veiculo.cor || 'Não informada'}</strong>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <span style={{ color: 'var(--color-gray-400)', fontSize: '0.72rem', display: 'block', textTransform: 'uppercase' }}>Renavam</span>
+                <strong style={{ color: '#fff', fontSize: '0.9rem' }}>{veiculo.renavam || 'Não informado'}</strong>
+              </div>
             </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+
+            <div style={{ marginTop: '16px', background: 'rgba(255,255,255,0.03)', padding: '14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <span style={{ color: 'var(--color-gray-400)', fontSize: '0.72rem', display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Observações Técnicas / Inspeção Comercial</span>
+              <p style={{ color: '#cbd5e1', fontSize: '0.85rem', margin: 0, lineHeight: 1.5 }}>
+                {veiculo.observacoes || 'Nenhuma observação técnica registrada. Veículo em conformidade para o estoque.'}
+              </p>
+            </div>
           </div>
 
         </div>
@@ -1140,9 +1134,12 @@ const VeiculoDetalhesPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Rodapé do Dossiê */}
-            <div style={{ marginTop: '30px', textAlign: 'center', fontSize: '0.7rem', color: '#94a3b8', borderTop: '1px solid #f1f5f9', paddingTop: '10px' }}>
-              Documento gerado eletronicamente por Gravity Car System • Cópia Válida para Consulta Interna e Comercial
+            {/* Rodapé / Nota Comercial Legal */}
+            <div style={{ marginTop: '30px', textAlign: 'center', fontSize: '0.72rem', color: '#64748b', borderTop: '1px solid #e2e8f0', paddingTop: '12px', lineHeight: 1.5 }}>
+              <div><strong>GRAVITY CAR SYSTEM • COMPROVANTE COMERCIAL DE VENDA & FICHA TÉCNICA</strong></div>
+              <div style={{ marginTop: '4px', color: '#94a3b8' }}>
+                Este comprovante é emitido para registro e controle comercial entre as partes. Não substitui a documentação oficial de transferência (ATPV-e) emitida pelo órgão de trânsito nem a Nota Fiscal Eletrônica (NF-e).
+              </div>
             </div>
           </div>
         </div>

@@ -52,9 +52,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
   const { logout, user, activeRole, setActiveRole } = useAuth();
   const [showProfileModal, setShowProfileModal] = React.useState(false);
-  const [theme, setTheme] = React.useState<'dark' | 'light'>(() => {
-    return (localStorage.getItem('@GravityCar:theme') as 'dark' | 'light') || 'light';
-  });
   const [senhaAtual, setSenhaAtual] = React.useState('');
   const [novaSenha, setNovaSenha] = React.useState('');
   const [confirmarSenha, setConfirmarSenha] = React.useState('');
@@ -83,14 +80,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     } catch { setSenhaMsg({ tipo: 'erro', texto: 'Erro de conexão. Tente novamente.' }); }
     setSenhaLoading(false);
   };
-
-  React.useEffect(() => {
-    if (theme === 'light') document.body.classList.add('theme-light');
-    else document.body.classList.remove('theme-light');
-    localStorage.setItem('@GravityCar:theme', theme);
-  }, [theme]);
-
-  const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
 
   // Helpers de permissão
   const isAdmin = activeRole === 'Admin' || activeRole === 'SuperAdmin';

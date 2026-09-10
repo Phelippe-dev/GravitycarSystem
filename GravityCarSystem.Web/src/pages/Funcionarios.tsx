@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserPlus, Users, Edit2, Power, Search, X, ChevronDown } from 'lucide-react';
+import { UserPlus, Users, Edit2, Power, Search, X } from 'lucide-react';
 import { API_BASE_URL } from '../api';
 import { useAuth } from '../contexts/AuthContext';
 
