@@ -2,10 +2,12 @@ using System;
 using System.Threading.Tasks;
 using GravityCarSystem.Application.DTOs.Integracoes;
 using GravityCarSystem.Application.Interfaces.Integracoes;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GravityCarSystem.API.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class SenatranController : ControllerBase

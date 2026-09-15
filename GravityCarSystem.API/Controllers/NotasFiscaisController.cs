@@ -2,10 +2,12 @@ using System;
 using System.Threading.Tasks;
 using GravityCarSystem.Application.DTOs.Fiscal;
 using GravityCarSystem.Application.Interfaces.Fiscal;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GravityCarSystem.API.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class NotasFiscaisController : ControllerBase

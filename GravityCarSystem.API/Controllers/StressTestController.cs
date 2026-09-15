@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using GravityCarSystem.Application.Interfaces;
 using GravityCarSystem.Domain.Entities.Acesso;
@@ -12,6 +13,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GravityCarSystem.API.Controllers;
 
+/// <summary>
+/// Controller para testes de carga — NÃO usar em produção.
+/// </summary>
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class StressTestController : ControllerBase

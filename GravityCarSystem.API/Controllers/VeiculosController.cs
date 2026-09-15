@@ -4,11 +4,13 @@ using System.Threading.Tasks;
 using GravityCarSystem.Application.DTOs.Veiculos;
 using GravityCarSystem.Application.Interfaces;
 using GravityCarSystem.Domain.Enums;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GravityCarSystem.API.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class VeiculosController : ControllerBase

@@ -31,7 +31,7 @@ import {
   API_BASE_URL
 } from '../api';
 import type { VeiculoDetalhes } from '../api';
-import logoImg from '../assets/logo.png';
+import logoImg from '../assets/LOGO2.png';
 
 const VeiculoDetalhesPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();

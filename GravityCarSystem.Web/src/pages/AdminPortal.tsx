@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { fetchEmpresas, createEmpresa, toggleStatusEmpresa, adicionarCreditosEmpresa } from '../api';
 import type { Empresa } from '../api';
-import { Building2, Search, PlusCircle, CheckCircle, XCircle, Coins } from 'lucide-react';
+import { Building2, Building, Search, Plus, PlusCircle, CheckCircle, XCircle, Coins } from 'lucide-react';
 
 const AdminPortal: React.FC = () => {
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
@@ -178,32 +178,43 @@ const AdminPortal: React.FC = () => {
 
       {showModal && (
         <div className="modal-overlay">
-          <div className="modal-content glass-panel" style={{ maxWidth: '600px' }}>
-            <h2 style={{ marginBottom: '20px' }}>Cadastrar Nova Concessionária (Tenant)</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
-                <div className="form-group" style={{ gridColumn: 'span 2' }}>
-                  <label>Razão Social</label>
-                  <input type="text" className="form-input" value={novaEmpresa.razaoSocial} onChange={e => setNovaEmpresa({...novaEmpresa, razaoSocial: e.target.value})} />
-                </div>
-                <div className="form-group">
-                  <label>Nome Fantasia</label>
-                  <input type="text" className="form-input" value={novaEmpresa.nomeFantasia} onChange={e => setNovaEmpresa({...novaEmpresa, nomeFantasia: e.target.value})} />
-                </div>
-                <div className="form-group">
-                  <label>CNPJ</label>
-                  <input type="text" className="form-input" value={novaEmpresa.cnpj} onChange={e => setNovaEmpresa({...novaEmpresa, cnpj: e.target.value})} />
-                </div>
-                <div className="form-group" style={{ gridColumn: 'span 2' }}>
-                  <label>E-mail (Para Primeiro Acesso do Dono)</label>
-                  <input type="email" className="form-input" value={novaEmpresa.email} onChange={e => setNovaEmpresa({...novaEmpresa, email: e.target.value})} />
-                </div>
+          <div className="modal-content glass-panel" style={{ maxWidth: '650px', padding: 0, overflow: 'hidden' }}>
+            <div style={{ padding: '24px 32px', borderBottom: '1px solid var(--color-border)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
+                <Building size={24} style={{ color: 'var(--color-primary)' }} />
+                <h2 style={{ margin: 0, fontSize: '1.4rem' }}>Cadastrar Nova Concessionária</h2>
+              </div>
+              <p style={{ margin: 0, color: 'var(--color-gray-400)', fontSize: '0.9rem' }}>
+                Preencha os dados abaixo para provisionar um novo ambiente isolado.
+              </p>
             </div>
             
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-              <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancelar</button>
-              <button className="btn btn-primary" onClick={handleSalvar}>
-                Criar Workspace
-              </button>
+            <div style={{ padding: '32px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '32px' }}>
+                  <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                    <label className="form-label">Razão Social *</label>
+                    <input type="text" className="form-input" placeholder="Ex: Gravity Motors Concessionaria LTDA" value={novaEmpresa.razaoSocial} onChange={e => setNovaEmpresa({...novaEmpresa, razaoSocial: e.target.value})} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Nome Fantasia</label>
+                    <input type="text" className="form-input" placeholder="Ex: Gravity Motors" value={novaEmpresa.nomeFantasia} onChange={e => setNovaEmpresa({...novaEmpresa, nomeFantasia: e.target.value})} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">CNPJ *</label>
+                    <input type="text" className="form-input" placeholder="00.000.000/0001-00" value={novaEmpresa.cnpj} onChange={e => setNovaEmpresa({...novaEmpresa, cnpj: e.target.value})} />
+                  </div>
+                  <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                    <label className="form-label">E-mail (Para Primeiro Acesso do Dono) *</label>
+                    <input type="email" className="form-input" placeholder="contato@empresa.com.br" value={novaEmpresa.email} onChange={e => setNovaEmpresa({...novaEmpresa, email: e.target.value})} />
+                  </div>
+              </div>
+              
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                <button className="btn btn-secondary" onClick={() => setShowModal(false)} style={{ padding: '10px 20px' }}>Cancelar</button>
+                <button className="btn btn-primary" onClick={handleSalvar} style={{ padding: '10px 20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Plus size={18} /> Criar Workspace
+                </button>
+              </div>
             </div>
           </div>
         </div>

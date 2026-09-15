@@ -1,12 +1,17 @@
 using System;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using GravityCarSystem.Application.Interfaces;
+using GravityCarSystem.Domain.Common;
 using GravityCarSystem.Domain.Entities.Acesso;
 using GravityCarSystem.Domain.Entities.Auditoria;
 using GravityCarSystem.Domain.Entities.Cadastros;
 using GravityCarSystem.Domain.Entities.Financeiro;
 using GravityCarSystem.Domain.Entities.Fiscal;
 using GravityCarSystem.Domain.Entities.Negocio;
+using System.Threading;
+using System.Threading.Tasks;
 using GravityCarSystem.Domain.Entities.Veiculos;
 using Microsoft.EntityFrameworkCore;
 
@@ -72,7 +77,61 @@ public class AppDbContext : DbContext, IAppDbContext
     {
         base.OnModelCreating(builder);
         
-        // Aplica todas as configuraÃ§Ãµes de IEntityTypeConfiguration<T> da assembly atual
+        // Aplica todas as configurações de IEntityTypeConfiguration<T> da assembly atual
         builder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+
+        // =====================================================================
+        // QUERY FILTERS DINÂMICOS — Multi-Tenant
+        // Aplica filtro automático por EmpresaId em TODAS as entidades que
+        // herdam de TenantEntity. O EmpresaId vem do JWT do usuário logado.
+        // =====================================================================
+        foreach (var entityType in builder.Model.GetEntityTypes())
+        {
+            if (typeof(TenantEntity).IsAssignableFrom(entityType.ClrType))
+            {
+                var method = typeof(AppDbContext)
+                    .GetMethod(nameof(ApplyTenantFilter), BindingFlags.NonPublic | BindingFlags.Instance)!
+                    .MakeGenericMethod(entityType.ClrType);
+                method.Invoke(this, new object[] { builder });
+            }
+        }
+    }
+
+    /// <summary>
+    /// Aplica HasQueryFilter dinâmico para uma entidade TenantEntity.
+    /// O filtro captura _currentTenantService por referência, garantindo
+    /// que o EmpresaId é avaliado a cada query (não em tempo de compilação).
+    /// </summary>
+    private void ApplyTenantFilter<TEntity>(ModelBuilder builder) where TEntity : TenantEntity
+    {
+        builder.Entity<TEntity>().HasQueryFilter(e => e.EmpresaId == _currentTenantService.GetEmpresaId());
+    }
+
+    public override int SaveChanges()
+    {
+        SetTenantIdOnAddedEntities();
+        return base.SaveChanges();
+    }
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        SetTenantIdOnAddedEntities();
+        return base.SaveChangesAsync(cancellationToken);
+    }
+
+    private void SetTenantIdOnAddedEntities()
+    {
+        var tenantId = _currentTenantService.GetEmpresaId();
+        // Se nulo ou Guid.Empty, significa que não tem usuário logado ou é um seed do sistema.
+        if (tenantId == null || tenantId == Guid.Empty) return;
+
+        foreach (var entry in ChangeTracker.Entries<TenantEntity>().Where(e => e.State == EntityState.Added))
+        {
+            if (entry.Entity.EmpresaId == Guid.Empty)
+            {
+                entry.Entity.EmpresaId = tenantId.Value;
+            }
+        }
     }
 }
+

@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { fetchVenda, getClienteDetalhes, fetchVeiculos, API_BASE_URL } from '../api';
 import type { VendaDto, Cliente, Veiculo } from '../api';
 import { Printer, ArrowLeft, ShieldCheck, Car, CreditCard, User } from 'lucide-react';
-import logoImg from '../assets/logo.png';
+import logoImg from '../assets/LOGO2.png';
 
 interface EmpresaDados {
     razaoSocial?: string;

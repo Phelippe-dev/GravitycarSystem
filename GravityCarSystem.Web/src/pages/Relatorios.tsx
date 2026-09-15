@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchRentabilidade, fetchResumoFinanceiro } from '../api';
+import { fetchRentabilidade, fetchResumoFinanceiro, cancelarVenda } from '../api';
 import type { RentabilidadeVeiculoDto, ResumoFinanceiroDto } from '../api';
 import { 
   BarChart2, 
@@ -12,9 +12,10 @@ import {
   Printer,
   X,
   User,
-  FileText
+  FileText,
+  RotateCcw
 } from 'lucide-react';
-import logoImg from '../assets/logo.png';
+import logoImg from '../assets/LOGO2.png';
 
 const Relatorios: React.FC = () => {
   const navigate = useNavigate();
@@ -90,6 +91,17 @@ const Relatorios: React.FC = () => {
   const handleFiltrar = (e: React.FormEvent) => {
       e.preventDefault();
       carregarRelatorios();
+  };
+
+  const handleCancelarVenda = async (vendaId: string) => {
+      if (!window.confirm('Tem certeza que deseja cancelar esta venda e retornar o veículo ao estoque?')) return;
+      try {
+          await cancelarVenda(vendaId);
+          alert('Venda cancelada com sucesso!');
+          carregarRelatorios();
+      } catch (error: any) {
+          alert(error.message || 'Erro ao cancelar venda.');
+      }
   };
 
   const aplicarPeriodo = (tipo: 'hoje' | '7dias' | 'mes' | '30dias' | 'ano' | 'todos') => {
@@ -377,27 +389,50 @@ const Relatorios: React.FC = () => {
                                           </td>
                                           <td style={{ textAlign: 'center' }}>
                                               {r.vendaId ? (
-                                                  <button
-                                                      type="button"
-                                                      className="btn"
-                                                      onClick={() => navigate(`/contrato/${r.vendaId}`)}
-                                                      style={{
-                                                          display: 'inline-flex',
-                                                          alignItems: 'center',
-                                                          gap: '6px',
-                                                          padding: '4px 10px',
-                                                          fontSize: '0.78rem',
-                                                          background: 'rgba(56, 189, 248, 0.12)',
-                                                          color: '#38bdf8',
-                                                          border: '1px solid rgba(56, 189, 248, 0.25)',
-                                                          borderRadius: '6px',
-                                                          cursor: 'pointer',
-                                                          fontWeight: 600
-                                                      }}
-                                                      title="Emitir 2ª Via do Comprovante de Venda Oficial"
-                                                  >
-                                                      <FileText size={13} /> 2ª Via
-                                                  </button>
+                                                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                                                      <button
+                                                          type="button"
+                                                          className="btn"
+                                                          onClick={() => navigate(`/contrato/${r.vendaId}`)}
+                                                          style={{
+                                                              display: 'inline-flex',
+                                                              alignItems: 'center',
+                                                              gap: '6px',
+                                                              padding: '4px 10px',
+                                                              fontSize: '0.78rem',
+                                                              background: 'rgba(56, 189, 248, 0.12)',
+                                                              color: '#38bdf8',
+                                                              border: '1px solid rgba(56, 189, 248, 0.25)',
+                                                              borderRadius: '6px',
+                                                              cursor: 'pointer',
+                                                              fontWeight: 600
+                                                          }}
+                                                          title="Emitir 2ª Via do Comprovante de Venda Oficial"
+                                                      >
+                                                          <FileText size={13} /> 2ª Via
+                                                      </button>
+                                                      <button
+                                                          type="button"
+                                                          className="btn"
+                                                          onClick={() => handleCancelarVenda(r.vendaId!)}
+                                                          style={{
+                                                              display: 'inline-flex',
+                                                              alignItems: 'center',
+                                                              gap: '6px',
+                                                              padding: '4px 10px',
+                                                              fontSize: '0.78rem',
+                                                              background: 'rgba(239, 68, 68, 0.12)',
+                                                              color: '#ef4444',
+                                                              border: '1px solid rgba(239, 68, 68, 0.25)',
+                                                              borderRadius: '6px',
+                                                              cursor: 'pointer',
+                                                              fontWeight: 600
+                                                          }}
+                                                          title="Cancelar Venda"
+                                                      >
+                                                          <RotateCcw size={13} /> Cancelar
+                                                      </button>
+                                                  </div>
                                               ) : (
                                                   <span style={{ fontSize: '0.75rem', color: 'var(--color-gray-400)' }}>-</span>
                                               )}

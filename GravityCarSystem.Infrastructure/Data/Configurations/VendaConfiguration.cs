@@ -10,9 +10,6 @@ public class VendaConfiguration : IEntityTypeConfiguration<Venda>
     {
         builder.ToTable("Vendas");
         builder.HasKey(v => v.Id);
-
-
-        builder.HasQueryFilter(x => x.EmpresaId == new System.Guid("00000000-0000-0000-0000-000000000001"));
         builder.HasOne(v => v.Cliente).WithMany().HasForeignKey(v => v.ClienteId).OnDelete(DeleteBehavior.Restrict);
 
     }

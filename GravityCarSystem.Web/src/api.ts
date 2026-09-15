@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'http://localhost:5263/api';
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5263/api';
 
 export interface Veiculo {
     id: string;
@@ -299,6 +299,22 @@ export const fetchVenda = async (id: string): Promise<VendaDto | null> => {
         return await response.json();
     } catch {
         return null;
+    }
+};
+
+export const cancelarVenda = async (id: string): Promise<void> => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/vendas/${id}/cancelar`, {
+            method: 'POST',
+            headers: getHeaders()
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText || 'Erro ao cancelar venda');
+        }
+    } catch (error) {
+        console.error('Erro ao cancelar venda:', error);
+        throw error;
     }
 };
 

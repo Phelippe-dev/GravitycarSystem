@@ -2,10 +2,12 @@ using System;
 using System.Threading.Tasks;
 using GravityCarSystem.Application.DTOs.Cadastros;
 using GravityCarSystem.Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GravityCarSystem.API.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class ClientesController : ControllerBase

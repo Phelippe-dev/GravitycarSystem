@@ -4,6 +4,58 @@ import { adicionarVeiculo } from '../api';
 import type { Veiculo } from '../api';
 import { buscarMarcasFipe, buscarModelosFipe, buscarAnosFipe, buscarPrecoFipeCompleto, fipeValorParaNumero } from '../services/brasilapi';
 import type { FipeMarca, FipeModelo } from '../services/brasilapi';
+import { Search } from 'lucide-react';
+
+const SearchableSelect = ({ options, value, onChange, placeholder, disabled = false }: { options: {label: string, value: string}[], value: string, onChange: (val: string) => void, placeholder: string, disabled?: boolean }) => {
+  const [search, setSearch] = useState('');
+  const [isOpen, setIsOpen] = useState(false);
+  
+  const selectedOption = options.find(o => String(o.value) === String(value));
+  const displayValue = isOpen ? search : (selectedOption ? selectedOption.label : '');
+
+  const filteredOptions = options.filter(o => o.label.toLowerCase().includes(search.toLowerCase()));
+
+  return (
+    <div style={{ position: 'relative', width: '100%' }}>
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+        <input 
+          className="form-input" 
+          style={{ width: '100%', paddingRight: '30px' }}
+          placeholder={placeholder} 
+          value={displayValue} 
+          disabled={disabled}
+          onChange={e => { setSearch(e.target.value); setIsOpen(true); }}
+          onFocus={() => { setSearch(''); setIsOpen(true); }}
+          onBlur={() => setTimeout(() => setIsOpen(false), 200)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && isOpen && filteredOptions.length > 0) {
+              e.preventDefault();
+              onChange(String(filteredOptions[0].value));
+              setIsOpen(false);
+            }
+          }}
+        />
+        <Search size={16} color="var(--color-gray-400)" style={{ position: 'absolute', right: '12px', pointerEvents: 'none' }} />
+      </div>
+      {isOpen && !disabled && (
+        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#1e293b', border: '1px solid #334155', borderRadius: '8px', maxHeight: '250px', overflowY: 'auto', zIndex: 50, marginTop: '4px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.5)' }}>
+          {filteredOptions.length === 0 ? <div style={{ padding: '10px 14px', color: '#94a3b8', fontSize: '0.9rem' }}>Nenhum resultado encontrado</div> : null}
+          {filteredOptions.map(o => (
+            <div 
+              key={o.value} 
+              style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid rgba(255,255,255,0.05)', fontSize: '0.9rem', color: '#e2e8f0', transition: 'background 0.2s' }}
+              onClick={() => { onChange(String(o.value)); setIsOpen(false); }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(59, 130, 246, 0.2)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+            >
+              {o.label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const CadastroVeiculo: React.FC = () => {
   const navigate = useNavigate();
@@ -58,7 +110,7 @@ const CadastroVeiculo: React.FC = () => {
     
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'number' ? Number(formattedVal) : formattedVal
+      [name]: type === 'number' ? (formattedVal === '' ? '' : Number(formattedVal)) : formattedVal
     }));
   };
 
@@ -115,8 +167,8 @@ const CadastroVeiculo: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span style={{ fontSize: '1.2rem' }}>📊</span>
             <div>
-              <h3 style={{ margin: 0, fontSize: '1rem', color: '#60a5fa', fontWeight: 600 }}>Consulta FIPE Oficial (BrasilAPI)</h3>
-              <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: '#94a3b8' }}>Selecione Marca, Modelo e Ano para buscar o valor FIPE real e oficial — gratuito, sem sair do sistema</p>
+              <h3 style={{ margin: 0, fontSize: '1rem', color: '#60a5fa', fontWeight: 600 }}>Consulta FIPE</h3>
+              <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: '#94a3b8' }}>Selecione Marca, Modelo e Ano</p>
             </div>
           </div>
           <button type="button" className="btn btn-outline" style={{ fontSize: '0.8rem', padding: '6px 14px' }}
@@ -129,9 +181,11 @@ const CadastroVeiculo: React.FC = () => {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr)) auto', gap: '12px', alignItems: 'flex-end' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '6px' }}>Marca</label>
-              <select className="form-input" value={codigoMarcaFipe}
-                onChange={async (e) => {
-                  const cod = e.target.value;
+              <SearchableSelect 
+                placeholder="-- Selecione a Marca --"
+                value={codigoMarcaFipe}
+                options={marcasFipe.map(m => ({ label: m.nome, value: String(m.valor) }))}
+                onChange={async (cod) => {
                   setCodigoMarcaFipe(cod);
                   setCodigoModeloFipe('');
                   setCodigoAnoFipe('');
@@ -139,22 +193,23 @@ const CadastroVeiculo: React.FC = () => {
                   setAnosFipe([]);
                   setFipeStatus(null);
                   if (cod) {
-                    const marca = marcasFipe.find(m => m.valor === cod);
+                    const marca = marcasFipe.find(m => String(m.valor) === cod);
                     if (marca) setFormData(prev => ({ ...prev, marca: marca.nome }));
                     const modelos = await buscarModelosFipe(1, cod);
                     setModelosFipe(modelos);
                   }
-                }}>
-                <option value="">-- Selecione a Marca --</option>
-                {marcasFipe.map(m => <option key={m.valor} value={m.valor}>{m.nome}</option>)}
-              </select>
+                }}
+              />
             </div>
 
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '6px' }}>Modelo</label>
-              <select className="form-input" value={codigoModeloFipe} disabled={!codigoMarcaFipe}
-                onChange={async (e) => {
-                  const cod = e.target.value;
+              <SearchableSelect 
+                placeholder="-- Selecione o Modelo --"
+                value={codigoModeloFipe}
+                disabled={!codigoMarcaFipe}
+                options={modelosFipe.map(m => ({ label: m.nome, value: String(m.valor) }))}
+                onChange={async (cod) => {
                   setCodigoModeloFipe(cod);
                   setCodigoAnoFipe('');
                   setAnosFipe([]);
@@ -188,17 +243,19 @@ const CadastroVeiculo: React.FC = () => {
                     const anos = await buscarAnosFipe(1, codigoMarcaFipe, cod);
                     setAnosFipe(anos);
                   }
-                }}>
-                <option value="">-- Selecione o Modelo --</option>
-                {modelosFipe.map(m => <option key={m.valor} value={String(m.valor)}>{m.nome}</option>)}
-              </select>
+                }}
+              />
             </div>
 
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '6px' }}>Ano</label>
-              <select className="form-input" value={codigoAnoFipe} disabled={!codigoModeloFipe}
-                onChange={(e) => { 
-                  const val = e.target.value;
+              <SearchableSelect 
+                placeholder="-- Selecione o Ano --"
+                value={codigoAnoFipe}
+                disabled={!codigoModeloFipe}
+                options={anosFipe.map(a => ({ label: a.nome, value: String(a.valor) }))}
+                onChange={(cod) => { 
+                  const val = cod;
                   setCodigoAnoFipe(val); 
                   setFipeStatus(null); 
                   
@@ -222,10 +279,8 @@ const CadastroVeiculo: React.FC = () => {
                       combustivel: combustivel || prev.combustivel
                     }));
                   }
-                }}>
-                <option value="">-- Selecione o Ano --</option>
-                {anosFipe.map(a => <option key={a.valor} value={a.valor}>{a.nome}</option>)}
-              </select>
+                }}
+              />
             </div>
 
             <div>

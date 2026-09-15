@@ -11,7 +11,6 @@ public class CompraConfiguration : IEntityTypeConfiguration<Compra>
         builder.ToTable("Compras");
         builder.HasKey(c => c.Id);
         builder.Property(c => c.ValorTotal).HasColumnType("decimal(18,2)");
-        builder.HasQueryFilter(x => x.EmpresaId == new System.Guid("00000000-0000-0000-0000-000000000001"));
         builder.HasOne(c => c.Fornecedor).WithMany().HasForeignKey(c => c.FornecedorId).OnDelete(DeleteBehavior.Restrict);
 
     }

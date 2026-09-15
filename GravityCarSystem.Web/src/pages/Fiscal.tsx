@@ -42,12 +42,34 @@ const Fiscal: React.FC = () => {
 
   return (
     <div style={{ maxWidth: '1400px', margin: '0 auto', width: '100%', padding: '24px' }}>
-      <header className="page-header" style={{ marginBottom: '32px' }}>
+      <header className="page-header" style={{ marginBottom: '16px' }}>
         <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <FileText size={28} color="var(--color-blue-light)" /> Fiscal
         </h1>
         <p style={{ color: 'var(--color-gray-400)', marginTop: '8px' }}>Gestão de Notas Fiscais Eletrônicas, CFOPs e Impostos Apurados</p>
       </header>
+
+      <div style={{
+        background: 'rgba(234, 179, 8, 0.1)',
+        border: '1px solid rgba(234, 179, 8, 0.3)',
+        borderRadius: '8px',
+        padding: '16px 20px',
+        marginBottom: '32px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px'
+      }}>
+        <div style={{ background: 'rgba(234, 179, 8, 0.2)', padding: '8px', borderRadius: '50%', display: 'flex' }}>
+          <FileText size={20} color="#eab308" />
+        </div>
+        <div>
+          <h3 style={{ color: '#eab308', margin: '0 0 4px 0', fontSize: '1rem' }}>Módulo em Desenvolvimento</h3>
+          <p style={{ color: 'var(--color-gray-300)', margin: 0, fontSize: '0.9rem', lineHeight: '1.4' }}>
+            O módulo comercial está 100% integrado, mas a emissão automatizada de notas para a SEFAZ está sendo homologada.<br/>
+            <strong>Por favor, continue emitindo suas NF-es pelo seu sistema emissor atual até a liberação final.</strong>
+          </p>
+        </div>
+      </div>
 
       {/* Summary Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', marginBottom: '32px' }}>

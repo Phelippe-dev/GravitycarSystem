@@ -12,12 +12,25 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddHttpContextAccessor();
 
+// CORS: restrito em produção, aberto em desenvolvimento
+var corsOrigins = builder.Configuration["CorsOrigins"];
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll",
-        policy => policy.AllowAnyOrigin()
-                        .AllowAnyMethod()
-                        .AllowAnyHeader());
+    options.AddPolicy("DefaultCors", policy =>
+    {
+        if (builder.Environment.IsDevelopment() || string.IsNullOrEmpty(corsOrigins))
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        }
+        else
+        {
+            policy.WithOrigins(corsOrigins.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        }
+    });
 });
 
 // Configure JWT Authentication
@@ -455,7 +468,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles(); // Serve files from wwwroot
-app.UseCors("AllowAll");
+app.UseCors("DefaultCors");
 
 app.UseAuthentication();
 app.UseAuthorization();

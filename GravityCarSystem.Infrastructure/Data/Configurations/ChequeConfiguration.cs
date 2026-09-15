@@ -13,6 +13,5 @@ public class ChequeConfiguration : IEntityTypeConfiguration<Cheque>
         builder.Property(c => c.Valor).HasColumnType("decimal(18,2)");
 
         builder.Property(c => c.Banco).HasMaxLength(100);
-        builder.HasQueryFilter(x => x.EmpresaId == new System.Guid("00000000-0000-0000-0000-000000000001"));
     }
 }

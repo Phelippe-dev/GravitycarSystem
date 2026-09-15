@@ -63,6 +63,10 @@ services:
       LojaCfg__RazaoSocial: ${LOJA_RAZAO_SOCIAL:-Concessionária LTDA}
       LojaCfg__NomeFantasia: ${LOJA_NOME_FANTASIA:-Gravity Motors}
       LojaCfg__Cnpj: ${LOJA_CNPJ:-00.000.000/0001-00}
+      # CORS — origens permitidas (separar por vírgula se houver múltiplas)
+      CorsOrigins: ${CORS_ORIGINS:-http://localhost,http://localhost:80}
+      # ApiBrasil (consulta veicular)
+      ApiBrasil__Token: ${APIBRASIL_TOKEN:-}
     volumes:
       - gravity_fotos:/app/wwwroot/uploads/fotos
     ports:

@@ -1,10 +1,12 @@
 using System;
 using System.Threading.Tasks;
 using GravityCarSystem.Application.Interfaces.Relatorios;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GravityCarSystem.API.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class RelatoriosController : ControllerBase
