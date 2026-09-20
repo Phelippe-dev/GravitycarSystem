@@ -30,6 +30,7 @@ public class VeiculoDto
     public DateTime? DataVenda { get; set; }
     
     public StatusVeiculo Status { get; set; }
+    public bool Consignado { get; set; }
     public string? Observacoes { get; set; }
     
     public string? FotoPrincipal { get; set; }

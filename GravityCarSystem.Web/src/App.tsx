@@ -195,43 +195,63 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff' }}>{user.nome}</div>
                 <div style={{ fontSize: '0.82rem', color: 'var(--color-gray-400)' }}>{user.email}</div>
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginTop: '6px', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', color: 'var(--color-blue-light)' }}>
-                  🏢 Concessionária Matriz
+                   Concessionária Matriz
                 </div>
               </div>
             </div>
 
-            {/* ─── Seleção de Papel (4 níveis) ─── */}
-            <div style={{ marginBottom: '24px' }}>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-gray-300)', marginBottom: '10px' }}>
-                Alternar Nível de Acesso (Simulação Operacional)
-              </label>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {([
-                  { role: 'SuperAdmin' as UserRole, icon: '👑', label: 'Super Administrador (Você)', desc: 'Acesso total + Portal Admin de todas as lojas', color: '#2563eb', colorLight: '#93c5fd', bg: 'rgba(37,99,235,0.12)' },
-                  { role: 'Admin' as UserRole, icon: '🏢', label: 'Dono da Concessionária', desc: 'Gestão completa da loja + cadastro de funcionários', color: '#10b981', colorLight: '#6ee7b7', bg: 'rgba(16,185,129,0.12)' },
-                  { role: 'Gerente' as UserRole, icon: '📊', label: 'Gerente', desc: 'Vendas, Financeiro, Relatórios e Fiscal — sem configurações', color: '#8b5cf6', colorLight: '#c4b5fd', bg: 'rgba(139,92,246,0.12)' },
-                  { role: 'Vendedor' as UserRole, icon: '💼', label: 'Consultor de Vendas', desc: 'Estoque, Vendas e Atendimento — sem acesso financeiro', color: '#f59e0b', colorLight: '#fcd34d', bg: 'rgba(245,158,11,0.12)' },
-                ] as const).map(({ role, icon, label, desc, color, colorLight, bg }) => (
-                  <div key={role} onClick={() => setActiveRole(role)} style={{
-                    padding: '12px 14px', borderRadius: '10px', cursor: 'pointer', transition: 'all 0.2s',
-                    border: activeRole === role ? `2px solid ${color}` : '1px solid rgba(255,255,255,0.08)',
-                    background: activeRole === role ? bg : 'rgba(255,255,255,0.02)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <div style={{ width: '32px', height: '32px', borderRadius: '6px', background: `${color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem' }}>{icon}</div>
-                      <div>
-                        <div style={{ fontWeight: 600, fontSize: '0.9rem', color: activeRole === role ? colorLight : '#fff' }}>{label}</div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--color-gray-400)' }}>{desc}</div>
-                      </div>
-                    </div>
-                    {activeRole === role && (
-                      <span style={{ fontSize: '0.72rem', fontWeight: 700, color, background: `${color}25`, padding: '2px 8px', borderRadius: '4px' }}>ATIVO</span>
-                    )}
+            {/* ─── Seleção de Papel (filtrado pela role real) ─── */}
+            {(() => {
+              const realRole = user?.realRole || activeRole;
+              const hierarchy: Record<string, number> = { 'SuperAdmin': 4, 'Admin': 3, 'Gerente': 2, 'Vendedor': 1 };
+              const allRoles = [
+                { role: 'SuperAdmin' as UserRole, icon: '', label: 'Super Administrador (Você)', desc: 'Acesso total + Portal Admin de todas as lojas', color: '#2563eb', colorLight: '#93c5fd', bg: 'rgba(37,99,235,0.12)' },
+                { role: 'Admin' as UserRole, icon: '', label: 'Dono da Concessionária', desc: 'Gestão completa da loja + cadastro de funcionários', color: '#10b981', colorLight: '#6ee7b7', bg: 'rgba(16,185,129,0.12)' },
+                { role: 'Gerente' as UserRole, icon: '', label: 'Gerente', desc: 'Vendas, Financeiro, Relatórios e Fiscal — sem configurações', color: '#8b5cf6', colorLight: '#c4b5fd', bg: 'rgba(139,92,246,0.12)' },
+                { role: 'Vendedor' as UserRole, icon: '', label: 'Consultor de Vendas', desc: 'Estoque, Vendas e Atendimento — sem acesso financeiro', color: '#f59e0b', colorLight: '#fcd34d', bg: 'rgba(245,158,11,0.12)' },
+              ];
+              const availableRoles = allRoles.filter(r => hierarchy[r.role] <= hierarchy[realRole]);
+
+              // Se só tem 1 role disponível, não mostra seletor
+              if (availableRoles.length <= 1) return (
+                <div style={{ marginBottom: '24px', padding: '12px 14px', borderRadius: '10px', border: `2px solid ${availableRoles[0]?.color || '#f59e0b'}`, background: availableRoles[0]?.bg || 'rgba(245,158,11,0.12)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '6px', background: `${availableRoles[0]?.color || '#f59e0b'}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem' }}>{availableRoles[0]?.icon}</div>
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: '0.9rem', color: availableRoles[0]?.colorLight || '#fcd34d' }}>{availableRoles[0]?.label}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--color-gray-400)' }}>Seu nível de acesso atual</div>
                   </div>
-                ))}
-              </div>
-            </div>
+                </div>
+              );
+
+              return (
+                <div style={{ marginBottom: '24px' }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-gray-300)', marginBottom: '10px' }}>
+                    Alternar Nível de Acesso (Simulação Operacional)
+                  </label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {availableRoles.map(({ role, icon, label, desc, color, colorLight, bg }) => (
+                      <div key={role} onClick={() => setActiveRole(role)} style={{
+                        padding: '12px 14px', borderRadius: '10px', cursor: 'pointer', transition: 'all 0.2s',
+                        border: activeRole === role ? `2px solid ${color}` : '1px solid rgba(255,255,255,0.08)',
+                        background: activeRole === role ? bg : 'rgba(255,255,255,0.02)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <div style={{ width: '32px', height: '32px', borderRadius: '6px', background: `${color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem' }}>{icon}</div>
+                          <div>
+                            <div style={{ fontWeight: 600, fontSize: '0.9rem', color: activeRole === role ? colorLight : '#fff' }}>{label}</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--color-gray-400)' }}>{desc}</div>
+                          </div>
+                        </div>
+                        {activeRole === role && (
+                          <span style={{ fontSize: '0.72rem', fontWeight: 700, color, background: `${color}25`, padding: '2px 8px', borderRadius: '4px' }}>ATIVO</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* ─── Troca de Senha ─── */}
             <div style={{ marginBottom: '20px' }}>
@@ -250,7 +270,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     </div>
                   )}
                   <button type="button" className="btn btn-primary" onClick={handleTrocarSenha} disabled={senhaLoading} style={{ fontSize: '0.85rem', alignSelf: 'flex-start' }}>
-                    {senhaLoading ? 'Salvando...' : '🔒 Salvar Nova Senha'}
+                    {senhaLoading ? 'Salvando...' : ' Salvar Nova Senha'}
                   </button>
                 </div>
               )}
@@ -285,6 +305,7 @@ const App: React.FC = () => {
                 <Routes>
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/cadastro/veiculos" element={<CadastroVeiculo />} />
+                  <Route path="/cadastro/veiculos/:id" element={<CadastroVeiculo />} />
                   <Route path="/estoque" element={<Estoque />} />
                   <Route path="/avaliacao" element={<AvaliacaoVeiculo />} />
                   <Route path="/vendas" element={<Vendas />} />

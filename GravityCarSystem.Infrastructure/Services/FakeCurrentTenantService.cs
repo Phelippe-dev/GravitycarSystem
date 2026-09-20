@@ -3,7 +3,7 @@ using GravityCarSystem.Application.Interfaces;
 
 namespace GravityCarSystem.Infrastructure.Services;
 
-// ImplementaÃ§Ã£o Fake inicial para permitir compilar e rodar Migrations
+// Implementação Fake inicial para permitir compilar e rodar Migrations
 public class FakeCurrentTenantService : ICurrentTenantService
 {
     public Guid? GetEmpresaId()

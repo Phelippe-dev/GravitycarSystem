@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -30,7 +30,7 @@ public class ContaPagarService : IContaPagarService
             ValorOriginal = dto.ValorOriginal,
             ValorPago = dto.ValorPago,
             Saldo = dto.ValorOriginal - dto.ValorPago,
-            DataEmissao = dto.DataEmissao == default ? DateTime.Now : dto.DataEmissao,
+            DataEmissao = dto.DataEmissao == default ? DateTime.UtcNow : dto.DataEmissao,
             DataVencimento = dto.DataVencimento,
             Status = StatusConta.Aberto
         };
@@ -38,7 +38,7 @@ public class ContaPagarService : IContaPagarService
         if (contaPagar.Saldo <= 0)
         {
             contaPagar.Status = StatusConta.Pago;
-            contaPagar.DataPagamento = DateTime.Now;
+            contaPagar.DataPagamento = DateTime.UtcNow;
         }
 
         _context.ContasPagar.Add(contaPagar);
@@ -97,7 +97,7 @@ public class ContaPagarService : IContaPagarService
         if (cp.Saldo <= 0)
         {
             cp.Status = StatusConta.Pago;
-            cp.DataPagamento = DateTime.Now;
+            cp.DataPagamento = DateTime.UtcNow;
             cp.Saldo = 0; // Evitar saldo negativo visível
         }
 

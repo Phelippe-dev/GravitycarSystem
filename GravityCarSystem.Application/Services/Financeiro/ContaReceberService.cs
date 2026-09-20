@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -30,7 +30,7 @@ public class ContaReceberService : IContaReceberService
             ValorOriginal = dto.ValorOriginal,
             ValorPago = dto.ValorPago,
             Saldo = dto.ValorOriginal - dto.ValorPago,
-            DataEmissao = dto.DataEmissao == default ? DateTime.Now : dto.DataEmissao,
+            DataEmissao = dto.DataEmissao == default ? DateTime.UtcNow : dto.DataEmissao,
             DataVencimento = dto.DataVencimento,
             Status = StatusConta.Aberto
         };
@@ -38,7 +38,7 @@ public class ContaReceberService : IContaReceberService
         if (contaReceber.Saldo <= 0)
         {
             contaReceber.Status = StatusConta.Pago;
-            contaReceber.DataPagamento = DateTime.Now;
+            contaReceber.DataPagamento = DateTime.UtcNow;
         }
 
         _context.ContasReceber.Add(contaReceber);
@@ -94,7 +94,7 @@ public class ContaReceberService : IContaReceberService
         if (cr.Saldo <= 0)
         {
             cr.Status = StatusConta.Pago;
-            cr.DataPagamento = DateTime.Now;
+            cr.DataPagamento = DateTime.UtcNow;
             cr.Saldo = 0; // Evitar saldo negativo visível
         }
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -31,8 +31,8 @@ public class ChequeService : IChequeService
             ClienteId = dto.ClienteId,
             VendaPagamentoId = dto.VendaPagamentoId,
             Valor = dto.Valor,
-            DataEmissao = dto.DataEmissao == default ? DateTime.Now : dto.DataEmissao,
-            DataBomPara = dto.DataBomPara == default ? DateTime.Now : dto.DataBomPara,
+            DataEmissao = dto.DataEmissao == default ? DateTime.UtcNow : dto.DataEmissao,
+            DataBomPara = dto.DataBomPara == default ? DateTime.UtcNow : dto.DataBomPara,
             Banco = dto.Banco,
             Agencia = dto.Agencia,
             Conta = dto.Conta,
@@ -91,11 +91,11 @@ public class ChequeService : IChequeService
         cheque.Status = novoStatus;
 
         if (novoStatus == StatusCheque.Depositado)
-            cheque.DataDeposito = DateTime.Now;
+            cheque.DataDeposito = DateTime.UtcNow;
             
         if (novoStatus == StatusCheque.Compensado)
         {
-            cheque.DataCompensacao = DateTime.Now;
+            cheque.DataCompensacao = DateTime.UtcNow;
             
             // Localiza a Conta a Receber correspondente a este cheque para liquidação
             var contaReceber = await _context.ContasReceber
@@ -108,7 +108,7 @@ public class ChequeService : IChequeService
                 contaReceber.Status = StatusConta.Pago;
                 contaReceber.ValorPago = cheque.Valor;
                 contaReceber.Saldo = 0;
-                contaReceber.DataPagamento = DateTime.Now;
+                contaReceber.DataPagamento = DateTime.UtcNow;
             }
 
             // Registra Movimento Financeiro de Entrada por compensação do cheque
@@ -151,8 +151,8 @@ public class ChequeService : IChequeService
                 Categoria = categoriaReceita,
                 Tipo = 1, // 1 = Entrada
                 Valor = cheque.Valor,
-                DataMovimento = DateTime.Now,
-                Descricao = $"Compensação Cheque Nº {cheque.NumeroCheque} ({cheque.Banco})",
+                DataMovimento = DateTime.UtcNow,
+                Descricao = $"Compensação Cheque NÂº {cheque.NumeroCheque} ({cheque.Banco})",
                 ChequeId = cheque.Id,
                 ContaReceberId = contaReceber?.Id
             };

@@ -27,7 +27,7 @@ services:
     volumes:
       - gravity_db_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"   # Acesso local para ferramentas (DBeaver, pgAdmin)
+      - "5433:5432"   # Acesso local para ferramentas (DBeaver, pgAdmin)
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U gravity_user -d gravitycarsystem"]
       interval: 10s

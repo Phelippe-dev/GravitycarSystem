@@ -76,7 +76,7 @@ public class SenatranMockService : ISenatranService
         }
 
         // =============================================================
-        // NÃO ENCONTRADO — resposta honesta e limpa
+        // NíO ENCONTRADO — resposta honesta e limpa
         // Para consulta FIPE oficial, use o widget no formulário de cadastro.
         // Para débitos/restrições reais, acesse o DETRAN-MG.
         // =============================================================
@@ -104,7 +104,7 @@ public class SenatranMockService : ISenatranService
             PossuiAlienacaoFiduciaria = false,
             TotalDebitosPendentes = 0m,
             DescricaoDebitos = "Veículo não encontrado na base da loja. Use o widget FIPE no formulário para buscar o valor de mercado por Marca/Modelo/Ano.",
-            StatusRenave = "NÃO ENCONTRADO",
+            StatusRenave = "NíO ENCONTRADO",
             Origem = "BASE LOCAL (veículo não cadastrado)",
             DataConsulta = DateTime.UtcNow
         };

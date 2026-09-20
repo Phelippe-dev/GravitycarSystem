@@ -108,8 +108,8 @@ public class FuncionariosController : ControllerBase
         if (string.IsNullOrWhiteSpace(dto.Senha) || dto.Senha.Length < 6)
             return BadRequest("A senha deve ter no mínimo 6 caracteres.");
 
-        var rolePermitida = dto.Role is "Gerente" or "Vendedor";
-        if (!rolePermitida) return BadRequest("Papel inválido. Use 'Gerente' ou 'Vendedor'.");
+        var rolePermitida = dto.Role is "Admin" or "Gerente" or "Vendedor";
+        if (!rolePermitida) return BadRequest("Papel inválido.");
 
         // Verificar e-mail duplicado
         var existe = await _context.Usuarios.IgnoreQueryFilters()
@@ -157,8 +157,8 @@ public class FuncionariosController : ControllerBase
             .FirstOrDefaultAsync(u => u.Id == id && u.EmpresaId == empresaId);
         if (usuario == null) return NotFound("Funcionário não encontrado.");
 
-        var rolePermitida = dto.Role is "Gerente" or "Vendedor";
-        if (!rolePermitida) return BadRequest("Papel inválido. Use 'Gerente' ou 'Vendedor'.");
+        var rolePermitida = dto.Role is "Admin" or "Gerente" or "Vendedor";
+        if (!rolePermitida) return BadRequest("Papel inválido.");
 
         usuario.Nome = dto.Nome.Trim();
         usuario.Cargo = dto.Cargo?.Trim() ?? dto.Role;
@@ -195,5 +195,27 @@ public class FuncionariosController : ControllerBase
         usuario.Ativo = !usuario.Ativo;
         await _context.SaveChangesAsync();
         return Ok(new { message = usuario.Ativo ? "Acesso reativado." : "Acesso desativado.", ativo = usuario.Ativo });
+    }
+    // ─── DELETE /api/funcionarios/{id} ─────────────────────────────
+    [HttpDelete("{id:guid}")]
+    [Authorize(Roles = "Admin,SuperAdmin")]
+    public async Task<IActionResult> ExcluirFuncionario(Guid id)
+    {
+        var empresaId = GetEmpresaId();
+        var usuario = await _context.Usuarios.IgnoreQueryFilters()
+            .Include(u => u.Perfis)
+            .FirstOrDefaultAsync(u => u.Id == id && u.EmpresaId == empresaId);
+        
+        if (usuario == null) return NotFound("Funcionário não encontrado.");
+
+        if (usuario.Perfis != null && usuario.Perfis.Any())
+        {
+            _context.UsuarioPerfis.RemoveRange(usuario.Perfis);
+        }
+
+        _context.Usuarios.Remove(usuario);
+        await _context.SaveChangesAsync();
+        
+        return Ok(new { message = "Funcionário removido com sucesso." });
     }
 }

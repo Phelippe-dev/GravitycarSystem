@@ -18,20 +18,32 @@ public class JwtTokenService
         _configuration = configuration;
     }
 
-    public string GenerateToken(Usuario usuario)
+    public string GenerateToken(Usuario usuario, Guid? overrideEmpresaId = null)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
-        // Fallback to a hardcoded key if not present in appsettings, just for development
         var secret = _configuration["JwtSettings:Secret"] ?? "MySuperSecretKeyForDevelopmentOnly_NeedToBeLongerToWorkProperly32Chars";
         var key = Encoding.ASCII.GetBytes(secret);
+
+        var empresaIdToUse = overrideEmpresaId ?? usuario.EmpresaId;
 
         var claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
             new Claim(ClaimTypes.Email, usuario.Email),
             new Claim(ClaimTypes.Name, usuario.Nome),
-            new Claim("EmpresaId", usuario.EmpresaId.ToString())
+            new Claim("EmpresaId", empresaIdToUse.ToString())
         };
+
+        if (usuario.Perfis != null)
+        {
+            foreach (var userPerfil in usuario.Perfis)
+            {
+                if (userPerfil.Perfil != null)
+                {
+                    claims.Add(new Claim(ClaimTypes.Role, userPerfil.Perfil.Nome));
+                }
+            }
+        }
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {

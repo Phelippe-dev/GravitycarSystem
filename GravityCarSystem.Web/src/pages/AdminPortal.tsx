@@ -1,18 +1,22 @@
 import React, { useEffect, useState } from 'react';
-import { fetchEmpresas, createEmpresa, toggleStatusEmpresa, adicionarCreditosEmpresa } from '../api';
+import { fetchEmpresas, createEmpresa, updateEmpresa, deleteEmpresa, toggleStatusEmpresa, adicionarCreditosEmpresa, impersonateEmpresa } from '../api';
 import type { Empresa } from '../api';
-import { Building2, Building, Search, Plus, PlusCircle, CheckCircle, XCircle, Coins } from 'lucide-react';
+import { Building2, Building, Search, Plus, PlusCircle, CheckCircle, XCircle, Coins, Edit, Trash2, LogIn } from 'lucide-react';
 
 const AdminPortal: React.FC = () => {
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [novaEmpresa, setNovaEmpresa] = useState<Partial<Empresa>>({
+  
+  // Create / Edit state
+  const [novaEmpresa, setNovaEmpresa] = useState<Partial<Empresa> & { senhaAdmin?: string }>({
     razaoSocial: '',
     nomeFantasia: '',
     cnpj: '',
-    email: ''
+    email: '',
+    senhaAdmin: ''
   });
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   // Saldo
   const [showCreditosModal, setShowCreditosModal] = useState(false);
@@ -40,14 +44,61 @@ const AdminPortal: React.FC = () => {
     }
   };
 
+  const handleDeletar = async (id: string) => {
+    if (window.confirm('Tem certeza que deseja deletar este tenant? Esta aÃ§Ã£o Ã© irreversÃ­vel.')) {
+        try {
+            await deleteEmpresa(id);
+            await carregarDados();
+        } catch (e) {
+            console.error("Erro ao deletar empresa", e);
+            alert("NÃ£o foi possÃ­vel deletar o tenant. Ele pode possuir registros dependentes.");
+        }
+    }
+  };
+
+  const handleImpersonate = async (id: string) => {
+    try {
+        const result = await impersonateEmpresa(id);
+        localStorage.setItem('token', result.token);
+        localStorage.setItem('userName', result.nome);
+        window.location.href = '/dashboard';
+    } catch (e) {
+        console.error("Erro ao entrar na loja", e);
+        alert("Erro ao tentar entrar na loja.");
+    }
+  };
+
+  const abrirEdicao = (empresa: Empresa) => {
+      setEditingId(empresa.id!);
+      setNovaEmpresa({
+          razaoSocial: empresa.razaoSocial,
+          nomeFantasia: empresa.nomeFantasia,
+          cnpj: empresa.cnpj,
+          email: empresa.email
+      });
+      setShowModal(true);
+  };
+
+  const abrirCriacao = () => {
+      setEditingId(null);
+      setNovaEmpresa({ razaoSocial: '', nomeFantasia: '', cnpj: '', email: '', senhaAdmin: '' });
+      setShowModal(true);
+  };
+
   const handleSalvar = async () => {
     try {
-        await createEmpresa(novaEmpresa);
+        if (editingId) {
+            await updateEmpresa(editingId, novaEmpresa);
+        } else {
+            await createEmpresa(novaEmpresa);
+        }
         setShowModal(false);
-        setNovaEmpresa({ razaoSocial: '', nomeFantasia: '', cnpj: '', email: '' });
+        setEditingId(null);
+        setNovaEmpresa({ razaoSocial: '', nomeFantasia: '', cnpj: '', email: '', senhaAdmin: '' });
         await carregarDados();
-    } catch (e) {
-        console.error("Erro ao criar empresa", e);
+    } catch (e: any) {
+        console.error("Erro ao salvar empresa", e);
+        alert("Erro ao salvar: " + e.message);
     }
   };
 
@@ -59,10 +110,10 @@ const AdminPortal: React.FC = () => {
         setQtdCreditos(10);
         setValorPago(0);
         await carregarDados();
-        alert('Créditos adicionados com sucesso!');
+        alert('CrÃ©ditos adicionados com sucesso!');
     } catch (e) {
-        console.error("Erro ao adicionar créditos", e);
-        alert('Erro ao adicionar créditos. Verifique se o usuário tem permissão SuperAdmin.');
+        console.error("Erro ao adicionar crÃ©ditos", e);
+        alert('Erro ao adicionar crÃ©ditos. Verifique se o usuÃ¡rio tem permissÃ£o SuperAdmin.');
     }
   };
 
@@ -74,11 +125,11 @@ const AdminPortal: React.FC = () => {
             <Building2 size={28} color="var(--color-blue-light)" /> Portal GravityCarAdmin
           </h1>
           <p style={{ color: 'var(--color-gray-400)', marginTop: '8px' }}>
-            Gestão Multi-Tenant das Concessionárias Clientes (Software House)
+            GestÃ£o Multi-Tenant das ConcessionÃ¡rias Clientes (Software House)
           </p>
         </div>
         <div>
-            <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+            <button className="btn btn-primary" onClick={abrirCriacao}>
                 <PlusCircle size={20} />
                 Novo Tenant
             </button>
@@ -118,7 +169,7 @@ const AdminPortal: React.FC = () => {
         ) : empresas.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--color-gray-400)' }}>
                 <Building2 size={48} style={{ opacity: 0.2, margin: '0 auto 16px' }} />
-                <p>Nenhuma concessionária cliente registrada no banco de dados.</p>
+                <p>Nenhuma concessionÃ¡ria cliente registrada no banco de dados.</p>
             </div>
         ) : (
             <div className="table-responsive">
@@ -126,12 +177,12 @@ const AdminPortal: React.FC = () => {
                 <thead>
                   <tr>
                     <th>Loja (Nome Fantasia)</th>
-                    <th>Razão Social</th>
+                    <th>RazÃ£o Social</th>
                     <th>CNPJ</th>
                     <th>Data Entrada</th>
                     <th>Status Assinatura</th>
                     <th>Saldo</th>
-                    <th style={{ textAlign: 'right' }}>Ações</th>
+                    <th style={{ textAlign: 'right' }}>AÃ§Ãµes</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -149,7 +200,15 @@ const AdminPortal: React.FC = () => {
                       <td style={{ fontWeight: 'bold', color: 'var(--color-blue-light)' }}>
                         {empresa.saldoConsultas ?? 0}
                       </td>
-                      <td style={{ textAlign: 'right', display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                      <td style={{ textAlign: 'right', display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
+                          <button 
+                            className="btn btn-outline" 
+                            style={{ padding: '6px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+                            onClick={() => handleImpersonate(empresa.id!)}
+                            title="Entrar na loja como Admin"
+                          >
+                              <LogIn size={14} /> Entrar
+                          </button>
                           <button 
                             className="btn btn-outline" 
                             style={{ padding: '6px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}
@@ -164,8 +223,25 @@ const AdminPortal: React.FC = () => {
                             className={`btn ${empresa.ativa ? 'btn-danger' : 'btn-success'}`} 
                             style={{ padding: '6px 12px', fontSize: '0.8rem' }}
                             onClick={() => handleToggleStatus(empresa.id!)}
+                            title={empresa.ativa ? 'Bloquear' : 'Desbloquear'}
                           >
-                              {empresa.ativa ? 'Bloquear' : 'Desbloquear'}
+                              {empresa.ativa ? <XCircle size={14} /> : <CheckCircle size={14} />}
+                          </button>
+                          <button 
+                            className="btn btn-outline" 
+                            style={{ padding: '6px 12px', fontSize: '0.8rem', color: 'var(--color-blue-light)' }}
+                            onClick={() => abrirEdicao(empresa)}
+                            title="Editar"
+                          >
+                              <Edit size={14} />
+                          </button>
+                          <button 
+                            className="btn btn-outline" 
+                            style={{ padding: '6px 12px', fontSize: '0.8rem', color: 'var(--color-danger)' }}
+                            onClick={() => handleDeletar(empresa.id!)}
+                            title="Remover"
+                          >
+                              <Trash2 size={14} />
                           </button>
                       </td>
                     </tr>
@@ -182,17 +258,17 @@ const AdminPortal: React.FC = () => {
             <div style={{ padding: '24px 32px', borderBottom: '1px solid var(--color-border)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
                 <Building size={24} style={{ color: 'var(--color-primary)' }} />
-                <h2 style={{ margin: 0, fontSize: '1.4rem' }}>Cadastrar Nova Concessionária</h2>
+                <h2 style={{ margin: 0, fontSize: '1.4rem' }}>{editingId ? 'Editar ConcessionÃ¡ria' : 'Cadastrar Nova ConcessionÃ¡ria'}</h2>
               </div>
               <p style={{ margin: 0, color: 'var(--color-gray-400)', fontSize: '0.9rem' }}>
-                Preencha os dados abaixo para provisionar um novo ambiente isolado.
+                {editingId ? 'Altere os dados da concessionÃ¡ria abaixo.' : 'Preencha os dados abaixo para provisionar um novo ambiente isolado.'}
               </p>
             </div>
             
             <div style={{ padding: '32px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '32px' }}>
                   <div className="form-group" style={{ gridColumn: 'span 2' }}>
-                    <label className="form-label">Razão Social *</label>
+                    <label className="form-label">RazÃ£o Social *</label>
                     <input type="text" className="form-input" placeholder="Ex: Gravity Motors Concessionaria LTDA" value={novaEmpresa.razaoSocial} onChange={e => setNovaEmpresa({...novaEmpresa, razaoSocial: e.target.value})} />
                   </div>
                   <div className="form-group">
@@ -204,15 +280,21 @@ const AdminPortal: React.FC = () => {
                     <input type="text" className="form-input" placeholder="00.000.000/0001-00" value={novaEmpresa.cnpj} onChange={e => setNovaEmpresa({...novaEmpresa, cnpj: e.target.value})} />
                   </div>
                   <div className="form-group" style={{ gridColumn: 'span 2' }}>
-                    <label className="form-label">E-mail (Para Primeiro Acesso do Dono) *</label>
+                    <label className="form-label">E-mail {editingId ? '' : '(Para Primeiro Acesso do Dono)'} *</label>
                     <input type="email" className="form-input" placeholder="contato@empresa.com.br" value={novaEmpresa.email} onChange={e => setNovaEmpresa({...novaEmpresa, email: e.target.value})} />
                   </div>
+                  {!editingId && (
+                      <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                        <label className="form-label">Senha Inicial do Dono *</label>
+                        <input type="password" className="form-input" placeholder="MÃ­nimo 6 caracteres" value={novaEmpresa.senhaAdmin} onChange={e => setNovaEmpresa({...novaEmpresa, senhaAdmin: e.target.value})} />
+                      </div>
+                  )}
               </div>
               
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
                 <button className="btn btn-secondary" onClick={() => setShowModal(false)} style={{ padding: '10px 20px' }}>Cancelar</button>
                 <button className="btn btn-primary" onClick={handleSalvar} style={{ padding: '10px 20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Plus size={18} /> Criar Workspace
+                  <Plus size={18} /> {editingId ? 'Salvar AlteraÃ§Ãµes' : 'Criar Workspace'}
                 </button>
               </div>
             </div>
@@ -220,11 +302,11 @@ const AdminPortal: React.FC = () => {
         </div>
       )}
 
-      {/* Modal de Créditos */}
+      {/* Modal de CrÃ©ditos */}
       {showCreditosModal && empresaSelecionada && (
         <div className="modal-overlay">
           <div className="modal-content glass-panel" style={{ maxWidth: '400px' }}>
-            <h2 style={{ marginBottom: '8px' }}>Adicionar Créditos</h2>
+            <h2 style={{ marginBottom: '8px' }}>Adicionar CrÃ©ditos</h2>
             <p style={{ color: 'var(--color-gray-400)', fontSize: '0.9rem', marginBottom: '20px' }}>
               Loja: <strong>{empresaSelecionada.nomeFantasia}</strong>
             </p>
@@ -240,7 +322,7 @@ const AdminPortal: React.FC = () => {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Valor Pago R$ (Opcional, p/ histórico)</label>
+                  <label>Valor Pago R$ (Opcional, p/ histÃ³rico)</label>
                   <input 
                     type="number" 
                     className="form-input" 

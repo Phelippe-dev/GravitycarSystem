@@ -117,11 +117,10 @@ using (var scope = app.Services.CreateScope())
 
     try
     {
-        // Migra o banco (cria tabelas se nao existirem, aplica migrations pendentes)
-        if (useSqlite)
-            db.Database.EnsureCreated(); // SQLite: EnsureCreated (nao suporta Migrate bem)
-        else
-            db.Database.Migrate();       // PostgreSQL: Migrate (preserva dados!)
+        // Migra o banco (cria tabelas se nao existirem)
+        // Como as migrations atuais foram geradas para SQLite, o Migrate() falha no Postgres.
+        // O EnsureCreated() resolve o problema construindo o schema on-the-fly para o provedor atual.
+        db.Database.EnsureCreated();
         
         if (useSqlite)
         {
@@ -183,7 +182,7 @@ using (var scope = app.Services.CreateScope())
             Id = Guid.NewGuid(),
             Nome = "Phelippe Silva",
             Email = userEmail,
-            SenhaHash = BCrypt.Net.BCrypt.HashPassword("123456"),
+            SenhaHash = BCrypt.Net.BCrypt.HashPassword("260517"),
             EmpresaId = empresaId,
             Ativo = true,
             DataCadastro = DateTime.UtcNow
@@ -206,6 +205,57 @@ using (var scope = app.Services.CreateScope())
             DataCadastro = DateTime.UtcNow
         };
         db.Usuarios.Add(defaultAdmin);
+        db.SaveChanges();
+    }
+
+    // 2.5 Seed Perfil Admin
+    var adminPerfil = db.Perfis.FirstOrDefault(p => p.Nome == "Admin");
+    if (adminPerfil == null)
+    {
+        adminPerfil = new GravityCarSystem.Domain.Entities.Acesso.Perfil
+        {
+            Id = Guid.NewGuid(),
+            Nome = "Admin",
+            Descricao = "Administrador da Loja"
+        };
+        db.Perfis.Add(adminPerfil);
+        db.SaveChanges();
+    }
+
+    // Seed Perfil SuperAdmin
+    var superAdminPerfil = db.Perfis.FirstOrDefault(p => p.Nome == "SuperAdmin");
+    if (superAdminPerfil == null)
+    {
+        superAdminPerfil = new GravityCarSystem.Domain.Entities.Acesso.Perfil
+        {
+            Id = Guid.NewGuid(),
+            Nome = "SuperAdmin",
+            Descricao = "Dono do Software"
+        };
+        db.Perfis.Add(superAdminPerfil);
+        db.SaveChanges();
+    }
+
+    // Vincular perfil SuperAdmin aos usuários da Software House
+    var phelippePerfil = db.UsuarioPerfis.FirstOrDefault(up => up.UsuarioId == adminUser.Id && up.PerfilId == superAdminPerfil.Id);
+    if (phelippePerfil == null)
+    {
+        db.UsuarioPerfis.Add(new GravityCarSystem.Domain.Entities.Acesso.UsuarioPerfil
+        {
+            UsuarioId = adminUser.Id,
+            PerfilId = superAdminPerfil.Id
+        });
+        db.SaveChanges();
+    }
+
+    var defaultAdminPerfil = db.UsuarioPerfis.FirstOrDefault(up => up.UsuarioId == defaultAdmin.Id && up.PerfilId == superAdminPerfil.Id);
+    if (defaultAdminPerfil == null)
+    {
+        db.UsuarioPerfis.Add(new GravityCarSystem.Domain.Entities.Acesso.UsuarioPerfil
+        {
+            UsuarioId = defaultAdmin.Id,
+            PerfilId = superAdminPerfil.Id
+        });
         db.SaveChanges();
     }
 

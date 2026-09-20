@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserPlus, Users, Edit2, Power, Search, X } from 'lucide-react';
+import { UserPlus, Users, Edit2, Power, Search, X, Trash2 } from 'lucide-react';
 import { API_BASE_URL } from '../api';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -15,8 +15,9 @@ interface Funcionario {
 }
 
 const ROLES_DISPONIVEIS = [
-    { value: 'Gerente', label: 'Gerente', icon: '📊', desc: 'Acesso financeiro e relatórios', color: '#8b5cf6' },
-    { value: 'Vendedor', label: 'Consultor de Vendas', icon: '💼', desc: 'Vendas, estoque e atendimento', color: '#f59e0b' },
+    { value: 'Admin', label: 'Administrador', icon: '👑', desc: 'Acesso total ao sistema', color: '#10b981' },
+    { value: 'Gerente', label: 'Gerente', icon: '👔', desc: 'Acesso financeiro e relatórios', color: '#8b5cf6' },
+    { value: 'Vendedor', label: 'Consultor de Vendas', icon: '🤝', desc: 'Vendas, estoque e atendimento', color: '#f59e0b' },
 ];
 
 const FuncionariosPage: React.FC = () => {
@@ -100,6 +101,22 @@ const FuncionariosPage: React.FC = () => {
         } catch { /* silencioso */ }
     };
 
+    const removerFuncionario = async (f: Funcionario) => {
+        if (!window.confirm(`Tem certeza que deseja remover o funcionário ${f.nome} em definitivo? Esta ação não pode ser desfeita.`)) return;
+        try {
+            const res = await fetch(`${API_BASE_URL}/funcionarios/${f.id}`, { method: 'DELETE', headers: getHeaders() });
+            if (res.ok) {
+                setMsgStatus({ tipo: 'ok', texto: 'Funcionário removido com sucesso!' });
+                await carregar();
+                setTimeout(() => setMsgStatus(null), 3000);
+            } else {
+                setMsgStatus({ tipo: 'erro', texto: 'Erro ao remover funcionário.' });
+            }
+        } catch {
+            setMsgStatus({ tipo: 'erro', texto: 'Erro de conexão ao remover.' });
+        }
+    };
+
     const filtrados = funcionarios.filter(f =>
         f.nome.toLowerCase().includes(busca.toLowerCase()) ||
         f.email.toLowerCase().includes(busca.toLowerCase()) ||
@@ -107,7 +124,7 @@ const FuncionariosPage: React.FC = () => {
     );
 
     const roleCor = (role: string) => role === 'Admin' ? '#10b981' : role === 'Gerente' ? '#8b5cf6' : '#f59e0b';
-    const roleIcon = (role: string) => role === 'Admin' ? '🏢' : role === 'Gerente' ? '📊' : '💼';
+    const roleIcon = (role: string) => role === 'Admin' ? '' : role === 'Gerente' ? '' : '';
 
     if (activeRole === 'Vendedor') {
         return (
@@ -143,8 +160,8 @@ const FuncionariosPage: React.FC = () => {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '20px' }}>
                 {[
                     { label: 'Total de Funcionários', value: funcionarios.length, color: '#60a5fa', icon: '👥' },
-                    { label: 'Ativos', value: funcionarios.filter(f => f.ativo).length, color: '#34d399', icon: '✅' },
-                    { label: 'Consultores de Venda', value: funcionarios.filter(f => f.role === 'Vendedor').length, color: '#fbbf24', icon: '💼' },
+                    { label: 'Ativos', value: funcionarios.filter(f => f.ativo).length, color: '#34d399', icon: '' },
+                    { label: 'Consultores de Venda', value: funcionarios.filter(f => f.role === 'Vendedor').length, color: '#fbbf24', icon: '' },
                 ].map(({ label, value, color, icon }) => (
                     <div key={label} className="glass-panel" style={{ padding: '16px', textAlign: 'center' }}>
                         <div style={{ fontSize: '1.5rem' }}>{icon}</div>
@@ -201,7 +218,7 @@ const FuncionariosPage: React.FC = () => {
                                 </div>
                                 <div style={{ fontSize: '0.82rem', color: 'var(--color-gray-400)', marginTop: '2px' }}>{f.email}</div>
                                 {f.role === 'Vendedor' && (
-                                    <div style={{ fontSize: '0.78rem', color: '#fbbf24', marginTop: '2px' }}>💰 Comissão: {f.comissaoPercent.toFixed(1)}% por venda</div>
+                                    <div style={{ fontSize: '0.78rem', color: '#fbbf24', marginTop: '2px' }}> Comissão: {f.comissaoPercent.toFixed(1)}% por venda</div>
                                 )}
                             </div>
 
@@ -214,6 +231,10 @@ const FuncionariosPage: React.FC = () => {
                                 <button onClick={() => toggleAtivo(f)} title={f.ativo ? 'Desativar acesso' : 'Reativar acesso'}
                                     style={{ padding: '7px', borderRadius: '8px', border: `1px solid ${f.ativo ? 'rgba(239,68,68,0.3)' : 'rgba(16,185,129,0.3)'}`, background: f.ativo ? 'rgba(239,68,68,0.08)' : 'rgba(16,185,129,0.08)', cursor: 'pointer', color: f.ativo ? '#ef4444' : '#34d399', display: 'flex', alignItems: 'center' }}>
                                     <Power size={15} />
+                                </button>
+                                <button onClick={() => removerFuncionario(f)} title="Remover funcionário"
+                                    style={{ padding: '7px', borderRadius: '8px', border: '1px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.08)', cursor: 'pointer', color: '#ef4444', display: 'flex', alignItems: 'center' }}>
+                                    <Trash2 size={15} />
                                 </button>
                             </div>
                         </div>
@@ -285,7 +306,7 @@ const FuncionariosPage: React.FC = () => {
 
                         {msgStatus && (
                             <div style={{ marginTop: '14px', padding: '10px 14px', borderRadius: '8px', fontSize: '0.85rem', background: msgStatus.tipo === 'ok' ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', color: msgStatus.tipo === 'ok' ? '#34d399' : '#ef4444', border: `1px solid ${msgStatus.tipo === 'ok' ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.4)'}` }}>
-                                {msgStatus.tipo === 'ok' ? '✅' : '⚠️'} {msgStatus.texto}
+                                {msgStatus.tipo === 'ok' ? '' : ''} {msgStatus.texto}
                             </div>
                         )}
 

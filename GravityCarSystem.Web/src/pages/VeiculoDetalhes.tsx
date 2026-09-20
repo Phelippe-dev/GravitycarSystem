@@ -28,6 +28,7 @@ import {
   removerDocumentoVeiculo,
   adicionarCustoVeiculo,
   atualizarObservacoesVeiculo,
+  removerVeiculo,
   API_BASE_URL
 } from '../api';
 import type { VeiculoDetalhes } from '../api';
@@ -100,9 +101,21 @@ const VeiculoDetalhesPage: React.FC = () => {
       const data = await getVeiculoDetalhes(id);
       setVeiculo(data);
     } catch (err: any) {
-      setError('Erro ao carregar detalhes do veículo.');
+      setError(err.message || 'Erro ao carregar detalhes do veículo');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRemoverVeiculo = async () => {
+    if (!veiculo || !id) return;
+    if (window.confirm('Tem certeza que deseja remover este veículo do estoque? Esta ação não pode ser desfeita.')) {
+      try {
+        await removerVeiculo(id);
+        navigate('/estoque');
+      } catch (e: any) {
+        alert(e.message || 'Erro ao remover veículo.');
+      }
     }
   };
 
@@ -238,19 +251,44 @@ const VeiculoDetalhesPage: React.FC = () => {
             </p>
           </div>
           <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
-            <button
-              className="btn btn-primary"
-              onClick={() => setShowModalDossiePdf(true)}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 18px', fontSize: '0.9rem', background: 'linear-gradient(135deg, #0284c7 0%, #2563eb 100%)', boxShadow: '0 4px 14px rgba(37,99,235,0.35)', fontWeight: 600, cursor: 'pointer' }}
-              title="Gerar Ficha Técnica do Produto em PDF"
-            >
-              <FileText size={18} /> Ficha Técnica do Veículo
-            </button>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              <button
+                className="btn btn-secondary"
+                onClick={() => navigate(`/cadastro/veiculos/${veiculo.id}`)}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 18px', fontSize: '0.9rem', cursor: 'pointer' }}
+                title="Editar Ficha Técnica"
+              >
+                <Edit2 size={18} /> Editar
+              </button>
+              <button
+                className="btn btn-secondary"
+                onClick={handleRemoverVeiculo}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 18px', fontSize: '0.9rem', color: 'var(--color-danger)', borderColor: 'rgba(239, 68, 68, 0.3)', cursor: 'pointer' }}
+                title="Remover do Estoque"
+              >
+                <Trash2 size={18} /> Remover
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={() => setShowModalDossiePdf(true)}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 18px', fontSize: '0.9rem', background: 'linear-gradient(135deg, #0284c7 0%, #2563eb 100%)', boxShadow: '0 4px 14px rgba(37,99,235,0.35)', fontWeight: 600, cursor: 'pointer' }}
+                title="Gerar Ficha Técnica do Produto em PDF"
+              >
+                <FileText size={18} /> PDF
+              </button>
+            </div>
             <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--color-blue-light)' }}>
               R$ {veiculo.valorVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </div>
-            <div className={veiculo.status === 0 ? 'badge badge-success' : 'badge badge-warning'}>
-              {veiculo.status === 0 ? 'Disponível' : veiculo.status === 1 ? 'Vendido' : 'Manutenção'}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {veiculo.consignado && (
+                <div style={{ padding: '4px 8px', fontSize: '0.75rem', fontWeight: 'bold', background: 'rgba(139, 92, 246, 0.2)', color: '#a78bfa', borderRadius: '4px', border: '1px solid #8b5cf6' }}>
+                  CONSIGNADO
+                </div>
+              )}
+              <div className={veiculo.status === 4 ? 'badge badge-success' : veiculo.status === 6 ? 'badge badge-danger' : 'badge badge-warning'}>
+                {getStatusLabel(veiculo.status)}
+              </div>
             </div>
           </div>
         </div>
@@ -1098,7 +1136,7 @@ const VeiculoDetalhesPage: React.FC = () => {
             {/* Ficha Técnica & Inspeção */}
             <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', marginBottom: '20px' }}>
               <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span>🛡️</span> Ficha Técnica & Inspeção
+                <span></span> Ficha Técnica & Inspeção
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', fontSize: '0.8rem' }}>
                 <div style={{ background: '#ffffff', padding: '8px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
@@ -1131,7 +1169,7 @@ const VeiculoDetalhesPage: React.FC = () => {
             {/* Observações Técnicas / Inspeção Comercial */}
             <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', marginBottom: '20px' }}>
               <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span>📋</span> Observações Técnicas / Inspeção Comercial
+                <span></span> Observações Técnicas / Inspeção Comercial
               </div>
               <div style={{ fontSize: '0.85rem', color: '#334155', lineHeight: '1.5', background: '#ffffff', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0', whiteSpace: 'pre-wrap' }}>
                 {veiculo.observacoes && veiculo.observacoes.trim().length > 0 

@@ -47,20 +47,20 @@ const Relatorios: React.FC = () => {
     if (text.includes('Financiamento')) {
       return (
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '2px 8px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: 600 }}>
-          🏦 {text}
+           {text}
         </span>
       );
     }
     if (text.includes('Cartão')) {
       return (
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'rgba(99, 102, 241, 0.15)', color: '#a5b4fc', border: '1px solid rgba(99, 102, 241, 0.3)', padding: '2px 8px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: 600 }}>
-          💳 {text}
+           {text}
         </span>
       );
     }
     return (
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '4px', fontSize: '0.78rem', color: '#e2e8f0' }}>
-        💰 {text}
+         {text}
       </span>
     );
   };

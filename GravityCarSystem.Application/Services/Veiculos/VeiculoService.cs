@@ -56,9 +56,10 @@ public class VeiculoService : IVeiculoService
             Quilometragem = dto.Quilometragem,
             ValorCompra = dto.ValorCompra,
             ValorVenda = dto.ValorVenda,
-            DataEntrada = dto.DataEntrada ?? DateTime.Now,
+            DataEntrada = dto.DataEntrada ?? DateTime.UtcNow,
             DataVenda = dto.DataVenda,
             Status = StatusVeiculo.Disponivel,
+            Consignado = dto.Consignado,
             Observacoes = dto.Observacoes
         };
 
@@ -101,6 +102,9 @@ public class VeiculoService : IVeiculoService
         veiculo.Quilometragem = dto.Quilometragem;
         veiculo.ValorCompra = dto.ValorCompra;
         veiculo.ValorVenda = dto.ValorVenda;
+        veiculo.DataEntrada = dto.DataEntrada ?? veiculo.DataEntrada;
+        veiculo.DataVenda = dto.DataVenda;
+        veiculo.Consignado = dto.Consignado;
         veiculo.Observacoes = dto.Observacoes;
 
         await _context.SaveChangesAsync();
@@ -120,7 +124,7 @@ public class VeiculoService : IVeiculoService
             TipoEvento = "AlteracaoStatus",
             ValorAnterior = statusAnterior.ToString(),
             ValorNovo = novoStatus.ToString(),
-            DataEvento = DateTime.Now,
+            DataEvento = DateTime.UtcNow,
             Descricao = "Status alterado via sistema"
         });
 
@@ -185,6 +189,7 @@ public class VeiculoService : IVeiculoService
             DataEntrada = v.DataEntrada,
             DataVenda = v.DataVenda,
             Status = v.Status,
+            Consignado = v.Consignado,
             Observacoes = v.Observacoes,
             FotoPrincipal = v.Fotos != null ? (v.Fotos.FirstOrDefault(f => f.Principal)?.Url ?? v.Fotos.FirstOrDefault()?.Url) : null
         };
@@ -222,6 +227,7 @@ public class VeiculoService : IVeiculoService
             DataEntrada = v.DataEntrada,
             DataVenda = v.DataVenda,
             Status = v.Status,
+            Consignado = v.Consignado,
             Observacoes = v.Observacoes,
             Fotos = v.Fotos.Select(f => new VeiculoFotoDto { Id = f.Id, Url = f.Url, IsPrincipal = f.Principal }).ToList(),
             Documentos = v.Documentos.Select(d => new VeiculoDocumentoDto { Id = d.Id, NomeArquivo = d.NomeArquivo, Url = d.Url, TipoDocumento = d.TipoDocumento.ToString() }).ToList(),
@@ -352,11 +358,11 @@ public class VeiculoService : IVeiculoService
             CategoriaId = categoriaPadrao.Id,
             Descricao = custoDto.Descricao,
             Valor = custoDto.Valor,
-            DataCusto = custoDto.DataCusto == default ? DateTime.Now : custoDto.DataCusto
+            DataCusto = custoDto.DataCusto == default ? DateTime.UtcNow : custoDto.DataCusto
         };
         _context.VeiculoCustos.Add(custo);
 
-        // INTEGRAÇÃO: Gerar Conta a Pagar automaticamente
+        // INTEGRAÇíO: Gerar Conta a Pagar automaticamente
         var fornecedorPadrao = await _context.Fornecedores.FirstOrDefaultAsync();
         if (fornecedorPadrao == null)
         {
@@ -383,8 +389,8 @@ public class VeiculoService : IVeiculoService
             ValorOriginal = custoDto.Valor,
             Saldo = custoDto.Valor,
             ValorPago = 0,
-            DataEmissao = DateTime.Now,
-            DataVencimento = DateTime.Now.AddDays(7), // Vencimento padrão para custos de veículo
+            DataEmissao = DateTime.UtcNow,
+            DataVencimento = DateTime.UtcNow.AddDays(7), // Vencimento padrão para custos de veículo
             Status = StatusConta.Aberto
         };
         _context.ContasPagar.Add(contaPagar);

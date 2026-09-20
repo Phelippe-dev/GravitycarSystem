@@ -366,7 +366,7 @@ const Vendas: React.FC = () => {
                 </div>
                 {trocas.map((t, idx) => (
                     <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '6px', marginBottom: '6px' }}>
-                        <span>🚗 <strong>{t.marca} {t.modelo}</strong> <span style={{ fontFamily: 'monospace', color: 'var(--color-gray-400)', marginLeft: '6px' }}>({t.placa})</span></span>
+                        <span> <strong>{t.marca} {t.modelo}</strong> <span style={{ fontFamily: 'monospace', color: 'var(--color-gray-400)', marginLeft: '6px' }}>({t.placa})</span></span>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                             <strong style={{ color: 'var(--color-warning)' }}>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(t.valorAvaliacao)}</strong>
                             <button type="button" onClick={() => removeTroca(idx)} style={{ background: 'none', border: 'none', color: 'var(--color-danger)', cursor: 'pointer', display: 'flex' }}><Trash2 size={16}/></button>
@@ -393,10 +393,10 @@ const Vendas: React.FC = () => {
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px' }}>
                         {[
                             { id: 2, label: '⚡ PIX' },
-                            { id: 1, label: '💵 Dinheiro' },
+                            { id: 1, label: ' Dinheiro' },
                             { id: 5, label: '📑 Cheque(s)' },
-                            { id: 6, label: '🏦 Financiamento' },
-                            { id: 4, label: '💳 Cartão' }
+                            { id: 6, label: ' Financiamento' },
+                            { id: 4, label: ' Cartão' }
                         ].map(t => (
                             <button
                                 key={t.id}
@@ -422,7 +422,7 @@ const Vendas: React.FC = () => {
                     </div>
                 </div>
 
-                {/* 💰 PIX ou Dinheiro em Espécie: campo simples */}
+                {/*  PIX ou Dinheiro em Espécie: campo simples */}
                 {(novoPagamentoTipo === 1 || novoPagamentoTipo === 2) && (
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 44px', gap: '8px', alignItems: 'center', marginBottom: '16px' }}>
                         <input
@@ -454,11 +454,11 @@ const Vendas: React.FC = () => {
                     </div>
                 )}
 
-                {/* 💳 CARTÃO — Painel Detalhado */}
+                {/*  CARTÃO — Painel Detalhado */}
                 {novoPagamentoTipo === 4 && (
                     <div style={{ background: 'rgba(99, 102, 241, 0.06)', border: '1px solid rgba(99, 102, 241, 0.3)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', paddingBottom: '10px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                            <span style={{ fontSize: '1.1rem' }}>💳</span>
+                            <span style={{ fontSize: '1.1rem' }}></span>
                             <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#a5b4fc' }}>Dados do Cartão</span>
                         </div>
 
@@ -477,7 +477,7 @@ const Vendas: React.FC = () => {
                                         color: cartaoTipo === tipo ? '#c7d2fe' : 'var(--color-gray-400)',
                                     }}
                                 >
-                                    {tipo === 'credito' ? '💳 Crédito' : '🏧 Débito'}
+                                    {tipo === 'credito' ? ' Crédito' : '🏧 Débito'}
                                 </button>
                             ))}
                         </div>
@@ -598,11 +598,11 @@ const Vendas: React.FC = () => {
                 )}
 
 
-                {/* 🏦 FINANCIAMENTO — Painel Detalhado */}
+                {/*  FINANCIAMENTO — Painel Detalhado */}
                 {novoPagamentoTipo === 6 && (
                     <div style={{ background: 'rgba(16, 185, 129, 0.06)', border: '1px solid rgba(16, 185, 129, 0.25)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', paddingBottom: '10px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                            <span style={{ fontSize: '1.1rem' }}>🏦</span>
+                            <span style={{ fontSize: '1.1rem' }}></span>
                             <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#34d399' }}>Dados do Financiamento</span>
                         </div>
 
@@ -615,11 +615,12 @@ const Vendas: React.FC = () => {
                                         <option value="Banco Bradesco (237)">Banco Bradesco (237)</option>
                                         <option value="Banco Itaú (341)">Banco Itaú / Itaú Unibanco (341)</option>
                                         <option value="Banco do Brasil (001)">Banco do Brasil (001)</option>
-                                        <option value="Santander (033)">Santander (033)</option>
-                                        <option value="Caixa Econômica (104)">Caixa Econômica Federal (104)</option>
+                                        <option value="Caixa Econômica (104)">Caixa Econômica (104)</option>
+                                        <option value="Banco Santander (033)">Banco Santander (033)</option>
                                     </optgroup>
                                     <optgroup label="Financeiras de Veículos">
-                                        <option value="BV Financeira (655)">BV Financeira / BV Bank (655)</option>
+                                        <option value="C6 Bank (336)">C6 Bank (336)</option>
+                                        <option value="BV Financeira">BV Financeira / Banco Votorantim</option>
                                         <option value="Banco Pan (623)">Banco Pan (623)</option>
                                         <option value="Banco Votorantim (655)">Banco Votorantim (655)</option>
                                         <option value="Santander Financiamentos">Santander Financiamentos</option>
@@ -821,6 +822,7 @@ const Vendas: React.FC = () => {
                                             <option value="Banco Bradesco (237)">Banco Bradesco (237)</option>
                                             <option value="Banco do Brasil (001)">Banco do Brasil (001)</option>
                                             <option value="Santander (033)">Santander (033)</option>
+                                            <option value="C6 Bank (336)">C6 Bank (336)</option>
                                             <option value="Caixa Econômica (104)">Caixa Econômica (104)</option>
                                             <option value="Sicredi (748)">Sicredi (748)</option>
                                             <option value="Sicoob (756)">Sicoob (756)</option>
@@ -992,6 +994,7 @@ const Vendas: React.FC = () => {
                                             <option value="Banco Bradesco (237)">Banco Bradesco (237)</option>
                                             <option value="Banco do Brasil (001)">Banco do Brasil (001)</option>
                                             <option value="Santander (033)">Santander (033)</option>
+                                            <option value="C6 Bank (336)">C6 Bank (336)</option>
                                             <option value="Caixa Econômica (104)">Caixa Econômica (104)</option>
                                             <option value="Sicredi (748)">Sicredi (748)</option>
                                             <option value="Sicoob (756)">Sicoob (756)</option>
@@ -1112,7 +1115,7 @@ const Vendas: React.FC = () => {
                             ) : p.tipoPagamento === 6 ? (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                        <span style={{ fontSize: '0.9rem' }}>🏦</span>
+                                        <span style={{ fontSize: '0.9rem' }}></span>
                                         <strong style={{ fontSize: '0.88rem', color: '#34d399' }}>
                                             Financiamento {p.parcelas ? `(${p.parcelas}x)` : ''}
                                         </strong>
@@ -1125,7 +1128,7 @@ const Vendas: React.FC = () => {
                             ) : (p.tipoPagamento === 3 || p.tipoPagamento === 4) ? (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                        <span style={{ fontSize: '0.9rem' }}>💳</span>
+                                        <span style={{ fontSize: '0.9rem' }}></span>
                                         <strong style={{ fontSize: '0.88rem', color: '#c7d2fe' }}>
                                             Cartão {p.tipoPagamento === 3 ? `Crédito ${p.parcelas ? `(${p.parcelas}x)` : ''}` : 'Débito'}
                                         </strong>
@@ -1136,7 +1139,7 @@ const Vendas: React.FC = () => {
                                 </div>
                             ) : (
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <span>{p.tipoPagamento === 2 ? '⚡' : '💵'}</span>
+                                    <span>{p.tipoPagamento === 2 ? '⚡' : ''}</span>
                                     <span style={{ fontWeight: 500, fontSize: '0.88rem' }}>
                                         {p.tipoPagamento === 2 ? 'PIX' : 'Dinheiro em Espécie'}
                                     </span>

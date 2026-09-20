@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { fetchClientes, adicionarCliente } from "../api";
 import type { Cliente } from "../api";
 import { useNavigate } from "react-router-dom";
@@ -85,14 +85,20 @@ const Clientes: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await adicionarCliente(formData);
+      await adicionarCliente({
+        ...formData,
+        tipoPessoa: tipoPessoa === "PF" ? "Fisica" : "Juridica",
+        logradouro: formData.endereco,
+        nomeRazaoSocial: formData.nome
+      });
       setShowForm(false);
       setFormData({ nome: "", cpfCnpj: "", email: "", telefone: "", endereco: "", cep: "", bairro: "", cidade: "", estado: "" });
       setCnpjStatus("idle");
       setCepStatus("idle");
       carregarClientes();
-    } catch {
-      alert("Erro ao salvar cliente.");
+    } catch (e: any) {
+      console.error(e);
+      alert(e.message || "Erro ao salvar cliente.");
     }
   };
 

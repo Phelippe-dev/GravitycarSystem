@@ -14,7 +14,7 @@ using Microsoft.EntityFrameworkCore;
 namespace GravityCarSystem.API.Controllers;
 
 /// <summary>
-/// Controller para testes de carga — NÃO usar em produção.
+/// Controller para testes de carga — NíO usar em produção.
 /// </summary>
 [Authorize]
 [ApiController]

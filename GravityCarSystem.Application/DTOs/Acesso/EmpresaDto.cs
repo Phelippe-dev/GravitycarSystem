@@ -11,6 +11,7 @@ public class EmpresaDto
     public string? InscricaoEstadual { get; set; }
     public string? Telefone { get; set; }
     public string? Email { get; set; }
+    public string? SenhaAdmin { get; set; }
     public string? Cep { get; set; }
     public string? Logradouro { get; set; }
     public string? Numero { get; set; }

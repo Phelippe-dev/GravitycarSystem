@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -21,7 +21,7 @@ public class EmpresaService : IEmpresaService
 
     public async Task<IEnumerable<EmpresaDto>> ObterTodasAsync()
     {
-        // NOTA: Como é o Portal Admin da Software House, ele NÃO usa o TenantId, 
+        // NOTA: Como Ã© o Portal Admin da Software House, ele NÃ­O usa o TenantId, 
         // ele busca TODAS as Empresas cadastradas no banco de dados inteiro.
         var empresas = await _context.Empresas.OrderByDescending(e => e.DataCadastro).ToListAsync();
         
@@ -48,7 +48,7 @@ public class EmpresaService : IEmpresaService
     public async Task<EmpresaDto> ObterPorIdAsync(Guid id)
     {
         var e = await _context.Empresas.FirstOrDefaultAsync(x => x.Id == id);
-        if (e == null) throw new KeyNotFoundException("Empresa não encontrada.");
+        if (e == null) throw new KeyNotFoundException("Empresa nÃ£o encontrada.");
 
         return new EmpresaDto
         {
@@ -92,20 +92,77 @@ public class EmpresaService : IEmpresaService
         };
 
         _context.Empresas.Add(empresa);
-        
-        // Aqui futuramente será criado o primeiro Usuário (Dono da Empresa)
-        
         await _context.SaveChangesAsync();
+        
+        // Criar o primeiro UsuÃ¡rio (Dono da Empresa)
+        if (!string.IsNullOrEmpty(dto.Email) && !string.IsNullOrEmpty(dto.SenhaAdmin))
+        {
+            var adminUser = new Usuario
+            {
+                Id = Guid.NewGuid(),
+                Nome = "Administrador - " + dto.NomeFantasia,
+                Email = dto.Email.ToLower().Trim(),
+                SenhaHash = BCrypt.Net.BCrypt.HashPassword(dto.SenhaAdmin),
+                EmpresaId = empresa.Id,
+                Ativo = true,
+                Cargo = "ProprietÃ¡rio",
+                DataCadastro = DateTime.UtcNow
+            };
+            _context.Usuarios.Add(adminUser);
+            await _context.SaveChangesAsync();
+
+            var adminPerfil = await _context.Perfis.FirstOrDefaultAsync(p => p.Nome == "Admin");
+            if (adminPerfil != null)
+            {
+                _context.UsuarioPerfis.Add(new UsuarioPerfil
+                {
+                    UsuarioId = adminUser.Id,
+                    PerfilId = adminPerfil.Id
+                });
+                await _context.SaveChangesAsync();
+            }
+        }
+        
         dto.Id = empresa.Id;
         dto.Ativa = empresa.Ativa;
         dto.CriadoEm = empresa.DataCadastro;
         return dto;
     }
 
-    public async Task<bool> AlternarStatusAsync(Guid id)
+        public async Task<EmpresaDto> AtualizarAsync(Guid id, EmpresaDto dto)
     {
         var empresa = await _context.Empresas.FirstOrDefaultAsync(x => x.Id == id);
         if (empresa == null) throw new KeyNotFoundException("Empresa não encontrada.");
+
+        empresa.RazaoSocial = dto.RazaoSocial;
+        empresa.NomeFantasia = dto.NomeFantasia;
+        empresa.Cnpj = dto.Cnpj;
+        empresa.InscricaoEstadual = dto.InscricaoEstadual;
+        empresa.Telefone = dto.Telefone;
+        empresa.Email = dto.Email;
+        empresa.Cep = dto.Cep;
+        empresa.Logradouro = dto.Logradouro;
+        empresa.Numero = dto.Numero;
+        empresa.Bairro = dto.Bairro;
+        empresa.Cidade = dto.Cidade;
+        empresa.Estado = dto.Estado;
+
+        await _context.SaveChangesAsync();
+        return dto;
+    }
+
+    public async Task RemoverAsync(Guid id)
+    {
+        var empresa = await _context.Empresas.FirstOrDefaultAsync(x => x.Id == id);
+        if (empresa == null) throw new KeyNotFoundException("Empresa não encontrada.");
+        
+        _context.Empresas.Remove(empresa);
+        await _context.SaveChangesAsync();
+    }
+    public async Task<bool> AlternarStatusAsync(Guid id)
+    {
+        var empresa = await _context.Empresas.FirstOrDefaultAsync(x => x.Id == id);
+        if (empresa == null) throw new KeyNotFoundException("Empresa nÃ£o encontrada.");
 
         empresa.Ativa = !empresa.Ativa; // Bloqueia ou Desbloqueia
         await _context.SaveChangesAsync();

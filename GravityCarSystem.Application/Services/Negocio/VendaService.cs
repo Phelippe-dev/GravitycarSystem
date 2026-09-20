@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -50,7 +50,7 @@ public class VendaService : IVendaService
             
             // Marca o veículo como vendido
             veiculo.Status = StatusVeiculo.Vendido;
-            veiculo.DataVenda = DateTime.Now;
+            veiculo.DataVenda = DateTime.UtcNow;
 
             vendaVeiculos.Add(new VendaVeiculo
             {
@@ -296,7 +296,7 @@ public class VendaService : IVendaService
 
         venda.Status = StatusVenda.Cancelada;
         
-        // INTERLIGAÇÃO (Fase 5 -> 6): Estorno de Contas a Receber
+        // INTERLIGAÇíO (Fase 5 -> 6): Estorno de Contas a Receber
         var contasReceber = await _context.ContasReceber.Where(c => c.VendaId == vendaId).ToListAsync();
         foreach (var conta in contasReceber)
         {

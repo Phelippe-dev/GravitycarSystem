@@ -9,6 +9,7 @@ export interface Veiculo {
     anoModelo: number;
     valorVenda: number;
     status: number;
+    consignado?: boolean;
     placa?: string;
     observacoes?: string;
     cor?: string;
@@ -51,7 +52,7 @@ export interface VendaPagamentoDto {
     taxaJuros?: number;
     valorEntrada?: number;
     numeroContrato?: string;
-    // Cartão
+    // CartÃƒÆ’Ã‚Â£o
     bandeira?: string;
     tipoCartao?: 'credito' | 'debito';
     maquininha?: string;
@@ -144,13 +145,13 @@ const getHeaders = () => {
     };
 };
 
-// -- Veículos --
+// -- VeÃƒÆ’Ã‚Â­culos --
 export const fetchVeiculos = async (): Promise<Veiculo[]> => {
     try {
         const response = await fetch(`${API_BASE_URL}/veiculos`, {
             headers: getHeaders()
         });
-        if (!response.ok) throw new Error('Erro ao buscar veículos');
+        if (!response.ok) throw new Error('Erro ao buscar veÃƒÆ’Ã‚Â­culos');
         return await response.json();
     } catch (error) {
         console.error(error);
@@ -167,7 +168,7 @@ export const adicionarVeiculo = async (veiculo: Partial<Veiculo>): Promise<Veicu
 
     if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(errorText || 'Erro ao adicionar veículo');
+        throw new Error(errorText || 'Erro ao adicionar veÃƒÆ’Ã‚Â­culo');
     }
 
     return await response.json();
@@ -194,9 +195,9 @@ export const fetchStats = async (veiculos: Veiculo[]): Promise<DashboardStats> =
         // Contas a receber normais (pendentes)
         const contasReceberPendentes = contasReceber.reduce((acc, curr) => acc + (curr.status === 0 ? curr.saldo : 0), 0);
         
-        // Cheques em custódia (status=1) e recebidos/depositados aguardando (status=0,2)
+        // Cheques em custÃƒÆ’Ã‚Â³dia (status=1) e recebidos/depositados aguardando (status=0,2)
         const chequesPendentes = cheques
-            .filter(c => c.status === 1 || c.status === 0 || c.status === 2) // Custódia, Recebido, Depositado
+            .filter(c => c.status === 1 || c.status === 0 || c.status === 2) // CustÃƒÆ’Ã‚Â³dia, Recebido, Depositado
             .reduce((acc, c) => acc + (c.valor || 0), 0);
         
         totalContasReceber = contasReceberPendentes + chequesPendentes;
@@ -360,6 +361,24 @@ export const getVeiculoDetalhes = async (id: string): Promise<VeiculoDetalhes> =
     return response.json();
 };
 
+export const removerVeiculo = async (id: string): Promise<void> => {
+    const response = await fetch(`${API_BASE_URL}/veiculos/${id}`, { 
+        method: 'DELETE', 
+        headers: getHeaders() 
+    });
+    if (!response.ok) throw new Error('Falha ao remover veÃƒÆ’Ã‚Â­culo');
+};
+
+export const atualizarVeiculo = async (id: string, veiculo: Partial<Veiculo>): Promise<Veiculo> => {
+    const response = await fetch(`${API_BASE_URL}/veiculos/${id}`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(veiculo)
+    });
+    if (!response.ok) throw new Error('Falha ao atualizar veÃƒÆ’Ã‚Â­culo');
+    return response.json();
+};
+
 export const uploadFotoVeiculo = async (id: string, file: File, isPrincipal: boolean = false): Promise<VeiculoFoto> => {
     const formData = new FormData();
     formData.append('file', file);
@@ -370,7 +389,7 @@ export const uploadFotoVeiculo = async (id: string, file: File, isPrincipal: boo
         method: 'POST',
         headers: {
             ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-            // Não defina Content-Type, o navegador define multipart/form-data com o boundary
+            // NÃƒÆ’Ã‚Â£o defina Content-Type, o navegador define multipart/form-data com o boundary
         },
         body: formData
     });
@@ -453,7 +472,7 @@ export const adicionarCustoVeiculo = async (id: string, custo: VeiculoCusto): Pr
     });
     if (!response.ok) {
         const text = await response.text();
-        let message = 'Falha ao lançar custo do veículo';
+        let message = 'Falha ao lanÃƒÆ’Ã‚Â§ar custo do veÃƒÆ’Ã‚Â­culo';
         try {
             const errObj = JSON.parse(text);
             message = errObj.message || errObj.title || text;
@@ -523,7 +542,7 @@ export const fetchContasReceber = async (): Promise<ContaReceberDto[]> => {
     } catch { return []; }
 };
 
-// --- FASE 4: RELATÓRIOS ---
+// --- FASE 4: RELATÃƒÆ’Ã¢â‚¬Å“RIOS ---
 
 export interface RentabilidadeVeiculoDto {
     veiculoId: string;
@@ -557,7 +576,7 @@ export const fetchRentabilidade = async (dataInicio?: string, dataFim?: string):
         if (params.toString()) url += `?${params.toString()}`;
 
         const response = await fetch(url, { headers: getHeaders() });
-        if (!response.ok) throw new Error('Erro ao buscar relatório de rentabilidade');
+        if (!response.ok) throw new Error('Erro ao buscar relatÃƒÆ’Ã‚Â³rio de rentabilidade');
         return await response.json();
     } catch { return []; }
 };
@@ -583,7 +602,7 @@ export interface NotaFiscalDto {
     chaveAcesso: string;
     numero?: string;
     serie?: string;
-    tipo: number; // 0: Entrada, 1: Saída
+    tipo: number; // 0: Entrada, 1: SaÃƒÆ’Ã‚Â­da
     dataEmissao: string;
     emitenteCnpj?: string;
     emitenteNome?: string;
@@ -627,7 +646,7 @@ export const emitirNotaFiscalVenda = async (vendaId: string): Promise<NotaFiscal
         const response = await fetch(`${API_BASE_URL}/notasfiscais/emitir/venda`, {
             method: 'POST',
             headers: getHeaders(),
-            body: JSON.stringify({ vendaId, naturezaOperacao: 'Venda de Veículo' })
+            body: JSON.stringify({ vendaId, naturezaOperacao: 'Venda de VeÃƒÆ’Ã‚Â­culo' })
         });
         if (!response.ok) throw new Error('Erro ao emitir NF');
         return await response.json();
@@ -652,7 +671,7 @@ export const emitirNotaFiscalEntrada = async (veiculoId: string, clienteId: stri
     }
 };
 
-// --- FASE 5: INTEGRAÇÕES SENATRAN / RENAVE ---
+// --- FASE 5: INTEGRAÃƒÆ’Ã¢â‚¬Â¡ÃƒÆ’Ã¢â‚¬Â¢ES SENATRAN / RENAVE ---
 export interface SenatranVeiculoResultDto {
     placa: string;
     renavam: string;
@@ -730,8 +749,40 @@ export const createEmpresa = async (empresa: Partial<Empresa>): Promise<Empresa>
         headers: getHeaders(),
         body: JSON.stringify(empresa)
     });
+    if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || "Erro ao criar empresa");
+    }
     return response.json();
 };
+
+export const updateEmpresa = async (id: string, empresa: Partial<Empresa>): Promise<Empresa> => {
+    const response = await fetch(`${API_BASE_URL}/admin/empresas/${id}`, {
+        method: "PUT",
+        headers: getHeaders(),
+        body: JSON.stringify(empresa)
+    });
+    if (!response.ok) throw new Error("Erro ao atualizar empresa");
+    return response.json();
+};
+
+export const deleteEmpresa = async (id: string): Promise<void> => {
+    const response = await fetch(`${API_BASE_URL}/admin/empresas/${id}`, {
+        method: "DELETE",
+        headers: getHeaders()
+    });
+    if (!response.ok) throw new Error("Erro ao deletar empresa");
+};
+
+export const impersonateEmpresa = async (id: string): Promise<{ token: string, nome: string, email: string }> => {
+    const response = await fetch(`${API_BASE_URL}/auth/impersonate/${id}`, {
+        method: "POST",
+        headers: getHeaders()
+    });
+    if (!response.ok) throw new Error("Erro ao entrar na loja");
+    return response.json();
+};
+
 
 export const toggleStatusEmpresa = async (id: string): Promise<{ ativa: boolean }> => {
     const response = await fetch(`${API_BASE_URL}/admin/empresas/${id}/toggle-status`, {
@@ -741,7 +792,7 @@ export const toggleStatusEmpresa = async (id: string): Promise<{ ativa: boolean 
     return response.json();
 };
 
-// ================= AVALIAÇÕES ==================
+// ================= AVALIAÃƒÆ’Ã¢â‚¬Â¡ÃƒÆ’Ã¢â‚¬Â¢ES ==================
 export interface Avaliacao {
     id: string;
     clienteId: string;
@@ -777,7 +828,7 @@ export const salvarAvaliacao = async (avaliacao: any): Promise<any> => {
         body: JSON.stringify(avaliacao)
     });
     if (!response.ok) {
-        let errText = 'Erro ao salvar avaliação';
+        let errText = 'Erro ao salvar avaliaÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o';
         try {
             const rawText = await response.text();
             try {
@@ -794,7 +845,7 @@ export const salvarAvaliacao = async (avaliacao: any): Promise<any> => {
     return await response.json();
 };
 
-// ─── SALDO DE CRÉDITOS ────────────────────────────────────────────────────────
+// ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ SALDO DE CRÃƒÆ’Ã¢â‚¬Â°DITOS ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 export const fetchSaldoCreditos = async (): Promise<{ saldoConsultas: number; consultasRealizadas: number }> => {
     try {
         const response = await fetch(`${API_BASE_URL}/empresa/saldo`, { headers: getHeaders() });

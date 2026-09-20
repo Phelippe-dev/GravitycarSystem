@@ -62,3 +62,17 @@ Para que ele funcione:
 Vá até "Firewall do Windows com Segurança Avançada", clique em "Regras de Entrada" e crie regras permitindo acesso nas portas `80` (Web) e `5000` (API).
 
 Pronto! Ao conectar qualquer celular ou PC na mesma rede e acessar o IP `http://192.168.0.100`, o Gravity Car System funcionará perfeitamente.
+
+## 4. Varredura de Segurança e Testes (Para o Pendrive)
+Antes de entregar o sistema no pendrive para o cliente final, siga este checklist de segurança e testes:
+
+**Segurança:**
+1. **JWT Secret:** No arquivo ppsettings.json de produção, troque a chave JwtSettings:Secret para uma string aleatória de no mínimo 32 caracteres. NUNCA deixe a chave padrão.
+2. **Senha Padrão:** Peça ao dono da loja (o primeiro usuário SuperAdmin criado) para trocar a senha "123456" ou "260517" logo no primeiro login.
+3. **Isolamento de Tenants:** O sistema garante que cada lojista veja apenas seus próprios veículos, vendas e funcionários graças ao filtro global EmpresaId no Entity Framework. O único usuário com acesso à área "Admin Portal" para ver e gerenciar todos os Tenants é o **SuperAdmin** (dmin@gravitycar.com).
+
+**Testes de Validação Funcional (Realizados e Aprovados):**
+- [x] **Cadastro de Tenant:** Criar um Tenant e verificar se a API retorna 200 OK. Se houver erros de campo, o sistema agora exibe um lert() no navegador com a mensagem exata (ex: "E-mail já existe" ou "CNPJ inválido").
+- [x] **Hierarquia de Permissões (Roles):** Criar Tenants é restrito EXCLUSIVAMENTE ao papel SuperAdmin. Usuários do tipo Admin de outras lojas não conseguem acessar o endpoint /api/admin/empresas (receberão 403 Forbidden).
+- [x] **Deleção de Funcionários:** Funcionários agora são deletados limpando primeiramente seus Perfis em cascata (evitando erro de Foreign Key 500 que ocorria anteriormente).
+- [x] **Impersonation:** O botão "Entrar" no Admin Portal gera um novo Token herdando os privilégios dentro do banco de dados do Tenant destino, permitindo que a Software House preste suporte sem precisar da senha do cliente.

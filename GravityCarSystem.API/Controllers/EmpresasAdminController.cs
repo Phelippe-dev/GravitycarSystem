@@ -7,9 +7,7 @@ using GravityCarSystem.Application.Interfaces.Acesso;
 
 namespace GravityCarSystem.API.Controllers;
 
-// NOTA: Para um MVP, podemos deixar AllowAnonymous se quisermos testar rápido, 
-// ou Authorize para forçar login (Mesmo que seja um usuário comum por enquanto, o ideal é ter uma Role "SuperAdmin").
-[Authorize] 
+[Authorize(Roles = "SuperAdmin")]
 [ApiController]
 [Route("api/admin/empresas")]
 public class EmpresasAdminController : ControllerBase
@@ -33,6 +31,20 @@ public class EmpresasAdminController : ControllerBase
     {
         var result = await _empresaService.CriarAsync(dto);
         return Ok(result);
+    }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Atualizar(Guid id, EmpresaDto dto)
+    {
+        var result = await _empresaService.AtualizarAsync(id, dto);
+        return Ok(result);
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Remover(Guid id)
+    {
+        await _empresaService.RemoverAsync(id);
+        return Ok(new { message = "Empresa removida com sucesso." });
     }
 
     [HttpPatch("{id}/toggle-status")]

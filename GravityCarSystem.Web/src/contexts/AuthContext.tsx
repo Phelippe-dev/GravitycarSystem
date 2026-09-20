@@ -4,12 +4,21 @@ import { API_BASE_URL } from '../api';
 
 export type UserRole = 'SuperAdmin' | 'Admin' | 'Gerente' | 'Vendedor';
 
+// Hierarquia de roles: SuperAdmin > Admin > Gerente > Vendedor
+const ROLE_HIERARCHY: Record<UserRole, number> = {
+    'SuperAdmin': 4,
+    'Admin': 3,
+    'Gerente': 2,
+    'Vendedor': 1,
+};
+
 export interface User {
     id: string;
     nome: string;
     email: string;
     empresaId: string;
     role: UserRole;
+    realRole: UserRole; // role real do JWT (não pode ser alterada)
     cargo: string;
     comissaoPercent: number;
 }
@@ -22,7 +31,7 @@ export interface SaldoCreditos {
 interface AuthContextType {
     user: User | null;
     token: string | null;
-    login: (token: string) => void;
+    login: (token: string, role?: string) => void;
     logout: () => void;
     isAuthenticated: boolean;
     activeRole: UserRole;
@@ -32,6 +41,23 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+/** Extrai a role do JWT decodificado */
+function extractRoleFromJwt(decoded: any): UserRole {
+    // O claim de Role pode vir em diferentes formatos
+    const roleClaim =
+        decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ||
+        decoded['role'] ||
+        decoded['Role'];
+
+    // Pode ser array (múltiplas roles) ou string
+    const roleValue = Array.isArray(roleClaim) ? roleClaim[0] : roleClaim;
+
+    if (roleValue && ['SuperAdmin', 'Admin', 'Gerente', 'Vendedor'].includes(roleValue)) {
+        return roleValue as UserRole;
+    }
+    return 'Admin'; // fallback para usuários antigos sem role no JWT
+}
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
@@ -43,7 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (saved && ['SuperAdmin', 'Admin', 'Gerente', 'Vendedor'].includes(saved)) {
             return saved;
         }
-        return 'SuperAdmin';
+        return 'Admin'; // default mais seguro
     });
 
     const getCargoLabel = (role: UserRole) => {
@@ -57,6 +83,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const setActiveRole = (newRole: UserRole) => {
+        // Só permite trocar para roles iguais ou inferiores à role real
+        const realRole = user?.realRole || 'Vendedor';
+        if (ROLE_HIERARCHY[newRole] > ROLE_HIERARCHY[realRole]) {
+            return; // não pode escalar privilégio
+        }
         localStorage.setItem('@GravityCar:activeRole', newRole);
         setActiveRoleState(newRole);
         setUser(prev => prev ? { ...prev, role: newRole, cargo: getCargoLabel(newRole) } : null);
@@ -76,9 +107,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } catch { /* sem saldo no dev */ }
     }, []);
 
-    const login = (newToken: string) => {
+    const login = (newToken: string, role?: string) => {
         localStorage.setItem('@GravityCar:token', newToken);
+        // Limpar activeRole salvo para usar a role real do novo login
+        localStorage.removeItem('@GravityCar:activeRole');
         setToken(newToken);
+
+        // Se a role veio da response do login, usar ela como activeRole inicial
+        if (role && ['SuperAdmin', 'Admin', 'Gerente', 'Vendedor'].includes(role)) {
+            setActiveRoleState(role as UserRole);
+            localStorage.setItem('@GravityCar:activeRole', role);
+        }
     };
 
     const logout = () => {
@@ -94,17 +133,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             try {
                 const decoded: any = jwtDecode(token);
                 const userId = decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || decoded.nameid || '11111111-1111-1111-1111-111111111111';
-                const userEmail = decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] || decoded.email || 'phelippesilvadev@gmail.com';
-                const userName = decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] || decoded.unique_name || 'Phelippe Silva';
+                const userEmail = decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] || decoded.email || '';
+                const userName = decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] || decoded.unique_name || 'Usuário';
                 const empresaId = decoded['EmpresaId'] || '00000000-0000-0000-0000-000000000001';
+
+                // Extrair a role REAL do JWT
+                const jwtRole = extractRoleFromJwt(decoded);
+
+                // Se não tem activeRole salvo, usar a role do JWT
+                const savedRole = localStorage.getItem('@GravityCar:activeRole') as UserRole;
+                let effectiveRole = jwtRole;
+                if (savedRole && ['SuperAdmin', 'Admin', 'Gerente', 'Vendedor'].includes(savedRole)) {
+                    // Só aceita a role salva se for menor ou igual à role real
+                    if (ROLE_HIERARCHY[savedRole] <= ROLE_HIERARCHY[jwtRole]) {
+                        effectiveRole = savedRole;
+                    }
+                }
+                setActiveRoleState(effectiveRole);
 
                 setUser({
                     id: userId,
                     nome: userName,
                     email: userEmail,
                     empresaId: empresaId,
-                    role: activeRole,
-                    cargo: getCargoLabel(activeRole),
+                    role: effectiveRole,
+                    realRole: jwtRole,
+                    cargo: getCargoLabel(effectiveRole),
                     comissaoPercent: 2.0
                 });
 

@@ -163,7 +163,7 @@ const ConfiguracoesEmpresa: React.FC = () => {
       )}
 
       {/* Dados Principais */}
-      <Section title="Dados da Empresa" icon="🏢">
+      <Section title="Dados da Empresa" icon="">
         <div className="form-row">
           <div className="form-group" style={{ flex: 2 }}>
             <label className="form-label">Razão Social *</label>

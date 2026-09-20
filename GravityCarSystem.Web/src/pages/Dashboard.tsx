@@ -80,10 +80,14 @@ const Dashboard: React.FC = () => {
   };
 
   const getStatusBadge = (status: number) => {
-    if (status === 0) return <span className="badge badge-success">Disponível</span>;
-    if (status === 1) return <span className="badge badge-warning">Vendido</span>;
-    if (status === 2) return <span className="badge badge-danger">Manutenção</span>;
-    return <span className="badge" style={{ background: '#374151' }}>{status}</span>;
+    switch(status) {
+      case 4: return <span className="badge badge-success">Disponível</span>;
+      case 6: return <span className="badge badge-warning">Vendido</span>;
+      case 3: return <span className="badge badge-info">Em Preparação</span>;
+      case 1: return <span className="badge badge-info">Em Avaliação</span>;
+      case 5: return <span className="badge badge-warning">Reservado</span>;
+      default: return <span className="badge" style={{ background: '#374151' }}>Indisponível</span>;
+    }
   };
 
   // Dados integrados para fluxo de caixa em tempo real
@@ -224,19 +228,19 @@ const Dashboard: React.FC = () => {
           {/* Breakdown */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', borderTop: '1px solid rgba(168,85,247,0.2)', paddingTop: '8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem' }}>
-              <span style={{ color: '#94a3b8' }}>🔵 Em Custódia</span>
+              <span style={{ color: '#94a3b8' }}> Em Custódia</span>
               <span style={{ color: '#c084fc', fontWeight: 600 }}>
                 {loading ? '...' : new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(chequeBreakdown.custodia)}
               </span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem' }}>
-              <span style={{ color: '#94a3b8' }}>🟡 Depositados (aguard. comp.)</span>
+              <span style={{ color: '#94a3b8' }}> Depositados (aguard. comp.)</span>
               <span style={{ color: '#fbbf24', fontWeight: 600 }}>
                 {loading ? '...' : new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(chequeBreakdown.depositados)}
               </span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem' }}>
-              <span style={{ color: '#94a3b8' }}>🟢 Contas a Receber</span>
+              <span style={{ color: '#94a3b8' }}> Contas a Receber</span>
               <span style={{ color: '#34d399', fontWeight: 600 }}>
                 {loading ? '...' : new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(chequeBreakdown.contasReceber)}
               </span>

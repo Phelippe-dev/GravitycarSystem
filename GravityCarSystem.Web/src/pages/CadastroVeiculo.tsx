@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { adicionarVeiculo } from '../api';
+import { useNavigate, useParams } from 'react-router-dom';
+import { adicionarVeiculo, atualizarVeiculo, getVeiculoDetalhes } from '../api';
 import type { Veiculo } from '../api';
 import { buscarMarcasFipe, buscarModelosFipe, buscarAnosFipe, buscarPrecoFipeCompleto, fipeValorParaNumero } from '../services/brasilapi';
 import type { FipeMarca, FipeModelo } from '../services/brasilapi';
@@ -59,6 +59,8 @@ const SearchableSelect = ({ options, value, onChange, placeholder, disabled = fa
 
 const CadastroVeiculo: React.FC = () => {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const isEditing = !!id;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -96,21 +98,53 @@ const CadastroVeiculo: React.FC = () => {
     quilometragem: 0,
     renavam: '',
     chassi: '',
-    status: 4
+    status: 4,
+    consignado: false
   });
 
   const formatBRL = (val: number) => {
     return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val);
   };
 
+  useEffect(() => {
+    if (isEditing) {
+      setLoading(true);
+      getVeiculoDetalhes(id).then(v => {
+        setFormData({
+            marca: v.marca,
+            modelo: v.modelo,
+            versao: v.versao,
+            anoFabricacao: v.anoFabricacao,
+            anoModelo: v.anoModelo,
+            valorVenda: v.valorVenda,
+            valorCompra: v.valorCompra,
+            placa: v.placa,
+            cor: v.cor,
+            combustivel: v.combustivel,
+            cambio: v.cambio,
+            quilometragem: v.quilometragem,
+            renavam: v.renavam,
+            chassi: v.chassi,
+            status: v.status,
+            consignado: v.consignado || false
+        });
+        if (v.valorVenda) setDisplayValorVenda(formatBRL(v.valorVenda));
+        if (v.valorCompra) setDisplayValorCompra(formatBRL(v.valorCompra));
+      }).catch(err => {
+        console.error(err);
+        setError("Erro ao carregar dados do veículo.");
+      }).finally(() => setLoading(false));
+    }
+  }, [id, isEditing]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
+    const target = e.target as HTMLInputElement;
+    const { name, value, type, checked } = target;
     const formattedVal = name === 'placa' ? value.toUpperCase() : value;
     
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'number' ? (formattedVal === '' ? '' : Number(formattedVal)) : formattedVal
+      [name]: type === 'checkbox' ? checked : (type === 'number' ? (formattedVal === '' ? '' : Number(formattedVal)) : formattedVal)
     }));
   };
 
@@ -141,10 +175,15 @@ const CadastroVeiculo: React.FC = () => {
     setError(null);
     
     try {
-      await adicionarVeiculo(formData);
-      navigate('/estoque'); // Redireciona para o estoque após sucesso
+      if (isEditing) {
+        await atualizarVeiculo(id, formData);
+        navigate(`/veiculos/${id}`);
+      } else {
+        await adicionarVeiculo(formData);
+        navigate('/estoque'); // Redireciona para o estoque após sucesso
+      }
     } catch (err: any) {
-      setError(err.message || 'Ocorreu um erro ao cadastrar o veículo. Verifique se o Back-end está rodando.');
+      setError(err.message || 'Ocorreu um erro ao salvar o veículo. Verifique se o Back-end está rodando.');
     } finally {
       setLoading(false);
     }
@@ -154,7 +193,7 @@ const CadastroVeiculo: React.FC = () => {
     <div style={{ maxWidth: '1000px', margin: '0 auto', width: '100%' }}>
       <header className="page-header" style={{ marginBottom: '20px' }}>
         <div>
-          <h1 className="page-title">Cadastrar Novo Veículo</h1>
+          <h1 className="page-title">{isEditing ? 'Editar Veículo' : 'Cadastrar Novo Veículo'}</h1>
           <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem', marginTop: '4px' }}>
             Preencha os dados do veículo manualmente. Use a Consulta FIPE abaixo para buscar o valor de mercado.
           </p>
@@ -431,6 +470,17 @@ const CadastroVeiculo: React.FC = () => {
           <div className="form-group">
             <label className="form-label">Chassi</label>
             <input type="text" name="chassi" value={formData.chassi} onChange={handleChange} className="form-input" placeholder="Ex: 9BW..." />
+          </div>
+
+          <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px', background: 'rgba(255,255,255,0.05)', padding: '12px', borderRadius: '8px' }}>
+            <input 
+              type="checkbox" 
+              name="consignado" 
+              checked={formData.consignado || false} 
+              onChange={handleChange} 
+              style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+            />
+            <label className="form-label" style={{ margin: 0, cursor: 'pointer' }}>Veículo Consignado (Cliente deixou na loja para venda)</label>
           </div>
 
           <div className="form-row">

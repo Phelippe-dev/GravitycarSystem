@@ -123,10 +123,12 @@ const Estoque: React.FC = () => {
             <tbody>
               {veiculosFiltrados.map(v => (
                 <tr key={v.id} onClick={() => navigate(`/veiculos/${v.id}`)} style={{ cursor: 'pointer' }}>
-                  <td>
-                    <strong>{v.marca} {v.modelo}</strong> <br/>
-                    <small style={{color: 'var(--color-gray-400)'}}>{v.versao || '-'}</small>
-                  </td>
+                    <td>
+                      <strong>{v.marca} {v.modelo}</strong> 
+                      {v.consignado && <span style={{ marginLeft: '8px', padding: '2px 6px', fontSize: '0.65rem', background: 'rgba(139, 92, 246, 0.2)', color: '#a78bfa', borderRadius: '4px', border: '1px solid #8b5cf6' }}>CONSIGNADO</span>}
+                      <br/>
+                      <small style={{color: 'var(--color-gray-400)'}}>{v.versao || '-'}</small>
+                    </td>
                   <td>{v.anoFabricacao || '-'}/{v.anoModelo || '-'}</td>
                   <td>
                     <span style={{ fontFamily: 'monospace', fontWeight: 600, padding: '2px 6px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px' }}>
