@@ -4,9 +4,12 @@ import { fetchStats, fetchVeiculos, fetchCheques, API_BASE_URL } from '../api';
 import type { DashboardStats, Veiculo, Cheque } from '../api';
 import { BarChart, Car, DollarSign, Calendar, TrendingUp, Wallet, CheckCircle2, ArrowUpRight } from 'lucide-react';
 import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { useAuth } from '../contexts/AuthContext';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
+  const { activeRole } = useAuth();
+  const isGerente = activeRole === 'Gerente' || activeRole === 'Admin' || activeRole === 'SuperAdmin';
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [veiculos, setVeiculos] = useState<Veiculo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,7 +28,7 @@ const Dashboard: React.FC = () => {
     setLoading(true);
     const [data, cheques] = await Promise.all([
       fetchVeiculos(),
-      fetchCheques().catch(() => [] as Cheque[])
+      isGerente ? fetchCheques().catch(() => [] as Cheque[]) : Promise.resolve([] as Cheque[])
     ]);
     const statsData = await fetchStats(data);
 
@@ -113,7 +116,7 @@ const Dashboard: React.FC = () => {
             Dashboard
           </h1>
           <p style={{ color: 'var(--color-gray-400)', marginTop: '8px' }}>
-            Visão Geral da Concessionária &amp; Fluxo de Caixa em Tempo Real
+            {isGerente ? 'Visão Geral da Concessionária & Fluxo de Caixa em Tempo Real' : 'Visão Geral do Estoque & Veículos'}
           </p>
         </div>
         <div>
@@ -164,7 +167,8 @@ const Dashboard: React.FC = () => {
 
       </div>
 
-      {/* Indicadores Financeiros / Fluxo de Caixa */}
+      {/* Indicadores Financeiros / Fluxo de Caixa — somente Gerente+ */}
+      {isGerente && (
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px', marginBottom: '24px' }}>
 
         <div className="stat-card glass-panel" style={{ position: 'relative', overflow: 'hidden', padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px', borderTop: '2px solid #10b981', background: 'linear-gradient(180deg, rgba(16, 185, 129, 0.05) 0%, rgba(255,255,255,0.02) 100%)' }}>
@@ -212,8 +216,10 @@ const Dashboard: React.FC = () => {
         </div>
 
       </div>
+      )}
 
-      {/* Sub-faixa financeira (Previsões & Pendências) */}
+      {/* Sub-faixa financeira (Previsões & Pendências) — somente Gerente+ */}
+      {isGerente && (
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '32px' }}>
         <div className="glass-panel" style={{ padding: '16px 20px', borderLeft: '3px solid #a855f7', display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -260,6 +266,7 @@ const Dashboard: React.FC = () => {
           </button>
         </div>
       </div>
+      )}
       
       {/* Alerta Estoque Parado Manifesto */}
       {estoqueParado > 0 && (
@@ -272,8 +279,9 @@ const Dashboard: React.FC = () => {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px', marginBottom: '40px' }}>
-        {/* Cashflow Chart */}
+      <div style={{ display: 'grid', gridTemplateColumns: isGerente ? '2fr 1fr' : '1fr', gap: '24px', marginBottom: '40px' }}>
+        {/* Cashflow Chart — somente Gerente+ */}
+        {isGerente && (
         <div className="glass-panel" style={{ padding: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
               <div>
@@ -318,6 +326,7 @@ const Dashboard: React.FC = () => {
               ))}
             </div>
         </div>
+        )}
 
         {/* Stock Status Chart */}
         <div className="glass-panel" style={{ padding: '24px' }}>
