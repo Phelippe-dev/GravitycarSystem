@@ -1,38 +1,14 @@
 using System;
 using System.Linq;
-using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using GravityCarSystem.Infrastructure.Data;
-using BCrypt.Net;
+using GravityCarSystem.Application.DTOs.Acesso;
+using GravityCarSystem.Application.Interfaces;
 
 namespace GravityCarSystem.API.Controllers;
-
-// DTOs
-public record EmpresaConfigDto(
-    string RazaoSocial,
-    string NomeFantasia,
-    string Cnpj,
-    string InscricaoEstadual,
-    string InscricaoMunicipal,
-    string Telefone,
-    string Email,
-    string Site,
-    string Logradouro,
-    string Numero,
-    string Complemento,
-    string Bairro,
-    string Cidade,
-    string Estado,
-    string Cep,
-    string RegimeTributario,
-    string ResponsavelTecnico
-);
-
-public record TrocaSenhaDto(string SenhaAtual, string NovaSenha);
-public record AdicionarCreditosDto(int Quantidade, decimal ValorPago, string Observacao = "Recarga manual");
 
 [Authorize]
 [ApiController]
@@ -40,70 +16,83 @@ public record AdicionarCreditosDto(int Quantidade, decimal ValorPago, string Obs
 public class EmpresaConfigController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly ICurrentTenantService _currentTenantService;
 
-    public EmpresaConfigController(AppDbContext context)
+    public EmpresaConfigController(AppDbContext context, ICurrentTenantService currentTenantService)
     {
         _context = context;
+        _currentTenantService = currentTenantService;
     }
 
     private Guid GetEmpresaId()
     {
-        var claim = User.Claims.FirstOrDefault(c => c.Type == "EmpresaId" || c.Type == "empresa_id");
-        if (claim != null && Guid.TryParse(claim.Value, out var id)) return id;
-        return Guid.Parse("00000000-0000-0000-0000-000000000001");
+        var empresaId = _currentTenantService.GetEmpresaId();
+        if (!empresaId.HasValue || empresaId.Value == Guid.Empty)
+        {
+            throw new UnauthorizedAccessException("Empresa não identificada.");
+        }
+        return empresaId.Value;
     }
 
     // ─── GET /api/empresa/minha ────────────────────────────────────────────
     [HttpGet("minha")]
     public async Task<IActionResult> ObterMinhaEmpresa()
     {
-        var empresaId = GetEmpresaId();
-        var empresa = await _context.Empresas.FirstOrDefaultAsync(e => e.Id == empresaId);
-        if (empresa == null) return NotFound("Empresa nao encontrada.");
-
-        var tipo = empresa.GetType();
-        string GetProp(string name, string fallback = "") {
-            var prop = tipo.GetProperty(name);
-            return prop?.GetValue(empresa)?.ToString() ?? fallback;
-        }
-
-        return Ok(new
+        try
         {
-            id = empresa.Id,
-            razaoSocial = empresa.RazaoSocial ?? "",
-            nomeFantasia = empresa.NomeFantasia ?? "",
-            cnpj = empresa.Cnpj ?? "",
-            inscricaoEstadual = GetProp("InscricaoEstadual"),
-            inscricaoMunicipal = GetProp("InscricaoMunicipal"),
-            telefone = GetProp("Telefone"),
-            email = GetProp("Email"),
-            site = GetProp("Site"),
-            logradouro = GetProp("Logradouro"),
-            numero = GetProp("Numero"),
-            complemento = GetProp("Complemento"),
-            bairro = GetProp("Bairro"),
-            cidade = GetProp("Cidade"),
-            estado = GetProp("Estado"),
-            cep = GetProp("Cep"),
-            regimeTributario = GetProp("RegimeTributario", "Simples Nacional"),
-            responsavelTecnico = GetProp("ResponsavelTecnico"),
-            saldoConsultas = empresa.SaldoConsultas,
-            consultasRealizadas = empresa.ConsultasRealizadas
-        });
+            var empresaId = GetEmpresaId();
+            var empresa = await _context.Empresas.FirstOrDefaultAsync(e => e.Id == empresaId);
+            if (empresa == null) return NotFound("Empresa não encontrada.");
+
+            return Ok(new
+            {
+                id = empresa.Id,
+                razaoSocial = empresa.RazaoSocial ?? "",
+                nomeFantasia = empresa.NomeFantasia ?? "",
+                cnpj = empresa.Cnpj ?? "",
+                inscricaoEstadual = empresa.InscricaoEstadual ?? "",
+                inscricaoMunicipal = empresa.InscricaoMunicipal ?? "",
+                telefone = empresa.Telefone ?? "",
+                email = empresa.Email ?? "",
+                site = empresa.Site ?? "",
+                logradouro = empresa.Logradouro ?? "",
+                numero = empresa.Numero ?? "",
+                complemento = empresa.Complemento ?? "",
+                bairro = empresa.Bairro ?? "",
+                cidade = empresa.Cidade ?? "",
+                estado = empresa.Estado ?? "",
+                cep = empresa.Cep ?? "",
+                regimeTributario = empresa.RegimeTributario ?? "Simples Nacional",
+                responsavelTecnico = empresa.ResponsavelTecnico ?? "",
+                saldoConsultas = empresa.SaldoConsultas,
+                consultasRealizadas = empresa.ConsultasRealizadas
+            });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(ex.Message);
+        }
     }
 
     // ─── GET /api/empresa/saldo (leve — só retorna créditos) ──────────────
     [HttpGet("saldo")]
     public async Task<IActionResult> ObterSaldo()
     {
-        var empresaId = GetEmpresaId();
-        var empresa = await _context.Empresas.FirstOrDefaultAsync(e => e.Id == empresaId);
-        if (empresa == null) return NotFound();
-        return Ok(new
+        try
         {
-            saldoConsultas = empresa.SaldoConsultas,
-            consultasRealizadas = empresa.ConsultasRealizadas
-        });
+            var empresaId = GetEmpresaId();
+            var empresa = await _context.Empresas.FirstOrDefaultAsync(e => e.Id == empresaId);
+            if (empresa == null) return NotFound();
+            return Ok(new
+            {
+                saldoConsultas = empresa.SaldoConsultas,
+                consultasRealizadas = empresa.ConsultasRealizadas
+            });
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
+        }
     }
 
     // ─── POST /api/empresa/{id}/creditos (só SuperAdmin) ──────────────────
@@ -122,66 +111,36 @@ public class EmpresaConfigController : ControllerBase
     [HttpPut("minha")]
     public async Task<IActionResult> AtualizarMinhaEmpresa([FromBody] EmpresaConfigDto dto)
     {
-        var empresaId = GetEmpresaId();
-        var empresa = await _context.Empresas.FirstOrDefaultAsync(e => e.Id == empresaId);
-        if (empresa == null) return NotFound("Empresa nao encontrada.");
+        try
+        {
+            var empresaId = GetEmpresaId();
+            var empresa = await _context.Empresas.FirstOrDefaultAsync(e => e.Id == empresaId);
+            if (empresa == null) return NotFound("Empresa não encontrada.");
 
-        empresa.RazaoSocial = dto.RazaoSocial;
-        empresa.NomeFantasia = dto.NomeFantasia;
-        empresa.Cnpj = dto.Cnpj;
+            empresa.RazaoSocial = dto.RazaoSocial;
+            empresa.NomeFantasia = dto.NomeFantasia;
+            empresa.Cnpj = dto.Cnpj;
+            empresa.InscricaoEstadual = dto.InscricaoEstadual ?? "";
+            empresa.InscricaoMunicipal = dto.InscricaoMunicipal ?? "";
+            empresa.Telefone = dto.Telefone ?? "";
+            empresa.Email = dto.Email ?? "";
+            empresa.Site = dto.Site ?? "";
+            empresa.Logradouro = dto.Logradouro ?? "";
+            empresa.Numero = dto.Numero ?? "";
+            empresa.Complemento = dto.Complemento ?? "";
+            empresa.Bairro = dto.Bairro ?? "";
+            empresa.Cidade = dto.Cidade ?? "";
+            empresa.Estado = dto.Estado ?? "";
+            empresa.Cep = dto.Cep ?? "";
+            empresa.RegimeTributario = dto.RegimeTributario ?? "Simples Nacional";
+            empresa.ResponsavelTecnico = dto.ResponsavelTecnico ?? "";
 
-        var tipo = empresa.GetType();
-        void SetProp(string name, object val) {
-            var prop = tipo.GetProperty(name);
-            if (prop != null && prop.CanWrite) prop.SetValue(empresa, val);
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Empresa atualizada com sucesso." });
         }
-        SetProp("InscricaoEstadual", dto.InscricaoEstadual ?? "");
-        SetProp("InscricaoMunicipal", dto.InscricaoMunicipal ?? "");
-        SetProp("Telefone", dto.Telefone ?? "");
-        SetProp("Email", dto.Email ?? "");
-        SetProp("Site", dto.Site ?? "");
-        SetProp("Logradouro", dto.Logradouro ?? "");
-        SetProp("Numero", dto.Numero ?? "");
-        SetProp("Complemento", dto.Complemento ?? "");
-        SetProp("Bairro", dto.Bairro ?? "");
-        SetProp("Cidade", dto.Cidade ?? "");
-        SetProp("Estado", dto.Estado ?? "");
-        SetProp("Cep", dto.Cep ?? "");
-        SetProp("RegimeTributario", dto.RegimeTributario ?? "Simples Nacional");
-        SetProp("ResponsavelTecnico", dto.ResponsavelTecnico ?? "");
-
-        await _context.SaveChangesAsync();
-        return Ok(new { message = "Empresa atualizada com sucesso." });
-    }
-}
-
-[Authorize]
-[ApiController]
-[Route("api/auth")]
-public class ChangePasswordController : ControllerBase
-{
-    private readonly AppDbContext _context;
-    public ChangePasswordController(AppDbContext context) { _context = context; }
-
-    [HttpPost("change-password")]
-    public async Task<IActionResult> TrocarSenha([FromBody] TrocaSenhaDto dto)
-    {
-        var emailClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email || c.Type == "email" || c.Type == "sub");
-        if (emailClaim == null) return Unauthorized("Token invalido.");
-
-        var usuario = await _context.Usuarios
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(u => u.Email == emailClaim.Value);
-        if (usuario == null) return NotFound("Usuario nao encontrado.");
-
-        if (!BCrypt.Net.BCrypt.Verify(dto.SenhaAtual, usuario.SenhaHash))
-            return BadRequest("Senha atual incorreta.");
-
-        if (string.IsNullOrEmpty(dto.NovaSenha) || dto.NovaSenha.Length < 6)
-            return BadRequest("Nova senha deve ter pelo menos 6 caracteres.");
-
-        usuario.SenhaHash = BCrypt.Net.BCrypt.HashPassword(dto.NovaSenha);
-        await _context.SaveChangesAsync();
-        return Ok(new { message = "Senha alterada com sucesso." });
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(ex.Message);
+        }
     }
 }

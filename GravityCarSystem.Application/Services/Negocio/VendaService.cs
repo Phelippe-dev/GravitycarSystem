@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -14,10 +14,12 @@ namespace GravityCarSystem.Application.Services.Negocio;
 public class VendaService : IVendaService
 {
     private readonly IAppDbContext _context;
+    private readonly ICurrentTenantService _tenantService;
 
-    public VendaService(IAppDbContext context)
+    public VendaService(IAppDbContext context, ICurrentTenantService tenantService)
     {
         _context = context;
+        _tenantService = tenantService;
     }
 
     public async Task<VendaDto> RealizarVendaAsync(VendaDto dto)
@@ -59,7 +61,9 @@ public class VendaService : IVendaService
             });
         }
 
-        var defaultTenantId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+        var empresaId = _tenantService.GetEmpresaId() ?? Guid.Empty;
+        if (empresaId == Guid.Empty)
+            throw new InvalidOperationException("Não foi possível identificar a empresa do usuário logado.");
         var usuarioId = dto.UsuarioId;
         if (usuarioId == Guid.Empty)
         {
@@ -73,7 +77,7 @@ public class VendaService : IVendaService
         var venda = new Venda
         {
             Id = Guid.NewGuid(),
-            EmpresaId = defaultTenantId,
+            EmpresaId = empresaId,
             ClienteId = dto.ClienteId,
             UsuarioId = usuarioId,
             NumeroVenda = dto.NumeroVenda ?? $"VD-{DateTime.UtcNow:yyyyMMddHHmmss}",
@@ -116,7 +120,7 @@ public class VendaService : IVendaService
                 veiculoTroca = new Veiculo
                 {
                     Id = Guid.NewGuid(),
-                    EmpresaId = defaultTenantId,
+                    EmpresaId = empresaId,
                     Marca = !string.IsNullOrWhiteSpace(trocaDto.Marca) ? trocaDto.Marca : "Não informada",
                     Modelo = !string.IsNullOrWhiteSpace(trocaDto.Modelo) ? trocaDto.Modelo : "Não informado",
                     AnoFabricacao = trocaDto.AnoFabricacao > 0 ? trocaDto.AnoFabricacao : (short)DateTime.UtcNow.Year,
@@ -146,7 +150,7 @@ public class VendaService : IVendaService
             contaPadrao = new GravityCarSystem.Domain.Entities.Financeiro.ContaFinanceira
             {
                 Id = Guid.NewGuid(),
-                EmpresaId = defaultTenantId,
+                EmpresaId = empresaId,
                 Nome = "Caixa Geral / Principal",
                 Tipo = 1,
                 SaldoInicial = 0,
@@ -162,7 +166,7 @@ public class VendaService : IVendaService
             categoriaReceita = new GravityCarSystem.Domain.Entities.Financeiro.CategoriaFinanceira
             {
                 Id = Guid.NewGuid(),
-                EmpresaId = defaultTenantId,
+                EmpresaId = empresaId,
                 Nome = "Vendas de Veículos",
                 Tipo = 1,
                 Ativa = true,
@@ -194,7 +198,7 @@ public class VendaService : IVendaService
                 var cheque = new Cheque
                 {
                     Id = Guid.NewGuid(),
-                    EmpresaId = defaultTenantId,
+                    EmpresaId = empresaId,
                     ClienteId = dto.ClienteId,
                     VendaPagamento = pagamento,
                     Valor = pagDto.Valor,
@@ -223,7 +227,7 @@ public class VendaService : IVendaService
             var contaReceber = new GravityCarSystem.Domain.Entities.Financeiro.ContaReceber
             {
                 Id = Guid.NewGuid(),
-                EmpresaId = defaultTenantId,
+                EmpresaId = empresaId,
                 ClienteId = dto.ClienteId,
                 Venda = venda, 
                 Descricao = $"Venda {venda.NumeroVenda} - {pagDto.TipoPagamento}",
@@ -243,7 +247,7 @@ public class VendaService : IVendaService
                 var movFinanceiro = new GravityCarSystem.Domain.Entities.Financeiro.MovimentoFinanceiro
                 {
                     Id = Guid.NewGuid(),
-                    EmpresaId = defaultTenantId,
+                    EmpresaId = empresaId,
                     ContaFinanceira = contaPadrao,
                     Categoria = categoriaReceita,
                     Tipo = 1, // 1 = Entrada
@@ -296,7 +300,7 @@ public class VendaService : IVendaService
 
         venda.Status = StatusVenda.Cancelada;
         
-        // INTERLIGAÇíO (Fase 5 -> 6): Estorno de Contas a Receber
+        // INTERLIGAÇÃO (Fase 5 -> 6): Estorno de Contas a Receber
         var contasReceber = await _context.ContasReceber.Where(c => c.VendaId == vendaId).ToListAsync();
         foreach (var conta in contasReceber)
         {

@@ -45,13 +45,13 @@ const AdminPortal: React.FC = () => {
   };
 
   const handleDeletar = async (id: string) => {
-    if (window.confirm('Tem certeza que deseja deletar este tenant? Esta aÃ§Ã£o Ã© irreversÃ­vel.')) {
+    if (window.confirm('Tem certeza que deseja deletar este tenant? Esta ação é irreversível.')) {
         try {
             await deleteEmpresa(id);
             await carregarDados();
         } catch (e) {
             console.error("Erro ao deletar empresa", e);
-            alert("NÃ£o foi possÃ­vel deletar o tenant. Ele pode possuir registros dependentes.");
+            alert("Não foi possível deletar o tenant. Ele pode possuir registros dependentes.");
         }
     }
   };
@@ -110,10 +110,10 @@ const AdminPortal: React.FC = () => {
         setQtdCreditos(10);
         setValorPago(0);
         await carregarDados();
-        alert('CrÃ©ditos adicionados com sucesso!');
+        alert('Créditos adicionados com sucesso!');
     } catch (e) {
-        console.error("Erro ao adicionar crÃ©ditos", e);
-        alert('Erro ao adicionar crÃ©ditos. Verifique se o usuÃ¡rio tem permissÃ£o SuperAdmin.');
+        console.error("Erro ao adicionar créditos", e);
+        alert('Erro ao adicionar créditos. Verifique se o usuário tem permissão SuperAdmin.');
     }
   };
 
@@ -125,7 +125,7 @@ const AdminPortal: React.FC = () => {
             <Building2 size={28} color="var(--color-blue-light)" /> Portal GravityCarAdmin
           </h1>
           <p style={{ color: 'var(--color-gray-400)', marginTop: '8px' }}>
-            GestÃ£o Multi-Tenant das ConcessionÃ¡rias Clientes (Software House)
+            Gestão Multi-Tenant das Concessionárias Clientes (Software House)
           </p>
         </div>
         <div>
@@ -169,7 +169,7 @@ const AdminPortal: React.FC = () => {
         ) : empresas.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--color-gray-400)' }}>
                 <Building2 size={48} style={{ opacity: 0.2, margin: '0 auto 16px' }} />
-                <p>Nenhuma concessionÃ¡ria cliente registrada no banco de dados.</p>
+                <p>Nenhuma concessionária cliente registrada no banco de dados.</p>
             </div>
         ) : (
             <div className="table-responsive">
@@ -177,12 +177,12 @@ const AdminPortal: React.FC = () => {
                 <thead>
                   <tr>
                     <th>Loja (Nome Fantasia)</th>
-                    <th>RazÃ£o Social</th>
+                    <th>Razão Social</th>
                     <th>CNPJ</th>
                     <th>Data Entrada</th>
                     <th>Status Assinatura</th>
                     <th>Saldo</th>
-                    <th style={{ textAlign: 'right' }}>AÃ§Ãµes</th>
+                    <th style={{ textAlign: 'right' }}>Ações</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -258,17 +258,17 @@ const AdminPortal: React.FC = () => {
             <div style={{ padding: '24px 32px', borderBottom: '1px solid var(--color-border)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
                 <Building size={24} style={{ color: 'var(--color-primary)' }} />
-                <h2 style={{ margin: 0, fontSize: '1.4rem' }}>{editingId ? 'Editar ConcessionÃ¡ria' : 'Cadastrar Nova ConcessionÃ¡ria'}</h2>
+                <h2 style={{ margin: 0, fontSize: '1.4rem' }}>{editingId ? 'Editar Concessionária' : 'Cadastrar Nova Concessionária'}</h2>
               </div>
               <p style={{ margin: 0, color: 'var(--color-gray-400)', fontSize: '0.9rem' }}>
-                {editingId ? 'Altere os dados da concessionÃ¡ria abaixo.' : 'Preencha os dados abaixo para provisionar um novo ambiente isolado.'}
+                {editingId ? 'Altere os dados da concessionária abaixo.' : 'Preencha os dados abaixo para provisionar um novo ambiente isolado.'}
               </p>
             </div>
             
             <div style={{ padding: '32px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '32px' }}>
                   <div className="form-group" style={{ gridColumn: 'span 2' }}>
-                    <label className="form-label">RazÃ£o Social *</label>
+                    <label className="form-label">Razão Social *</label>
                     <input type="text" className="form-input" placeholder="Ex: Gravity Motors Concessionaria LTDA" value={novaEmpresa.razaoSocial} onChange={e => setNovaEmpresa({...novaEmpresa, razaoSocial: e.target.value})} />
                   </div>
                   <div className="form-group">
@@ -286,7 +286,7 @@ const AdminPortal: React.FC = () => {
                   {!editingId && (
                       <div className="form-group" style={{ gridColumn: 'span 2' }}>
                         <label className="form-label">Senha Inicial do Dono *</label>
-                        <input type="password" className="form-input" placeholder="MÃ­nimo 6 caracteres" value={novaEmpresa.senhaAdmin} onChange={e => setNovaEmpresa({...novaEmpresa, senhaAdmin: e.target.value})} />
+                        <input type="password" className="form-input" placeholder="Mínimo 6 caracteres" value={novaEmpresa.senhaAdmin} onChange={e => setNovaEmpresa({...novaEmpresa, senhaAdmin: e.target.value})} />
                       </div>
                   )}
               </div>
@@ -294,7 +294,7 @@ const AdminPortal: React.FC = () => {
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
                 <button className="btn btn-secondary" onClick={() => setShowModal(false)} style={{ padding: '10px 20px' }}>Cancelar</button>
                 <button className="btn btn-primary" onClick={handleSalvar} style={{ padding: '10px 20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Plus size={18} /> {editingId ? 'Salvar AlteraÃ§Ãµes' : 'Criar Workspace'}
+                  <Plus size={18} /> {editingId ? 'Salvar Alterações' : 'Criar Workspace'}
                 </button>
               </div>
             </div>
@@ -302,11 +302,11 @@ const AdminPortal: React.FC = () => {
         </div>
       )}
 
-      {/* Modal de CrÃ©ditos */}
+      {/* Modal de Créditos */}
       {showCreditosModal && empresaSelecionada && (
         <div className="modal-overlay">
           <div className="modal-content glass-panel" style={{ maxWidth: '400px' }}>
-            <h2 style={{ marginBottom: '8px' }}>Adicionar CrÃ©ditos</h2>
+            <h2 style={{ marginBottom: '8px' }}>Adicionar Créditos</h2>
             <p style={{ color: 'var(--color-gray-400)', fontSize: '0.9rem', marginBottom: '20px' }}>
               Loja: <strong>{empresaSelecionada.nomeFantasia}</strong>
             </p>
@@ -322,7 +322,7 @@ const AdminPortal: React.FC = () => {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Valor Pago R$ (Opcional, p/ histÃ³rico)</label>
+                  <label>Valor Pago R$ (Opcional, p/ histórico)</label>
                   <input 
                     type="number" 
                     className="form-input" 

@@ -23,7 +23,7 @@ services:
     environment:
       POSTGRES_DB: gravitycarsystem
       POSTGRES_USER: gravity_user
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-Gravity@2024!Seguro}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - gravity_db_data:/var/lib/postgresql/data
     ports:
@@ -52,7 +52,7 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:5263
       # Banco de dados PostgreSQL (substitui SQLite em produção)
-      ConnectionStrings__DefaultConnection: "Host=gravity-db;Port=5432;Database=gravitycarsystem;Username=gravity_user;Password=${DB_PASSWORD:-Gravity@2024!Seguro}"
+      ConnectionStrings__DefaultConnection: "Host=gravity-db;Port=5432;Database=gravitycarsystem;Username=gravity_user;Password=${DB_PASSWORD}"
       UseSqlite: "false"
       # JWT (altere em produção!)
       JwtSettings__Secret: ${JWT_SECRET:-ProdSecretKeyGravityCarSystem2024MustBe32Chars!}

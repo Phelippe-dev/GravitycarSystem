@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -152,7 +152,7 @@ public class ChequeService : IChequeService
                 Tipo = 1, // 1 = Entrada
                 Valor = cheque.Valor,
                 DataMovimento = DateTime.UtcNow,
-                Descricao = $"Compensação Cheque NÂº {cheque.NumeroCheque} ({cheque.Banco})",
+                Descricao = $"Compensação Cheque Nº {cheque.NumeroCheque} ({cheque.Banco})",
                 ChequeId = cheque.Id,
                 ContaReceberId = contaReceber?.Id
             };

@@ -22,8 +22,7 @@ public class CurrentTenantService : ICurrentTenantService
             return empresaId;
         }
 
-        // Fallback para o tenant padrão da concessionária matriz
-        return Guid.Parse("00000000-0000-0000-0000-000000000001");
+        return null;
     }
 
     public Guid? GetUsuarioId()

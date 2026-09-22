@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
+using GravityCarSystem.Application.Interfaces;
+
 namespace GravityCarSystem.API.Controllers;
 
 // ─── DTOs ─────────────────────────────────────────────────────────────────────
@@ -34,17 +36,20 @@ public record AtualizarFuncionarioDto(
 public class FuncionariosController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly ICurrentTenantService _currentTenantService;
 
-    public FuncionariosController(AppDbContext context)
+    public FuncionariosController(AppDbContext context, ICurrentTenantService currentTenantService)
     {
         _context = context;
+        _currentTenantService = currentTenantService;
     }
 
     private Guid GetEmpresaId()
     {
-        var claim = User.Claims.FirstOrDefault(c => c.Type == "EmpresaId" || c.Type == "empresa_id");
-        if (claim != null && Guid.TryParse(claim.Value, out var id)) return id;
-        return Guid.Parse("00000000-0000-0000-0000-000000000001");
+        var id = _currentTenantService.GetEmpresaId();
+        if (!id.HasValue || id.Value == Guid.Empty)
+            throw new UnauthorizedAccessException("Empresa não identificada.");
+        return id.Value;
     }
 
     private string GetUserRole() => User.Claims.FirstOrDefault(c =>

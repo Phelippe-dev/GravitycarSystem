@@ -71,7 +71,9 @@ builder.Services.AddScoped<IAppDbContext>(provider => provider.GetRequiredServic
 builder.Services.AddScoped<GravityCarSystem.Application.Interfaces.IClienteService, GravityCarSystem.Application.Services.Cadastros.ClienteService>();
 builder.Services.AddScoped<GravityCarSystem.Application.Interfaces.IVeiculoService, GravityCarSystem.Application.Services.Veiculos.VeiculoService>();
 builder.Services.AddScoped<GravityCarSystem.Application.Interfaces.IVendaService, GravityCarSystem.Application.Services.Negocio.VendaService>();
+builder.Services.AddScoped<GravityCarSystem.Application.Interfaces.IFornecedorService, GravityCarSystem.Application.Services.Cadastros.FornecedorService>();
 builder.Services.AddScoped<GravityCarSystem.Application.Interfaces.Financeiro.IContaPagarService, GravityCarSystem.Application.Services.Financeiro.ContaPagarService>();
+builder.Services.AddScoped<GravityCarSystem.Application.Interfaces.IEmailService, GravityCarSystem.Infrastructure.Services.MockEmailService>();
 builder.Services.AddScoped<GravityCarSystem.Application.Interfaces.Financeiro.IContaReceberService, GravityCarSystem.Application.Services.Financeiro.ContaReceberService>();
 builder.Services.AddScoped<GravityCarSystem.Application.Interfaces.Relatorios.IRelatorioService, GravityCarSystem.Application.Services.Relatorios.RelatorioService>();
 builder.Services.AddScoped<GravityCarSystem.Application.Interfaces.Fiscal.INotaFiscalService, GravityCarSystem.Application.Services.Fiscal.NotaFiscalService>();
@@ -126,6 +128,11 @@ using (var scope = app.Services.CreateScope())
         {
             try { db.Database.ExecuteSqlRaw("ALTER TABLE Empresas ADD COLUMN SaldoConsultas INTEGER NOT NULL DEFAULT 100;"); } catch { }
             try { db.Database.ExecuteSqlRaw("ALTER TABLE Empresas ADD COLUMN ConsultasRealizadas INTEGER NOT NULL DEFAULT 0;"); } catch { }
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE Empresas ADD COLUMN InscricaoMunicipal TEXT;"); } catch { }
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE Empresas ADD COLUMN Site TEXT;"); } catch { }
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE Empresas ADD COLUMN Complemento TEXT;"); } catch { }
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE Empresas ADD COLUMN RegimeTributario TEXT;"); } catch { }
+            try { db.Database.ExecuteSqlRaw("ALTER TABLE Empresas ADD COLUMN ResponsavelTecnico TEXT;"); } catch { }
             try { db.Database.ExecuteSqlRaw("ALTER TABLE Usuarios ADD COLUMN Cargo TEXT;"); } catch { }
             try { db.Database.ExecuteSqlRaw("ALTER TABLE Usuarios ADD COLUMN ComissaoPercent REAL NOT NULL DEFAULT 2.0;"); } catch { }
             try { db.Database.ExecuteSqlRaw("ALTER TABLE Usuarios ADD COLUMN ResetToken TEXT;"); } catch { }

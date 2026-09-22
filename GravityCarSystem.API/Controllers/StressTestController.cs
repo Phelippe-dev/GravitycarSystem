@@ -11,10 +11,11 @@ using GravityCarSystem.Domain.Enums;
 using GravityCarSystem.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
+#if DEBUG
 namespace GravityCarSystem.API.Controllers;
 
 /// <summary>
-/// Controller para testes de carga — NíO usar em produção.
+/// Controller para testes de carga — NÃO usar em produção.
 /// </summary>
 [Authorize]
 [ApiController]
@@ -128,3 +129,4 @@ public class StressTestController : ControllerBase
         return Ok("Dados limpos.");
     }
 }
+#endif

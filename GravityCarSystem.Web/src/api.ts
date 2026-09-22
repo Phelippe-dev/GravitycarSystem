@@ -52,7 +52,7 @@ export interface VendaPagamentoDto {
     taxaJuros?: number;
     valorEntrada?: number;
     numeroContrato?: string;
-    // CartÃƒÆ’Ã‚Â£o
+    // Cartão
     bandeira?: string;
     tipoCartao?: 'credito' | 'debito';
     maquininha?: string;
@@ -145,13 +145,13 @@ const getHeaders = () => {
     };
 };
 
-// -- VeÃƒÆ’Ã‚Â­culos --
+// -- Veículos --
 export const fetchVeiculos = async (): Promise<Veiculo[]> => {
     try {
         const response = await fetch(`${API_BASE_URL}/veiculos`, {
             headers: getHeaders()
         });
-        if (!response.ok) throw new Error('Erro ao buscar veÃƒÆ’Ã‚Â­culos');
+        if (!response.ok) throw new Error('Erro ao buscar veículos');
         return await response.json();
     } catch (error) {
         console.error(error);
@@ -168,7 +168,7 @@ export const adicionarVeiculo = async (veiculo: Partial<Veiculo>): Promise<Veicu
 
     if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(errorText || 'Erro ao adicionar veÃƒÆ’Ã‚Â­culo');
+        throw new Error(errorText || 'Erro ao adicionar veículo');
     }
 
     return await response.json();
@@ -195,9 +195,9 @@ export const fetchStats = async (veiculos: Veiculo[]): Promise<DashboardStats> =
         // Contas a receber normais (pendentes)
         const contasReceberPendentes = contasReceber.reduce((acc, curr) => acc + (curr.status === 0 ? curr.saldo : 0), 0);
         
-        // Cheques em custÃƒÆ’Ã‚Â³dia (status=1) e recebidos/depositados aguardando (status=0,2)
+        // Cheques em custódia (status=1) e recebidos/depositados aguardando (status=0,2)
         const chequesPendentes = cheques
-            .filter(c => c.status === 1 || c.status === 0 || c.status === 2) // CustÃƒÆ’Ã‚Â³dia, Recebido, Depositado
+            .filter(c => c.status === 1 || c.status === 0 || c.status === 2) // Custódia, Recebido, Depositado
             .reduce((acc, c) => acc + (c.valor || 0), 0);
         
         totalContasReceber = contasReceberPendentes + chequesPendentes;
@@ -366,7 +366,7 @@ export const removerVeiculo = async (id: string): Promise<void> => {
         method: 'DELETE', 
         headers: getHeaders() 
     });
-    if (!response.ok) throw new Error('Falha ao remover veÃƒÆ’Ã‚Â­culo');
+    if (!response.ok) throw new Error('Falha ao remover veículo');
 };
 
 export const atualizarVeiculo = async (id: string, veiculo: Partial<Veiculo>): Promise<Veiculo> => {
@@ -375,7 +375,7 @@ export const atualizarVeiculo = async (id: string, veiculo: Partial<Veiculo>): P
         headers: getHeaders(),
         body: JSON.stringify(veiculo)
     });
-    if (!response.ok) throw new Error('Falha ao atualizar veÃƒÆ’Ã‚Â­culo');
+    if (!response.ok) throw new Error('Falha ao atualizar veículo');
     return response.json();
 };
 
@@ -389,7 +389,7 @@ export const uploadFotoVeiculo = async (id: string, file: File, isPrincipal: boo
         method: 'POST',
         headers: {
             ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-            // NÃƒÆ’Ã‚Â£o defina Content-Type, o navegador define multipart/form-data com o boundary
+            // Não defina Content-Type, o navegador define multipart/form-data com o boundary
         },
         body: formData
     });
@@ -472,7 +472,7 @@ export const adicionarCustoVeiculo = async (id: string, custo: VeiculoCusto): Pr
     });
     if (!response.ok) {
         const text = await response.text();
-        let message = 'Falha ao lanÃƒÆ’Ã‚Â§ar custo do veÃƒÆ’Ã‚Â­culo';
+        let message = 'Falha ao lançar custo do veículo';
         try {
             const errObj = JSON.parse(text);
             message = errObj.message || errObj.title || text;
@@ -542,7 +542,7 @@ export const fetchContasReceber = async (): Promise<ContaReceberDto[]> => {
     } catch { return []; }
 };
 
-// --- FASE 4: RELATÃƒÆ’Ã¢â‚¬Å“RIOS ---
+// --- FASE 4: RELATÃƒÆ’ââ‚¬Å“RIOS ---
 
 export interface RentabilidadeVeiculoDto {
     veiculoId: string;
@@ -576,7 +576,7 @@ export const fetchRentabilidade = async (dataInicio?: string, dataFim?: string):
         if (params.toString()) url += `?${params.toString()}`;
 
         const response = await fetch(url, { headers: getHeaders() });
-        if (!response.ok) throw new Error('Erro ao buscar relatÃƒÆ’Ã‚Â³rio de rentabilidade');
+        if (!response.ok) throw new Error('Erro ao buscar relatório de rentabilidade');
         return await response.json();
     } catch { return []; }
 };
@@ -602,7 +602,7 @@ export interface NotaFiscalDto {
     chaveAcesso: string;
     numero?: string;
     serie?: string;
-    tipo: number; // 0: Entrada, 1: SaÃƒÆ’Ã‚Â­da
+    tipo: number; // 0: Entrada, 1: Saída
     dataEmissao: string;
     emitenteCnpj?: string;
     emitenteNome?: string;
@@ -646,7 +646,7 @@ export const emitirNotaFiscalVenda = async (vendaId: string): Promise<NotaFiscal
         const response = await fetch(`${API_BASE_URL}/notasfiscais/emitir/venda`, {
             method: 'POST',
             headers: getHeaders(),
-            body: JSON.stringify({ vendaId, naturezaOperacao: 'Venda de VeÃƒÆ’Ã‚Â­culo' })
+            body: JSON.stringify({ vendaId, naturezaOperacao: 'Venda de Veículo' })
         });
         if (!response.ok) throw new Error('Erro ao emitir NF');
         return await response.json();
@@ -671,7 +671,7 @@ export const emitirNotaFiscalEntrada = async (veiculoId: string, clienteId: stri
     }
 };
 
-// --- FASE 5: INTEGRAÃƒÆ’Ã¢â‚¬Â¡ÃƒÆ’Ã¢â‚¬Â¢ES SENATRAN / RENAVE ---
+// --- FASE 5: INTEGRAÃƒÆ’ââ‚¬Â¡ÃƒÆ’ââ‚¬Â¢ES SENATRAN / RENAVE ---
 export interface SenatranVeiculoResultDto {
     placa: string;
     renavam: string;
@@ -792,7 +792,7 @@ export const toggleStatusEmpresa = async (id: string): Promise<{ ativa: boolean 
     return response.json();
 };
 
-// ================= AVALIAÃƒÆ’Ã¢â‚¬Â¡ÃƒÆ’Ã¢â‚¬Â¢ES ==================
+// ================= AVALIAÃƒÆ’ââ‚¬Â¡ÃƒÆ’ââ‚¬Â¢ES ==================
 export interface Avaliacao {
     id: string;
     clienteId: string;
@@ -828,7 +828,7 @@ export const salvarAvaliacao = async (avaliacao: any): Promise<any> => {
         body: JSON.stringify(avaliacao)
     });
     if (!response.ok) {
-        let errText = 'Erro ao salvar avaliaÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o';
+        let errText = 'Erro ao salvar avaliação';
         try {
             const rawText = await response.text();
             try {
@@ -845,7 +845,7 @@ export const salvarAvaliacao = async (avaliacao: any): Promise<any> => {
     return await response.json();
 };
 
-// ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ SALDO DE CRÃƒÆ’Ã¢â‚¬Â°DITOS ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
+// ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ SALDO DE CRÃƒÆ’ââ‚¬Â°DITOS ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬ÃƒÂ¢ââ‚¬Âââ€šÂ¬
 export const fetchSaldoCreditos = async (): Promise<{ saldoConsultas: number; consultasRealizadas: number }> => {
     try {
         const response = await fetch(`${API_BASE_URL}/empresa/saldo`, { headers: getHeaders() });

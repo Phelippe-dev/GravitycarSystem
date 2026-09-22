@@ -26,7 +26,7 @@ public class SenatranVeiculoResultDto
     public string DescricaoDebitos { get; set; } = string.Empty;
     
     // Status RENAVE
-    public string StatusRenave { get; set; } = string.Empty; // "NíO REGISTRADO", "EM ESTOQUE", "TRANSFERÊNCIA PENDENTE"
+    public string StatusRenave { get; set; } = string.Empty; // "NÃO REGISTRADO", "EM ESTOQUE", "TRANSFERÊNCIA PENDENTE"
     public string Origem { get; set; } = "SENATRAN / DETRAN / PRF & FIPE";
     
     public DateTime DataConsulta { get; set; } = DateTime.UtcNow;
