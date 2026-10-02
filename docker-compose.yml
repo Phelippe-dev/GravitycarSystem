@@ -1,109 +1,34 @@
-# =====================================================================
-# docker-compose.yml — Gravity Car System
-# Orquestra: API .NET + Frontend React/Nginx + PostgreSQL
-#
-# USO:
-#   Subir tudo:     docker compose up -d
-#   Ver logs:       docker compose logs -f
-#   Parar tudo:     docker compose down
-#   Atualizar:      docker compose build --no-cache && docker compose up -d
-# =====================================================================
-
 version: '3.9'
 
 services:
-
-  # ──────────────────────────────────────────
-  # Banco de Dados PostgreSQL 16
-  # ──────────────────────────────────────────
-  gravity-db:
+  # ==========================================
+  # Banco de Dados PostgreSQL (Produção / Dev)
+  # ==========================================
+  motors-xy-db:
     image: postgres:16-alpine
-    container_name: gravity-db
+    container_name: motors-xy-db
     restart: always
     environment:
-      POSTGRES_DB: gravitycarsystem
-      POSTGRES_USER: gravity_user
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: motorsxysystem
+      POSTGRES_USER: motorsxy_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-motorsxy_secret123!}
     volumes:
-      - gravity_db_data:/var/lib/postgresql/data
+      - motors_xy_db_data:/var/lib/postgresql/data
     ports:
-      - "5433:5432"   # Acesso local para ferramentas (DBeaver, pgAdmin)
+      - "5434:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U gravity_user -d gravitycarsystem"]
+      test: ["CMD-SHELL", "pg_isready -U motorsxy_user -d motorsxysystem"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - gravity-net
+      - motors-xy-net
 
-  # ──────────────────────────────────────────
-  # Backend API .NET 8
-  # ──────────────────────────────────────────
-  gravity-api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: gravity-api
-    restart: always
-    depends_on:
-      gravity-db:
-        condition: service_healthy
-    environment:
-      ASPNETCORE_ENVIRONMENT: Production
-      ASPNETCORE_URLS: http://+:5263
-      # Banco de dados PostgreSQL (substitui SQLite em produção)
-      ConnectionStrings__DefaultConnection: "Host=gravity-db;Port=5432;Database=gravitycarsystem;Username=gravity_user;Password=${DB_PASSWORD}"
-      UseSqlite: "false"
-      # JWT (altere em produção!)
-      JwtSettings__Secret: ${JWT_SECRET:-ProdSecretKeyGravityCarSystem2024MustBe32Chars!}
-      JwtSettings__Issuer: GravityCarSystem
-      JwtSettings__Audience: GravityCarSystemApp
-      # Configurações da Loja (sobrescritas pelo instalar_loja.bat)
-      LojaCfg__TenantId: ${LOJA_TENANT_ID:-loja-001}
-      LojaCfg__RazaoSocial: ${LOJA_RAZAO_SOCIAL:-Concessionária LTDA}
-      LojaCfg__NomeFantasia: ${LOJA_NOME_FANTASIA:-Gravity Motors}
-      LojaCfg__Cnpj: ${LOJA_CNPJ:-00.000.000/0001-00}
-      # CORS — origens permitidas (separar por vírgula se houver múltiplas)
-      CorsOrigins: ${CORS_ORIGINS:-http://localhost,http://localhost:80}
-      # ApiBrasil (consulta veicular)
-      ApiBrasil__Token: ${APIBRASIL_TOKEN:-}
-    volumes:
-      - gravity_fotos:/app/wwwroot/uploads/fotos
-    ports:
-      - "5263:5263"   # Porta da API (usada internamente pelo Nginx e opcionalmente externamente)
-    networks:
-      - gravity-net
-
-  # ──────────────────────────────────────────
-  # Frontend React via Nginx
-  # Acesso dos usuários: http://IP-DO-SERVIDOR
-  # ──────────────────────────────────────────
-  gravity-web:
-    build:
-      context: ./GravityCarSystem.Web
-      dockerfile: Dockerfile
-    container_name: gravity-web
-    restart: always
-    depends_on:
-      - gravity-api
-    ports:
-      - "80:80"       # Acesso principal: http://localhost ou http://192.168.1.100
-    networks:
-      - gravity-net
-
-# ──────────────────────────────────────────
-# Volumes persistentes (dados sobrevivem a reinicializações)
-# ──────────────────────────────────────────
 volumes:
-  gravity_db_data:
-    name: gravity_db_data
-  gravity_fotos:
-    name: gravity_fotos
+  motors_xy_db_data:
+    name: motors_xy_db_data
 
-# ──────────────────────────────────────────
-# Rede interna dos containers
-# ──────────────────────────────────────────
 networks:
-  gravity-net:
-    name: gravity-net
+  motors-xy-net:
+    name: motors-xy-net
     driver: bridge

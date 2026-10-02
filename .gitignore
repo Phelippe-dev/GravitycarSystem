@@ -5,11 +5,28 @@
 
 # dotenv files
 .env
+.env.local
+.env.production.local
 
 # SQLite local databases
 *.db
 *.db-shm
 *.db-wal
+
+# Production ZIP packages
+*.zip
+
+# Backup files
+backups/
+*.sql
+
+# Upload directories (user data)
+wwwroot/uploads/
+
+# Fake/test files
+fake.*
+test_*.cs
+test_*.csx
 
 # User-specific files
 *.rsuser

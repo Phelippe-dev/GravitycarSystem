@@ -1,0 +1,55 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{4051A645-F91D-4FB3-BF85-8ABFFF3E4BEE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MotorsXySystem.Domain", "src\MotorsXySystem.Domain\MotorsXySystem.Domain.csproj", "{4BC5C2C8-EE87-46D9-B69D-ADFD768F7FC7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MotorsXySystem.Application", "src\MotorsXySystem.Application\MotorsXySystem.Application.csproj", "{917B9870-8AF5-4BD5-9556-A08F497AA7CE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MotorsXySystem.Infrastructure", "src\MotorsXySystem.Infrastructure\MotorsXySystem.Infrastructure.csproj", "{ACF4C817-CC03-4C7D-96A5-ED3FC0E2380D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MotorsXySystem.Integracoes", "src\MotorsXySystem.Integracoes\MotorsXySystem.Integracoes.csproj", "{AA688944-BB27-4026-A8D8-4BA41BA430C4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MotorsXySystem.API", "src\MotorsXySystem.API\MotorsXySystem.API.csproj", "{6AEC2068-4D42-435E-AA94-F7942583D785}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4BC5C2C8-EE87-46D9-B69D-ADFD768F7FC7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4BC5C2C8-EE87-46D9-B69D-ADFD768F7FC7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4BC5C2C8-EE87-46D9-B69D-ADFD768F7FC7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4BC5C2C8-EE87-46D9-B69D-ADFD768F7FC7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{917B9870-8AF5-4BD5-9556-A08F497AA7CE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{917B9870-8AF5-4BD5-9556-A08F497AA7CE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{917B9870-8AF5-4BD5-9556-A08F497AA7CE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{917B9870-8AF5-4BD5-9556-A08F497AA7CE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ACF4C817-CC03-4C7D-96A5-ED3FC0E2380D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ACF4C817-CC03-4C7D-96A5-ED3FC0E2380D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ACF4C817-CC03-4C7D-96A5-ED3FC0E2380D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ACF4C817-CC03-4C7D-96A5-ED3FC0E2380D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AA688944-BB27-4026-A8D8-4BA41BA430C4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AA688944-BB27-4026-A8D8-4BA41BA430C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AA688944-BB27-4026-A8D8-4BA41BA430C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AA688944-BB27-4026-A8D8-4BA41BA430C4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6AEC2068-4D42-435E-AA94-F7942583D785}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6AEC2068-4D42-435E-AA94-F7942583D785}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6AEC2068-4D42-435E-AA94-F7942583D785}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6AEC2068-4D42-435E-AA94-F7942583D785}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{4BC5C2C8-EE87-46D9-B69D-ADFD768F7FC7} = {4051A645-F91D-4FB3-BF85-8ABFFF3E4BEE}
+		{917B9870-8AF5-4BD5-9556-A08F497AA7CE} = {4051A645-F91D-4FB3-BF85-8ABFFF3E4BEE}
+		{ACF4C817-CC03-4C7D-96A5-ED3FC0E2380D} = {4051A645-F91D-4FB3-BF85-8ABFFF3E4BEE}
+		{AA688944-BB27-4026-A8D8-4BA41BA430C4} = {4051A645-F91D-4FB3-BF85-8ABFFF3E4BEE}
+		{6AEC2068-4D42-435E-AA94-F7942583D785} = {4051A645-F91D-4FB3-BF85-8ABFFF3E4BEE}
+	EndGlobalSection
+EndGlobal
