@@ -22,18 +22,32 @@ export interface Veiculo {
     fotoPrincipal?: string;
     dataEntrada?: string;
     dataCadastro?: string;
+    // Multimarcas (Carro = 1, Moto = 2, Scooter = 3, Quadriciclo = 4, UTV = 5, Caminhao = 6, Utilitario = 7)
+    tipoVeiculo?: number;
+    cilindrada?: number;
+    categoriaMoto?: number; // 1=Naked, 2=Esportiva, 3=Custom, 4=Trail, 5=Scooter, 10=Street, etc.
+    partida?: number;       // 1=Elétrica, 2=Pedal, 3=Elétrica e Pedal
+    refrigeracao?: number;  // 1=Ar, 2=Óleo, 3=Ar e Óleo, 4=Líquida
+    tipoRefrigeracao?: string;
+    // Tabela FIPE
+    codigoFipe?: string;
+    valorFipe?: number;
+    mesReferenciaFipe?: string;
+    dataConsultaFipe?: string;
 }
 
 export interface Cliente {
     id: string;
     nome: string;
     nomeRazaoSocial?: string;
+    tipoPessoa?: 'PF' | 'PJ' | string;
     cpfCnpj: string;
     email?: string;
     telefone?: string;
     celular?: string;
     cep?: string;
     endereco?: string;
+    logradouro?: string;
     numero?: string;
     complemento?: string;
     bairro?: string;
@@ -136,9 +150,11 @@ export interface DashboardStats {
     saldoOperacional: number;
 }
 
+export const getStoredToken = () => localStorage.getItem('@MotorsXy:token') || localStorage.getItem('@GravityCar:token');
+
 // -- Helper para injetar o Token JWT --
 const getHeaders = () => {
-    const token = localStorage.getItem('@GravityCar:token');
+    const token = getStoredToken();
     return {
         'Content-Type': 'application/json',
         ...(token ? { 'Authorization': `Bearer ${token}` } : {})
@@ -384,7 +400,7 @@ export const uploadFotoVeiculo = async (id: string, file: File, isPrincipal: boo
     formData.append('file', file);
     formData.append('isPrincipal', String(isPrincipal));
 
-    const token = localStorage.getItem('@GravityCar:token');
+    const token = getStoredToken();
     const response = await fetch(`${API_BASE_URL}/veiculos/${id}/fotos`, {
         method: 'POST',
         headers: {
@@ -402,7 +418,7 @@ export const uploadFotoVeiculo = async (id: string, file: File, isPrincipal: boo
 };
 
 export const removerFotoVeiculo = async (veiculoId: string, fotoId: string): Promise<void> => {
-    const token = localStorage.getItem('@GravityCar:token');
+    const token = getStoredToken();
     const response = await fetch(`${API_BASE_URL}/veiculos/${veiculoId}/fotos/${fotoId}`, {
         method: 'DELETE',
         headers: {
@@ -416,7 +432,7 @@ export const removerFotoVeiculo = async (veiculoId: string, fotoId: string): Pro
 };
 
 export const definirFotoPrincipalVeiculo = async (veiculoId: string, fotoId: string): Promise<void> => {
-    const token = localStorage.getItem('@GravityCar:token');
+    const token = getStoredToken();
     const response = await fetch(`${API_BASE_URL}/veiculos/${veiculoId}/fotos/${fotoId}/principal`, {
         method: 'PATCH',
         headers: {
@@ -434,7 +450,7 @@ export const uploadDocumentoVeiculo = async (id: string, file: File, tipo: strin
     formData.append('file', file);
     formData.append('tipo', tipo);
 
-    const token = localStorage.getItem('@GravityCar:token');
+    const token = getStoredToken();
     const response = await fetch(`${API_BASE_URL}/veiculos/${id}/documentos`, {
         method: 'POST',
         headers: {
@@ -451,7 +467,7 @@ export const uploadDocumentoVeiculo = async (id: string, file: File, tipo: strin
 };
 
 export const removerDocumentoVeiculo = async (veiculoId: string, documentoId: string): Promise<void> => {
-    const token = localStorage.getItem('@GravityCar:token');
+    const token = getStoredToken();
     const response = await fetch(`${API_BASE_URL}/veiculos/${veiculoId}/documentos/${documentoId}`, {
         method: 'DELETE',
         headers: {
@@ -486,7 +502,7 @@ export const adicionarCustoVeiculo = async (id: string, custo: VeiculoCusto): Pr
 
 export const atualizarObservacoesVeiculo = async (veiculoId: string, observacoes: string): Promise<boolean> => {
     try {
-        const token = localStorage.getItem('@GravityCar:token');
+        const token = getStoredToken();
         const response = await fetch(`${API_BASE_URL}/veiculos/${veiculoId}/observacoes`, {
             method: 'PATCH',
             headers: {
@@ -865,4 +881,302 @@ export const adicionarCreditosEmpresa = async (empresaId: string, quantidade: nu
     if (!response.ok) throw new Error(await response.text());
     return response.json();
 };
+
+// ================= TABELA FIPE ==================
+export interface FipeItem {
+    codigo: string;
+    nome: string;
+}
+
+export interface FipePreco {
+    marca: string;
+    modelo: string;
+    anoModelo: number;
+    combustivel: string;
+    codigoFipe: string;
+    valor: number;
+    mesReferencia: string;
+    segmento: string;
+}
+
+export const fetchFipeMarcas = async (tipo: number = 1): Promise<FipeItem[]> => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/fipe/marcas?tipo=${tipo}`, { headers: getHeaders() });
+        if (!response.ok) return [];
+        return await response.json();
+    } catch { return []; }
+};
+
+export const fetchFipeModelos = async (marcaId: string, tipo: number = 1): Promise<FipeItem[]> => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/fipe/marcas/${marcaId}/modelos?tipo=${tipo}`, { headers: getHeaders() });
+        if (!response.ok) return [];
+        return await response.json();
+    } catch { return []; }
+};
+
+export const fetchFipeAnos = async (marcaId: string, modeloId: string, tipo: number = 1): Promise<FipeItem[]> => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/fipe/marcas/${marcaId}/modelos/${modeloId}/anos?tipo=${tipo}`, { headers: getHeaders() });
+        if (!response.ok) return [];
+        return await response.json();
+    } catch { return []; }
+};
+
+export const fetchFipePreco = async (marcaId: string, modeloId: string, anoId: string, tipo: number = 1): Promise<FipePreco | null> => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/fipe/preco?tipo=${tipo}&marcaId=${marcaId}&modeloId=${modeloId}&anoId=${anoId}`, { headers: getHeaders() });
+        if (!response.ok) return null;
+        return await response.json();
+    } catch { return null; }
+};
+
+// ================= CRM / PIPELINE DE LEADS ==================
+export interface LeadCard {
+    id: string;
+    nome: string;
+    telefone?: string;
+    email?: string;
+    estagio: number; // 1: Novo, 2: EmContato, 3: Qualificado, 4: Proposta, 5: Negociacao, 6: Ganho, 7: Perdido
+    ordem: number;
+    tipoOportunidade: number; // 1: Compra, 2: Venda, 3: Troca
+    origem: number;
+    canal?: string;
+    valorEstimado?: number;
+    interesseTipo?: number;
+    interesseMarca?: string;
+    interesseModelo?: string;
+    interessePrecoMin?: number;
+    interessePrecoMax?: number;
+    interesseAnoMin?: number;
+    interesseAnoMax?: number;
+    responsavelId?: string;
+    clienteId?: string;
+    dataProximoContato?: string;
+    dataCriacao: string;
+}
+
+export interface KanbanColuna {
+    estagio: number;
+    titulo: string;
+    quantidade: number;
+    valorTotal: number;
+    leads: LeadCard[];
+}
+
+export interface LeadDetalhes {
+    lead: LeadCard;
+    mensagem?: string;
+    motivoPerda?: string;
+    utmSource?: string;
+    utmMedium?: string;
+    utmCampaign?: string;
+    veiculoInteresseId?: string;
+    interacoes: Array<{
+        id: string;
+        tipo: string;
+        descricao: string;
+        usuarioId?: string;
+        dataCriacao: string;
+    }>;
+}
+
+export const fetchKanbanLeads = async (responsavelId?: string, tipo?: number, busca?: string): Promise<KanbanColuna[]> => {
+    try {
+        const params = new URLSearchParams();
+        if (responsavelId) params.append('responsavelId', responsavelId);
+        if (tipo) params.append('tipo', tipo.toString());
+        if (busca) params.append('busca', busca);
+
+        const response = await fetch(`${API_BASE_URL}/leads/kanban?${params.toString()}`, { headers: getHeaders() });
+        if (!response.ok) return [];
+        return await response.json();
+    } catch { return []; }
+};
+
+export const fetchLeadDetalhes = async (id: string): Promise<LeadDetalhes | null> => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/leads/${id}`, { headers: getHeaders() });
+        if (!response.ok) return null;
+        return await response.json();
+    } catch { return null; }
+};
+
+export const moverLead = async (id: string, estagio: number, ordem: number, motivoPerda?: string): Promise<LeadCard> => {
+    const response = await fetch(`${API_BASE_URL}/leads/${id}/mover`, {
+        method: 'PATCH',
+        headers: getHeaders(),
+        body: JSON.stringify({ estagio, ordem, motivoPerda })
+    });
+    if (!response.ok) throw new Error(await response.text());
+    return await response.json();
+};
+
+export const criarLead = async (lead: any): Promise<LeadCard> => {
+    const response = await fetch(`${API_BASE_URL}/leads`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(lead)
+    });
+    if (!response.ok) throw new Error(await response.text());
+    return await response.json();
+};
+
+export const adicionarInteracaoLead = async (id: string, tipo: string, descricao: string): Promise<any> => {
+    const response = await fetch(`${API_BASE_URL}/leads/${id}/interacoes`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ tipo, descricao })
+    });
+    if (!response.ok) throw new Error(await response.text());
+    return await response.json();
+};
+
+export const fetchVeiculosCompativeisLead = async (id: string): Promise<Veiculo[]> => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/leads/${id}/veiculos-compativeis`, { headers: getHeaders() });
+        if (!response.ok) return [];
+        return await response.json();
+    } catch { return []; }
+};
+
+export const converterLeadEmCliente = async (id: string): Promise<{ clienteId: string }> => {
+    const response = await fetch(`${API_BASE_URL}/leads/${id}/converter-cliente`, {
+        method: 'POST',
+        headers: getHeaders()
+    });
+    if (!response.ok) throw new Error(await response.text());
+    return await response.json();
+};
+
+// ================= RECIBOS E CONTRATOS DIGITAIS ==================
+export interface ReciboResumo {
+    id: string;
+    numero: string;
+    tipo: string; // 'Venda' | 'Sinal'
+    compradorNome: string;
+    veiculoDescricao: string;
+    valorTotal: number;
+    valorRecebido: number;
+    emitidoEmUtc: string;
+    hashSha256: string;
+    cancelado: boolean;
+    statusAssinatura: string;
+    urlAssinatura?: string;
+}
+
+export interface PagamentoReciboItem {
+    forma: number; // 1: AVista, 2: Pix, 3: Dinheiro, 4: Transferencia, 5: Financiado, 6: Entrada, 7: Troca, 8: Cartao, 9: Cheque
+    valor: number;
+    descricao?: string;
+    banco?: string;
+    parcelas?: number;
+    valorParcela?: number;
+    veiculoTrocaDescricao?: string;
+    veiculoTrocaPlaca?: string;
+}
+
+export interface EmitirReciboInput {
+    tipo: number; // 1: Venda, 2: Sinal
+    vendaId?: string;
+    clienteId?: string;
+    veiculoId?: string;
+    comprador?: {
+        nome?: string;
+        cpfCnpj?: string;
+        rg?: string;
+        endereco?: string;
+        telefone?: string;
+        email?: string;
+    };
+    valorTotal: number;
+    pagamentos: PagamentoReciboItem[];
+    validadeSinalDias?: number;
+    condicoesSinal?: string;
+    garantiaDias?: number;
+    garantiaKm?: number;
+    termosGarantia?: string;
+    observacoes?: string;
+}
+
+export const emitirRecibo = async (input: EmitirReciboInput): Promise<any> => {
+    const response = await fetch(`${API_BASE_URL}/recibos`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(input)
+    });
+    if (!response.ok) {
+        let err = 'Falha ao emitir recibo.';
+        try {
+            const json = await response.json();
+            err = json.erro || json.message || err;
+        } catch {
+            err = await response.text() || err;
+        }
+        throw new Error(err);
+    }
+    return await response.json();
+};
+
+export const fetchRecibos = async (tipo?: number): Promise<ReciboResumo[]> => {
+    try {
+        const url = tipo ? `${API_BASE_URL}/recibos?tipo=${tipo}` : `${API_BASE_URL}/recibos`;
+        const response = await fetch(url, { headers: getHeaders() });
+        if (!response.ok) return [];
+        return await response.json();
+    } catch { return []; }
+};
+
+export const fetchReciboDetalhes = async (id: string): Promise<any> => {
+    const response = await fetch(`${API_BASE_URL}/recibos/${id}`, { headers: getHeaders() });
+    if (!response.ok) throw new Error('Recibo não encontrado.');
+    return await response.json();
+};
+
+export const downloadReciboPdf = async (id: string, numero: string) => {
+    const token = getStoredToken();
+    const response = await fetch(`${API_BASE_URL}/recibos/${id}/pdf`, {
+        headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }
+    });
+    if (!response.ok) throw new Error('Erro ao baixar PDF do recibo.');
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Recibo_${numero}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+};
+
+export const verificarIntegridadeRecibo = async (id: string): Promise<{ integridadeValida: boolean; mensagem: string }> => {
+    const response = await fetch(`${API_BASE_URL}/recibos/${id}/integridade`, { headers: getHeaders() });
+    return await response.json();
+};
+
+export const solicitarAssinaturaRecibo = async (id: string): Promise<any> => {
+    const response = await fetch(`${API_BASE_URL}/recibos/${id}/solicitar-assinatura`, {
+        method: 'POST',
+        headers: getHeaders()
+    });
+    if (!response.ok) throw new Error(await response.text());
+    return await response.json();
+};
+
+export const cancelarRecibo = async (id: string, motivo: string): Promise<any> => {
+    const response = await fetch(`${API_BASE_URL}/recibos/${id}/cancelar`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ motivo })
+    });
+    if (!response.ok) throw new Error(await response.text());
+    return await response.json();
+};
+
+export const consultarAutenticidadeReciboPublico = async (hash: string): Promise<any> => {
+    const response = await fetch(`${API_BASE_URL}/public/recibos/verificar/${hash}`);
+    return await response.json();
+};
+
 

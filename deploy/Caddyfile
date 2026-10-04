@@ -1,0 +1,55 @@
+# ==============================================================================
+# CADDY WEB SERVER & REVERSE PROXY (AUTOMATIC SSL/TLS)
+# ==============================================================================
+# O Caddy obtém e renova certificados HTTPS automaticamente via Let's Encrypt / ZeroSSL.
+# Substitua {$APP_DOMAIN:motorsxy.com} pelo seu domínio configurado no .env.
+
+# Redirecionamento e SSL automático para o domínio principal e subdomínios (Multi-Tenant)
+{$APP_DOMAIN:motorsxy.com}, *.{$APP_DOMAIN:motorsxy.com} {
+    # Compressão automática (Zstandard & Gzip)
+    encode zstd gzip
+
+    # Headers de Segurança
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+
+    # Encaminha requisições da API para o container da API .NET 8
+    handle /api/* {
+        reverse_proxy motors-xy-api:5000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote}
+            header_up X-Forwarded-For {remote}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # Probes de saúde para Load Balancers da Cloud (AWS, GCP, Azure, Hetzner, etc)
+    handle /health {
+        reverse_proxy motors-xy-api:5000
+    }
+
+    handle /ready {
+        reverse_proxy motors-xy-api:5000
+    }
+
+    # Encaminha todo o resto para a aplicação web (Frontend SPA React)
+    handle {
+        reverse_proxy motors-xy-web:80 {
+            header_up Host {host}
+            header_up X-Real-IP {remote}
+            header_up X-Forwarded-For {remote}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # Logs de acesso em formato JSON para ferramentas de observabilidade (CloudWatch, Datadog, Loki)
+    log {
+        output stdout
+        format json
+    }
+}

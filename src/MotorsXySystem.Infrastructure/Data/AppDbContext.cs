@@ -11,6 +11,8 @@ using MotorsXySystem.Domain.Entidades.Cadastros;
 using MotorsXySystem.Domain.Entidades.Negocio;
 using MotorsXySystem.Domain.Entidades.Financeiro;
 using MotorsXySystem.Domain.Entidades.Acesso;
+using MotorsXySystem.Domain.Entidades.Crm;
+using MotorsXySystem.Domain.Entidades.Documentos;
 
 namespace MotorsXySystem.Infrastructure.Data;
 
@@ -51,6 +53,13 @@ public class AppDbContext : DbContext
     public DbSet<ContaPagar> ContasPagar => Set<ContaPagar>();
     public DbSet<MovimentoFinanceiro> MovimentosFinanceiros => Set<MovimentoFinanceiro>();
 
+    // CRM
+    public DbSet<Lead> Leads => Set<Lead>();
+    public DbSet<LeadInteracao> LeadInteracoes => Set<LeadInteracao>();
+
+    // Documentos
+    public DbSet<ReciboVenda> Recibos => Set<ReciboVenda>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -72,6 +81,47 @@ public class AppDbContext : DbContext
         builder.Entity<ContaReceber>().HasQueryFilter(e => _currentTenantService.ObterEmpresaId() == null || e.EmpresaId == _currentTenantService.ObterEmpresaId());
         builder.Entity<ContaPagar>().HasQueryFilter(e => _currentTenantService.ObterEmpresaId() == null || e.EmpresaId == _currentTenantService.ObterEmpresaId());
         builder.Entity<MovimentoFinanceiro>().HasQueryFilter(e => _currentTenantService.ObterEmpresaId() == null || e.EmpresaId == _currentTenantService.ObterEmpresaId());
+
+        builder.Entity<Lead>().HasQueryFilter(e => _currentTenantService.ObterEmpresaId() == null || e.EmpresaId == _currentTenantService.ObterEmpresaId());
+        builder.Entity<LeadInteracao>().HasQueryFilter(e => _currentTenantService.ObterEmpresaId() == null || e.EmpresaId == _currentTenantService.ObterEmpresaId());
+        builder.Entity<ReciboVenda>().HasQueryFilter(e => _currentTenantService.ObterEmpresaId() == null || e.EmpresaId == _currentTenantService.ObterEmpresaId());
+
+        // =====================================================================
+        // CONFIGURAÇÕES / ÍNDICES
+        // =====================================================================
+        builder.Entity<Empresa>(e =>
+        {
+            e.Property(x => x.Slug).HasMaxLength(63);
+            e.HasIndex(x => x.Slug).IsUnique();
+            e.Property(x => x.Uf).HasMaxLength(2);
+        });
+
+        builder.Entity<Veiculo>(e =>
+        {
+            e.HasIndex(x => new { x.EmpresaId, x.Tipo, x.Status });
+            e.Property(x => x.CodigoFipe).HasMaxLength(10);
+        });
+
+        builder.Entity<Lead>(e =>
+        {
+            e.Property(x => x.Nome).HasMaxLength(150).IsRequired();
+            e.HasIndex(x => new { x.EmpresaId, x.Estagio, x.Ordem });
+            e.HasOne(x => x.Cliente).WithMany().HasForeignKey(x => x.ClienteId).OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(x => x.VeiculoInteresse).WithMany().HasForeignKey(x => x.VeiculoInteresseId).OnDelete(DeleteBehavior.SetNull);
+            e.HasMany(x => x.Interacoes).WithOne(i => i.Lead).HasForeignKey(i => i.LeadId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<ReciboVenda>(e =>
+        {
+            e.Property(x => x.Numero).HasMaxLength(30);
+            e.HasIndex(x => new { x.EmpresaId, x.Numero }).IsUnique();
+            e.Property(x => x.HashSha256).HasMaxLength(64);
+            e.HasIndex(x => x.HashSha256).IsUnique();
+            e.Property(x => x.PdfSha256).HasMaxLength(64);
+            // "text" (e não jsonb): jsonb reordena chaves/espaços e quebraria a verificação do hash.
+            e.Property(x => x.DadosJson).HasColumnType("text");
+            e.HasIndex(x => new { x.ProvedorAssinatura, x.IdExternoAssinatura });
+        });
     }
 
     public override int SaveChanges()

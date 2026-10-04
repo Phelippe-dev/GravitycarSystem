@@ -155,7 +155,7 @@ const Login: React.FC = () => {
                     </form>
 
                     <div className="login-footer">
-                        © 2025 Gravity Tech. Todos os direitos reservados.
+                        © 2025 XY WORKS. Todos os direitos reservados.
                     </div>
                 </div>
             </div>

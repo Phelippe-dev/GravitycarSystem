@@ -38,7 +38,7 @@ const ContratoVenda: React.FC = () => {
         if (!id) return;
         setLoading(true);
         try {
-            const token = localStorage.getItem('@GravityCar:token');
+            const token = localStorage.getItem('@MotorsXy:token') || localStorage.getItem('@GravityCar:token');
             const [vendaData, todosVeiculos, empresaResp] = await Promise.all([
                 fetchVenda(id),
                 fetchVeiculos(),
@@ -68,7 +68,7 @@ const ContratoVenda: React.FC = () => {
     if (loading) return <div style={{ padding: '32px' }}>Carregando dados do comprovante...</div>;
     if (!venda || !cliente) return <div style={{ padding: '32px' }}>Comprovante de venda não encontrado.</div>;
 
-    const nomeVendedor = empresa?.razaoSocial || empresa?.nomeFantasia || 'GRAVITY CAR AUTOMÓVEIS';
+    const nomeVendedor = empresa?.razaoSocial || empresa?.nomeFantasia || 'MOTORS XY AUTOMÓVEIS';
     const cnpjVendedor = empresa?.cnpj || 'Consulte o cadastro da empresa';
     const enderecoVendedor = empresa?.logradouro 
         ? `${empresa.logradouro}, ${empresa.numero || 'S/N'}${empresa.complemento ? ` - ${empresa.complemento}` : ''} - Bairro ${empresa.bairro || ''}, ${empresa.cidade || ''}/${empresa.estado || 'MG'} - CEP: ${empresa.cep || ''}`
@@ -132,7 +132,7 @@ const ContratoVenda: React.FC = () => {
                 {/* Cabeçalho da Concessionária */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #0f172a', paddingBottom: '16px', marginBottom: '20px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                        <img src={logoImg} alt="Gravity Car System" style={{ height: '54px', objectFit: 'contain' }} />
+                        <img src={logoImg} alt="MotorsXy System" style={{ height: '54px', objectFit: 'contain' }} />
                         <div>
                             <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#0f172a' }}>{nomeVendedor}</h2>
                             <p style={{ margin: '2px 0 0 0', fontSize: '0.78rem', color: '#475569' }}>CNPJ: {cnpjVendedor}</p>
@@ -342,7 +342,7 @@ const ContratoVenda: React.FC = () => {
                 {/* Nota de Esclarecimento Legal no Rodapé */}
                 <div style={{ textAlign: 'center', fontSize: '0.72rem', color: '#64748b', borderTop: '1px solid #e2e8f0', paddingTop: '12px', lineHeight: 1.5 }}>
                     <div style={{ fontWeight: 700, color: '#334155' }}>
-                        GRAVITY CAR SYSTEM • COMPROVANTE COMERCIAL DE VENDA & TERMO DE ENTREGA
+                        MOTORS XY SYSTEM • COMPROVANTE COMERCIAL DE VENDA & TERMO DE ENTREGA
                     </div>
                     <div style={{ marginTop: '2px', color: '#94a3b8' }}>
                         Comprovante emitido para conferência comercial e quitação das condições acordadas. Não substitui o documento oficial de transferência (ATPV-e) expedido pelo DETRAN nem a Nota Fiscal Eletrônica (NF-e).

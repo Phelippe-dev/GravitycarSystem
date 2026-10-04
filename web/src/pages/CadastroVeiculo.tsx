@@ -4,7 +4,7 @@ import { adicionarVeiculo, atualizarVeiculo, getVeiculoDetalhes } from '../api';
 import type { Veiculo } from '../api';
 import { buscarMarcasFipe, buscarModelosFipe, buscarAnosFipe, buscarPrecoFipeCompleto, fipeValorParaNumero } from '../services/brasilapi';
 import type { FipeMarca, FipeModelo } from '../services/brasilapi';
-import { Search } from 'lucide-react';
+import { Search, Car, Bike, Truck } from 'lucide-react';
 
 const SearchableSelect = ({ options, value, onChange, placeholder, disabled = false }: { options: {label: string, value: string}[], value: string, onChange: (val: string) => void, placeholder: string, disabled?: boolean }) => {
   const [search, setSearch] = useState('');
@@ -64,6 +64,9 @@ const CadastroVeiculo: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Tipo de veículo: 1 = Carro, 2 = Moto, 7 = Utilitário
+  const [tipoVeiculo, setTipoVeiculo] = useState<number>(1);
+
   // FIPE estados
   const [marcasFipe, setMarcasFipe] = useState<FipeMarca[]>([]);
   const [modelosFipe, setModelosFipe] = useState<FipeModelo[]>([]);
@@ -75,15 +78,26 @@ const CadastroVeiculo: React.FC = () => {
   const [fipeStatus, setFipeStatus] = useState<string | null>(null);
   const [showFipeWidget, setShowFipeWidget] = useState(true);
 
+  // Carrega marcas FIPE baseado no tipo de veículo selecionado (1=carros, 2=motos, 3=caminhoes/utilitarios)
   useEffect(() => {
-    buscarMarcasFipe(1).then(setMarcasFipe);
-  }, []);
+    const fipeTipoParam: 1 | 2 | 3 = tipoVeiculo === 2 ? 2 : tipoVeiculo === 7 ? 3 : 1;
+    setLoadingFipe(true);
+    setCodigoMarcaFipe('');
+    setCodigoModeloFipe('');
+    setCodigoAnoFipe('');
+    setModelosFipe([]);
+    setAnosFipe([]);
+    buscarMarcasFipe(fipeTipoParam)
+      .then(setMarcasFipe)
+      .finally(() => setLoadingFipe(false));
+  }, [tipoVeiculo]);
 
   // Estado para controlar o que é exibido no input de dinheiro formatado
   const [displayValorVenda, setDisplayValorVenda] = useState<string>('');
   const [displayValorCompra, setDisplayValorCompra] = useState<string>('');
 
   const [formData, setFormData] = useState<Partial<Veiculo>>({
+    tipoVeiculo: 1,
     marca: '',
     modelo: '',
     versao: '',
@@ -99,7 +113,14 @@ const CadastroVeiculo: React.FC = () => {
     renavam: '',
     chassi: '',
     status: 4,
-    consignado: false
+    consignado: false,
+    cilindrada: undefined,
+    categoriaMoto: undefined,
+    partida: undefined,
+    refrigeracao: undefined,
+    codigoFipe: '',
+    valorFipe: undefined,
+    mesReferenciaFipe: ''
   });
 
   const formatBRL = (val: number) => {
@@ -111,6 +132,7 @@ const CadastroVeiculo: React.FC = () => {
       setLoading(true);
       getVeiculoDetalhes(id).then(v => {
         setFormData({
+            tipoVeiculo: v.tipoVeiculo || 1,
             marca: v.marca,
             modelo: v.modelo,
             versao: v.versao,
@@ -126,8 +148,16 @@ const CadastroVeiculo: React.FC = () => {
             renavam: v.renavam,
             chassi: v.chassi,
             status: v.status,
-            consignado: v.consignado || false
+            consignado: v.consignado || false,
+            cilindrada: v.cilindrada,
+            categoriaMoto: v.categoriaMoto,
+            partida: v.partida,
+            refrigeracao: v.refrigeracao,
+            codigoFipe: v.codigoFipe,
+            valorFipe: v.valorFipe,
+            mesReferenciaFipe: v.mesReferenciaFipe
         });
+        if (v.tipoVeiculo) setTipoVeiculo(v.tipoVeiculo);
         if (v.valorVenda) setDisplayValorVenda(formatBRL(v.valorVenda));
         if (v.valorCompra) setDisplayValorCompra(formatBRL(v.valorCompra));
       }).catch(err => {
@@ -144,7 +174,18 @@ const CadastroVeiculo: React.FC = () => {
     
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : (type === 'number' ? (formattedVal === '' ? '' : Number(formattedVal)) : formattedVal)
+      [name]: type === 'checkbox' ? checked : (type === 'number' ? (formattedVal === '' ? undefined : Number(formattedVal)) : formattedVal)
+    }));
+  };
+
+  const handleTipoChange = (novoTipo: number) => {
+    setTipoVeiculo(novoTipo);
+    setFormData(prev => ({
+      ...prev,
+      tipoVeiculo: novoTipo,
+      // Se mudar para Carro/Utilitário, reseta campos exclusivos de moto
+      cilindrada: novoTipo === 2 ? prev.cilindrada : undefined,
+      categoriaMoto: novoTipo === 2 ? prev.categoriaMoto : undefined
     }));
   };
 
@@ -180,7 +221,7 @@ const CadastroVeiculo: React.FC = () => {
         navigate(`/veiculos/${id}`);
       } else {
         await adicionarVeiculo(formData);
-        navigate('/estoque'); // Redireciona para o estoque após sucesso
+        navigate('/estoque');
       }
     } catch (err: any) {
       setError(err.message || 'Ocorreu um erro ao salvar o veículo. Verifique se o Back-end está rodando.');
@@ -195,31 +236,110 @@ const CadastroVeiculo: React.FC = () => {
         <div>
           <h1 className="page-title">{isEditing ? 'Editar Veículo' : 'Cadastrar Novo Veículo'}</h1>
           <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem', marginTop: '4px' }}>
-            Preencha os dados do veículo manualmente. Use a Consulta FIPE abaixo para buscar o valor de mercado.
+            Suporte completo a Carros, Motos e Utilitários com consulta oficial à Tabela FIPE.
           </p>
         </div>
       </header>
 
-      {/* WIDGET FIPE REAL - BrasilAPI */}
+      {/* SELETOR DE CATEGORIA PRINCIPAL (CARRO / MOTO / UTILITÁRIO) */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '20px' }}>
+        <button
+          type="button"
+          onClick={() => handleTipoChange(1)}
+          style={{
+            padding: '16px',
+            borderRadius: '12px',
+            background: tipoVeiculo === 1 ? 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)' : 'rgba(30, 41, 59, 0.7)',
+            border: tipoVeiculo === 1 ? '2px solid #60a5fa' : '1px solid rgba(255,255,255,0.1)',
+            color: 'white',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '12px',
+            cursor: 'pointer',
+            fontSize: '1rem',
+            fontWeight: 600,
+            transition: 'all 0.2s ease',
+            boxShadow: tipoVeiculo === 1 ? '0 4px 14px rgba(37, 99, 235, 0.4)' : 'none'
+          }}
+        >
+          <Car size={24} color={tipoVeiculo === 1 ? '#93c5fd' : '#94a3b8'} />
+          <span>Carro de Passeio</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleTipoChange(2)}
+          style={{
+            padding: '16px',
+            borderRadius: '12px',
+            background: tipoVeiculo === 2 ? 'linear-gradient(135deg, #701a75 0%, #c026d3 100%)' : 'rgba(30, 41, 59, 0.7)',
+            border: tipoVeiculo === 2 ? '2px solid #f472b6' : '1px solid rgba(255,255,255,0.1)',
+            color: 'white',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '12px',
+            cursor: 'pointer',
+            fontSize: '1rem',
+            fontWeight: 600,
+            transition: 'all 0.2s ease',
+            boxShadow: tipoVeiculo === 2 ? '0 4px 14px rgba(192, 38, 211, 0.4)' : 'none'
+          }}
+        >
+          <Bike size={24} color={tipoVeiculo === 2 ? '#fbcfe8' : '#94a3b8'} />
+          <span>Motocicleta / Scooter</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleTipoChange(7)}
+          style={{
+            padding: '16px',
+            borderRadius: '12px',
+            background: tipoVeiculo === 7 ? 'linear-gradient(135deg, #065f46 0%, #059669 100%)' : 'rgba(30, 41, 59, 0.7)',
+            border: tipoVeiculo === 7 ? '2px solid #34d399' : '1px solid rgba(255,255,255,0.1)',
+            color: 'white',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '12px',
+            cursor: 'pointer',
+            fontSize: '1rem',
+            fontWeight: 600,
+            transition: 'all 0.2s ease',
+            boxShadow: tipoVeiculo === 7 ? '0 4px 14px rgba(5, 150, 105, 0.4)' : 'none'
+          }}
+        >
+          <Truck size={24} color={tipoVeiculo === 7 ? '#a7f3d0' : '#94a3b8'} />
+          <span>Utilitário / Caminhonete</span>
+        </button>
+      </div>
+
+      {/* WIDGET FIPE DINÂMICO (CARROS / MOTOS / UTILITÁRIOS) */}
       <div className="glass-panel" style={{ padding: '20px', marginBottom: '24px', border: '1px solid rgba(59, 130, 246, 0.25)', borderRadius: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: showFipeWidget ? '16px' : '0' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span style={{ fontSize: '1.2rem' }}>📊</span>
             <div>
-              <h3 style={{ margin: 0, fontSize: '1rem', color: '#60a5fa', fontWeight: 600 }}>Consulta FIPE</h3>
-              <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: '#94a3b8' }}>Selecione Marca, Modelo e Ano</p>
+              <h3 style={{ margin: 0, fontSize: '1rem', color: '#60a5fa', fontWeight: 600 }}>
+                Consulta Tabela FIPE — {tipoVeiculo === 2 ? 'Motos' : tipoVeiculo === 7 ? 'Utilitários' : 'Carros'}
+              </h3>
+              <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: '#94a3b8' }}>
+                Preenche automaticamente Marca, Modelo, Versão e valores sugeridos
+              </p>
             </div>
           </div>
           <button type="button" className="btn btn-outline" style={{ fontSize: '0.8rem', padding: '6px 14px' }}
             onClick={() => setShowFipeWidget(v => !v)}>
-            {showFipeWidget ? 'Fechar' : 'Abrir Consulta FIPE'}
+            {showFipeWidget ? 'Recolher' : 'Abrir Consulta FIPE'}
           </button>
         </div>
 
         {showFipeWidget && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr)) auto', gap: '12px', alignItems: 'flex-end' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '6px' }}>Marca</label>
+              <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '6px' }}>Marca FIPE</label>
               <SearchableSelect 
                 placeholder="-- Selecione a Marca --"
                 value={codigoMarcaFipe}
@@ -234,7 +354,8 @@ const CadastroVeiculo: React.FC = () => {
                   if (cod) {
                     const marca = marcasFipe.find(m => String(m.valor) === cod);
                     if (marca) setFormData(prev => ({ ...prev, marca: marca.nome }));
-                    const modelos = await buscarModelosFipe(1, cod);
+                    const fipeTipo: 1 | 2 | 3 = tipoVeiculo === 2 ? 2 : tipoVeiculo === 7 ? 3 : 1;
+                    const modelos = await buscarModelosFipe(fipeTipo, cod);
                     setModelosFipe(modelos);
                   }
                 }}
@@ -242,7 +363,7 @@ const CadastroVeiculo: React.FC = () => {
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '6px' }}>Modelo</label>
+              <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '6px' }}>Modelo FIPE</label>
               <SearchableSelect 
                 placeholder="-- Selecione o Modelo --"
                 value={codigoModeloFipe}
@@ -271,15 +392,25 @@ const CadastroVeiculo: React.FC = () => {
                       if (mLower.includes('aut') || mLower.includes('cvt')) cambio = 'Automático';
                       else if (mLower.includes('man')) cambio = 'Manual';
 
+                      // Tentar inferir cilindrada para motos
+                      let cc: number | undefined = undefined;
+                      const ccMatch = mNome.match(/(\d{2,4})\s*(cc|c\.c\.)?/i);
+                      if (ccMatch && tipoVeiculo === 2) {
+                        const parsed = parseInt(ccMatch[1], 10);
+                        if (parsed >= 50 && parsed <= 2500) cc = parsed;
+                      }
+
                       setFormData(prev => ({ 
                         ...prev, 
-                        modelo: mNome.split(' ')[0], // Pega a primeira palavra pro modelo geral (ex: Focus)
-                        versao: mNome, // Põe o texto completo na versão
+                        modelo: mNome.split(' ')[0],
+                        versao: mNome,
                         combustivel: combustivel || prev.combustivel,
-                        cambio: cambio || prev.cambio
+                        cambio: cambio || prev.cambio,
+                        cilindrada: cc || prev.cilindrada
                       }));
                     }
-                    const anos = await buscarAnosFipe(1, codigoMarcaFipe, cod);
+                    const fipeTipo: 1 | 2 | 3 = tipoVeiculo === 2 ? 2 : tipoVeiculo === 7 ? 3 : 1;
+                    const anos = await buscarAnosFipe(fipeTipo, codigoMarcaFipe, cod);
                     setAnosFipe(anos);
                   }
                 }}
@@ -287,7 +418,7 @@ const CadastroVeiculo: React.FC = () => {
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '6px' }}>Ano</label>
+              <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '6px' }}>Ano Modelo FIPE</label>
               <SearchableSelect 
                 placeholder="-- Selecione o Ano --"
                 value={codigoAnoFipe}
@@ -300,7 +431,7 @@ const CadastroVeiculo: React.FC = () => {
                   
                   const anoObj = anosFipe.find(a => String(a.valor) === val);
                   if (anoObj) {
-                    const nomeStr = anoObj.nome; // Ex: "2009 Gasolina" ou "2015 Diesel"
+                    const nomeStr = anoObj.nome;
                     const anoMatch = nomeStr.match(/^(\d{4})/);
                     const anoNum = anoMatch ? parseInt(anoMatch[1], 10) : new Date().getFullYear();
                     
@@ -329,17 +460,26 @@ const CadastroVeiculo: React.FC = () => {
                   if (!codigoMarcaFipe || !codigoModeloFipe || !codigoAnoFipe) return;
                   setLoadingFipe(true);
                   setFipeStatus(null);
-                  const result = await buscarPrecoFipeCompleto(1, codigoMarcaFipe, codigoModeloFipe, codigoAnoFipe);
+                  const fipeTipo: 1 | 2 | 3 = tipoVeiculo === 2 ? 2 : tipoVeiculo === 7 ? 3 : 1;
+                  const result = await buscarPrecoFipeCompleto(fipeTipo, codigoMarcaFipe, codigoModeloFipe, codigoAnoFipe);
                   setLoadingFipe(false);
                   if (result) {
                     const valorStr = result.valor || result.Valor || '';
                     const mesRef = result.mesReferencia || result.MesReferencia || '';
+                    const codFipe = result.codigoFipe || result.CodigoFipe || '';
                     const valor = fipeValorParaNumero(valorStr);
                     const compraSugerida = Math.round(valor * 0.85);
-                    setFormData(prev => ({ ...prev, valorCompra: compraSugerida, valorVenda: valor }));
+                    setFormData(prev => ({ 
+                      ...prev, 
+                      valorCompra: compraSugerida, 
+                      valorVenda: valor,
+                      valorFipe: valor,
+                      codigoFipe: codFipe,
+                      mesReferenciaFipe: mesRef
+                    }));
                     setDisplayValorCompra(formatBRL(compraSugerida));
                     setDisplayValorVenda(formatBRL(valor));
-                    setFipeStatus(`FIPE: ${valorStr} (${mesRef}) — Compra sugerida: R$ ${formatBRL(compraSugerida)}`);
+                    setFipeStatus(`FIPE: ${valorStr} (${mesRef} - Código: ${codFipe}) — Preço sugerido de compra: R$ ${formatBRL(compraSugerida)}`);
                   } else {
                     setFipeStatus('Não foi possível buscar o valor FIPE para esta combinação.');
                   }
@@ -368,10 +508,10 @@ const CadastroVeiculo: React.FC = () => {
         <form onSubmit={handleSubmit}>
           {/* Sessão 1: Identificação Básica */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <h3 style={{ margin: 0, color: 'var(--color-blue-light)', fontSize: '1.1rem' }}>Identificação</h3>
+            <h3 style={{ margin: 0, color: 'var(--color-blue-light)', fontSize: '1.1rem' }}>Identificação do Veículo</h3>
             {formData.marca && formData.modelo && (
               <span style={{ fontSize: '0.75rem', color: '#10b981', background: 'rgba(16,185,129,0.1)', padding: '3px 8px', borderRadius: '4px', border: '1px solid rgba(16,185,129,0.3)' }}>
-                Preenchido Automaticamente
+                Dados FIPE Aplicados
               </span>
             )}
           </div>
@@ -379,18 +519,98 @@ const CadastroVeiculo: React.FC = () => {
           <div className="form-row">
             <div className="form-group">
               <label className="form-label">Marca</label>
-              <input type="text" name="marca" value={formData.marca} onChange={handleChange} className="form-input" placeholder="Ex: Honda" required />
+              <input type="text" name="marca" value={formData.marca} onChange={handleChange} className="form-input" placeholder={tipoVeiculo === 2 ? "Ex: Honda, Yamaha" : "Ex: Toyota, VW"} required />
             </div>
             <div className="form-group">
               <label className="form-label">Modelo</label>
-              <input type="text" name="modelo" value={formData.modelo} onChange={handleChange} className="form-input" placeholder="Ex: Civic" required />
+              <input type="text" name="modelo" value={formData.modelo} onChange={handleChange} className="form-input" placeholder={tipoVeiculo === 2 ? "Ex: CB 500F, Fazer" : "Ex: Corolla, Civic"} required />
             </div>
           </div>
 
           <div className="form-group">
-            <label className="form-label">Versão</label>
-            <input type="text" name="versao" value={formData.versao} onChange={handleChange} className="form-input" placeholder="Ex: Touring 1.5 Turbo" required />
+            <label className="form-label">Versão / Detalhes</label>
+            <input type="text" name="versao" value={formData.versao} onChange={handleChange} className="form-input" placeholder="Ex: ABS Flex Edition" required />
           </div>
+
+          {/* SESSÃO EXCLUSIVA PARA MOTOS */}
+          {tipoVeiculo === 2 && (
+            <div style={{ background: 'rgba(192, 38, 211, 0.08)', border: '1px solid rgba(192, 38, 211, 0.25)', borderRadius: '12px', padding: '20px', margin: '20px 0' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                <Bike size={20} color="#f472b6" />
+                <h4 style={{ margin: 0, color: '#f472b6', fontSize: '1rem' }}>Especificações da Motocicleta</h4>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">Cilindrada (cc)</label>
+                  <input 
+                    type="number" 
+                    name="cilindrada" 
+                    value={formData.cilindrada || ''} 
+                    onChange={handleChange} 
+                    className="form-input" 
+                    placeholder="Ex: 160, 250, 500, 1000" 
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Estilo da Moto</label>
+                  <select 
+                    name="categoriaMoto" 
+                    value={formData.categoriaMoto || ''} 
+                    onChange={handleChange} 
+                    className="form-input"
+                  >
+                    <option value="">-- Selecione o Estilo --</option>
+                    <option value="10">Street</option>
+                    <option value="4">Trail</option>
+                    <option value="11">Big Trail</option>
+                    <option value="3">Custom</option>
+                    <option value="5">Scooter</option>
+                    <option value="1">Naked</option>
+                    <option value="2">Esportiva</option>
+                    <option value="6">Touring</option>
+                    <option value="7">Cross / Off-Road</option>
+                    <option value="8">Cafe Racer</option>
+                    <option value="9">Scrambler</option>
+                    <option value="12">Cub / Biz</option>
+                    <option value="13">Elétrica</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">Tipo de Partida</label>
+                  <select 
+                    name="partida" 
+                    value={formData.partida || ''} 
+                    onChange={handleChange} 
+                    className="form-input"
+                  >
+                    <option value="">-- Selecione a Partida --</option>
+                    <option value="1">Elétrica</option>
+                    <option value="2">Pedal</option>
+                    <option value="3">Elétrica e Pedal</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Tipo de Refrigeração</label>
+                  <select 
+                    name="refrigeracao" 
+                    value={formData.refrigeracao || ''} 
+                    onChange={handleChange} 
+                    className="form-input"
+                  >
+                    <option value="">-- Selecione a Refrigeração --</option>
+                    <option value="1">Ar</option>
+                    <option value="4">Líquida</option>
+                    <option value="2">Óleo</option>
+                    <option value="3">Ar e Óleo</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Sessão 2: Detalhes Técnicos */}
           <h3 style={{ marginBottom: '16px', marginTop: '24px', color: 'var(--color-blue-light)', fontSize: '1.1rem' }}>Detalhes Técnicos</h3>
@@ -408,7 +628,7 @@ const CadastroVeiculo: React.FC = () => {
           <div className="form-row">
             <div className="form-group">
               <label className="form-label">Cor</label>
-              <input type="text" name="cor" value={formData.cor} onChange={handleChange} className="form-input" placeholder="Ex: Prata" />
+              <input type="text" name="cor" value={formData.cor} onChange={handleChange} className="form-input" placeholder="Ex: Preto, Vermelho, Prata" />
             </div>
             <div className="form-group">
               <label className="form-label">Quilometragem (km)</label>
@@ -435,6 +655,8 @@ const CadastroVeiculo: React.FC = () => {
                 <option value="">-- Selecione --</option>
                 <option value="Manual">Manual</option>
                 <option value="Automático">Automático</option>
+                <option value="Semi-Automático">Semi-Automático</option>
+                <option value="CVT">CVT</option>
               </select>
             </div>
           </div>
@@ -486,7 +708,7 @@ const CadastroVeiculo: React.FC = () => {
           <div className="form-row">
             <div className="form-group">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                <label className="form-label" style={{ margin: 0 }}>Valor de Compra (R$)</label>
+                <label className="form-label" style={{ margin: 0 }}>Valor de Compra / Custo (R$)</label>
               </div>
               <input 
                 type="text" 
@@ -512,6 +734,15 @@ const CadastroVeiculo: React.FC = () => {
               />
             </div>
           </div>
+
+          {/* Dados FIPE capturados */}
+          {formData.codigoFipe && (
+            <div style={{ padding: '12px 16px', background: 'rgba(37, 99, 235, 0.08)', borderRadius: '8px', border: '1px solid rgba(37, 99, 235, 0.2)', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.85rem', color: '#93c5fd' }}>
+                Referência FIPE: <strong>{formData.codigoFipe}</strong> ({formData.mesReferenciaFipe || 'Vigente'}) — Valor Tabela: R$ {formatBRL(formData.valorFipe || 0)}
+              </span>
+            </div>
+          )}
 
           <div style={{ display: 'flex', gap: '16px', marginTop: '32px' }}>
             <button type="button" className="btn" onClick={() => navigate('/estoque')} style={{ background: 'rgba(255,255,255,0.05)', color: 'white' }}>

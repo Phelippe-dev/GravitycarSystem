@@ -40,7 +40,7 @@ const FuncionariosPage: React.FC = () => {
     });
 
     const getHeaders = () => {
-        const token = localStorage.getItem('@GravityCar:token');
+        const token = localStorage.getItem('@MotorsXy:token') || localStorage.getItem('@GravityCar:token');
         return { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) };
     };
 
@@ -262,7 +262,7 @@ const FuncionariosPage: React.FC = () => {
                                 <>
                                     <div>
                                         <label style={{ fontSize: '0.8rem', color: 'var(--color-gray-400)', display: 'block', marginBottom: '4px' }}>E-mail de Acesso*</label>
-                                        <input className="form-input" type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} placeholder="joao@gravity.com.br" />
+                                        <input className="form-input" type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} placeholder="joao@motorsxy.com.br" />
                                     </div>
                                     <div>
                                         <label style={{ fontSize: '0.8rem', color: 'var(--color-gray-400)', display: 'block', marginBottom: '4px' }}>Senha Inicial*</label>

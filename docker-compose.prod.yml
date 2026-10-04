@@ -1,0 +1,118 @@
+version: '3.9'
+
+# ==============================================================================
+# MOTORS XY SYSTEM - PRODUCTION DOCKER COMPOSE STACK
+# Arquitetura Multi-Tenant para Concessionárias & Revendas
+# ==============================================================================
+
+services:
+  # ----------------------------------------------------------------------------
+  # 1. BANCO DE DADOS POSTGRESQL 16 (DADOS PERSISTENTES E ISOLAMENTO)
+  # ----------------------------------------------------------------------------
+  motors-xy-db:
+    image: postgres:16-alpine
+    container_name: motors-xy-db
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME:-motorsxysystem}
+      POSTGRES_USER: ${DB_USER:-motorsxy_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-motorsxy_secret123!}
+    volumes:
+      - motors_xy_db_data:/var/lib/postgresql/data
+      - ./deploy/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-motorsxy_user} -d ${DB_NAME:-motorsxysystem}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - motors-xy-net
+
+  # ----------------------------------------------------------------------------
+  # 2. BACKEND API (.NET 8 ASP.NET CORE - MULTI-TENANT & QUESTPDF)
+  # ----------------------------------------------------------------------------
+  motors-xy-api:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.api
+    container_name: motors-xy-api
+    restart: always
+    depends_on:
+      motors-xy-db:
+        condition: service_healthy
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Host=motors-xy-db;Port=5432;Database=${DB_NAME:-motorsxysystem};Username=${DB_USER:-motorsxy_user};Password=${DB_PASSWORD:-motorsxy_secret123!}
+      - Jwt__Key=${JWT_SECRET:-MotorsXySystemSuperSecretKey2026!@#VeryLongKeyForHS256Algorithm12345}
+      - Jwt__Issuer=MotorsXySystemAPI
+      - Jwt__Audience=MotorsXySystemWeb
+      - SuperAdmin__Email=${SUPERADMIN_EMAIL:-phelippexy@gmail.com}
+      - SuperAdmin__Password=${SUPERADMIN_PASSWORD:-Xydev.com}
+      - SuperAdmin__Nome=${SUPERADMIN_NOME:-Super Administrador}
+      - Tenancy__BaseDomain=${APP_DOMAIN:-motorsxy.com}
+      - App__PublicUrl=https://${APP_DOMAIN:-motorsxy.com}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5000/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - motors-xy-net
+
+  # ----------------------------------------------------------------------------
+  # 3. FRONTEND WEB (REACT 19 + VITE + NGINX ALPINE)
+  # ----------------------------------------------------------------------------
+  motors-xy-web:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.web
+      args:
+        - VITE_API_BASE_URL=/api
+    container_name: motors-xy-web
+    restart: always
+    depends_on:
+      motors-xy-api:
+        condition: service_healthy
+    networks:
+      - motors-xy-net
+
+  # ----------------------------------------------------------------------------
+  # 4. REVERSE PROXY CLOUD (CADDY COM SSL/TLS AUTOMÁTICO E HTTP/3 QUIC)
+  # ----------------------------------------------------------------------------
+  motors-xy-proxy:
+    image: caddy:2.8-alpine
+    container_name: motors-xy-proxy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp" # Suporte nativo a HTTP/3 QUIC
+    environment:
+      - APP_DOMAIN=${APP_DOMAIN:-motorsxy.com}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - motors-xy-web
+      - motors-xy-api
+    networks:
+      - motors-xy-net
+
+# ==============================================================================
+# VOLUMES PERSISTENTES E REDES
+# ==============================================================================
+volumes:
+  motors_xy_db_data:
+    name: motors_xy_db_data
+  caddy_data:
+    name: caddy_data
+  caddy_config:
+    name: caddy_config
+
+networks:
+  motors-xy-net:
+    name: motors-xy-net
+    driver: bridge

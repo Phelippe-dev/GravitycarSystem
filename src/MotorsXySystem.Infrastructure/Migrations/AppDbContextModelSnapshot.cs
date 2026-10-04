@@ -70,6 +70,9 @@ namespace MotorsXySystem.Infrastructure.Migrations
                     b.Property<string>("AtualizadoPor")
                         .HasColumnType("text");
 
+                    b.Property<string>("CodigoLiberacao")
+                        .HasColumnType("text");
+
                     b.Property<string>("CriadoPor")
                         .HasColumnType("text");
 
@@ -77,6 +80,9 @@ namespace MotorsXySystem.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime>("DataCriacao")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DataExpiracaoCodigoLiberacao")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Email")
@@ -153,6 +159,274 @@ namespace MotorsXySystem.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Clientes");
+                });
+
+            modelBuilder.Entity("MotorsXySystem.Domain.Entidades.Crm.Lead", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("AtualizadoPor")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Canal")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("ClienteId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CriadoPor")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("DataAtualizacao")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("DataCriacao")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DataFechamento")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DataProximoContato")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("EmpresaId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Estagio")
+                        .HasColumnType("integer");
+
+                    b.Property<short?>("InteresseAnoMax")
+                        .HasColumnType("smallint");
+
+                    b.Property<short?>("InteresseAnoMin")
+                        .HasColumnType("smallint");
+
+                    b.Property<string>("InteresseMarca")
+                        .HasColumnType("text");
+
+                    b.Property<string>("InteresseModelo")
+                        .HasColumnType("text");
+
+                    b.Property<decimal?>("InteressePrecoMax")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal?>("InteressePrecoMin")
+                        .HasColumnType("numeric");
+
+                    b.Property<int?>("InteresseTipo")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Mensagem")
+                        .HasColumnType("text");
+
+                    b.Property<string>("MotivoPerda")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<int>("Ordem")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Origem")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("ResponsavelId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Telefone")
+                        .HasColumnType("text");
+
+                    b.Property<int>("TipoOportunidade")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("UtmCampaign")
+                        .HasColumnType("text");
+
+                    b.Property<string>("UtmMedium")
+                        .HasColumnType("text");
+
+                    b.Property<string>("UtmSource")
+                        .HasColumnType("text");
+
+                    b.Property<decimal?>("ValorEstimado")
+                        .HasColumnType("numeric");
+
+                    b.Property<Guid?>("VeiculoInteresseId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClienteId");
+
+                    b.HasIndex("VeiculoInteresseId");
+
+                    b.HasIndex("EmpresaId", "Estagio", "Ordem");
+
+                    b.ToTable("Leads");
+                });
+
+            modelBuilder.Entity("MotorsXySystem.Domain.Entidades.Crm.LeadInteracao", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("AtualizadoPor")
+                        .HasColumnType("text");
+
+                    b.Property<string>("CriadoPor")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("DataAtualizacao")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("DataCriacao")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Descricao")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("EmpresaId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("LeadId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Tipo")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("UsuarioId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LeadId");
+
+                    b.ToTable("LeadInteracoes");
+                });
+
+            modelBuilder.Entity("MotorsXySystem.Domain.Entidades.Documentos.ReciboVenda", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("AtualizadoPor")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("Cancelado")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid?>("ClienteId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CriadoPor")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DadosJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("DataAssinatura")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DataAtualizacao")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("DataCriacao")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("EmitidoEmUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("EmitidoPorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("EmpresaId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("HashSha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("IdExternoAssinatura")
+                        .HasColumnType("text");
+
+                    b.Property<string>("MotivoCancelamento")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Numero")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<byte[]>("Pdf")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.Property<byte[]>("PdfAssinado")
+                        .HasColumnType("bytea");
+
+                    b.Property<string>("PdfSha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("ProvedorAssinatura")
+                        .HasColumnType("text");
+
+                    b.Property<int>("StatusAssinatura")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Tipo")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("UrlAssinatura")
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("ValorRecebido")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal>("ValorTotal")
+                        .HasColumnType("numeric");
+
+                    b.Property<Guid?>("VeiculoId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("VendaId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("HashSha256")
+                        .IsUnique();
+
+                    b.HasIndex("EmpresaId", "Numero")
+                        .IsUnique();
+
+                    b.HasIndex("ProvedorAssinatura", "IdExternoAssinatura");
+
+                    b.ToTable("Recibos");
                 });
 
             modelBuilder.Entity("MotorsXySystem.Domain.Entidades.Financeiro.ContaPagar", b =>
@@ -349,11 +623,18 @@ namespace MotorsXySystem.Infrastructure.Migrations
                     b.Property<Guid>("EmpresaId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("NumeroVenda")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Observacoes")
                         .HasColumnType("text");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
+
+                    b.Property<Guid>("UsuarioId")
+                        .HasColumnType("uuid");
 
                     b.Property<decimal>("ValorDesconto")
                         .HasColumnType("numeric");
@@ -474,6 +755,12 @@ namespace MotorsXySystem.Infrastructure.Migrations
                     b.Property<string>("AtualizadoPor")
                         .HasColumnType("text");
 
+                    b.Property<string>("Cep")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Cidade")
+                        .HasColumnType("text");
+
                     b.Property<string>("Cnpj")
                         .HasColumnType("text");
 
@@ -486,6 +773,18 @@ namespace MotorsXySystem.Infrastructure.Migrations
                     b.Property<DateTime>("DataCriacao")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Email")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Endereco")
+                        .HasColumnType("text");
+
+                    b.Property<string>("InscricaoEstadual")
+                        .HasColumnType("text");
+
+                    b.Property<string>("LeadApiKey")
+                        .HasColumnType("text");
+
                     b.Property<string>("LogoUrl")
                         .HasColumnType("text");
 
@@ -497,13 +796,30 @@ namespace MotorsXySystem.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("Slug")
+                        .HasMaxLength(63)
+                        .HasColumnType("character varying(63)");
+
+                    b.Property<string>("Telefone")
+                        .HasColumnType("text");
+
                     b.Property<string>("TemaCorPrincipal")
                         .HasColumnType("text");
 
                     b.Property<string>("TemaCorSecundaria")
                         .HasColumnType("text");
 
+                    b.Property<string>("TermoGarantiaPadrao")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Uf")
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("Slug")
+                        .IsUnique();
 
                     b.ToTable("Empresas");
                 });
@@ -541,6 +857,10 @@ namespace MotorsXySystem.Infrastructure.Migrations
                     b.Property<int?>("Cilindrada")
                         .HasColumnType("integer");
 
+                    b.Property<string>("CodigoFipe")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
                     b.Property<string>("Combustivel")
                         .HasColumnType("text");
 
@@ -554,6 +874,9 @@ namespace MotorsXySystem.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.Property<DateTime?>("DataAtualizacao")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DataConsultaFipe")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime>("DataCriacao")
@@ -575,6 +898,9 @@ namespace MotorsXySystem.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("MesReferenciaFipe")
+                        .HasColumnType("text");
+
                     b.Property<string>("Modelo")
                         .IsRequired()
                         .HasColumnType("text");
@@ -591,6 +917,9 @@ namespace MotorsXySystem.Infrastructure.Migrations
                     b.Property<string>("Observacoes")
                         .HasColumnType("text");
 
+                    b.Property<int?>("Partida")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Placa")
                         .HasColumnType("text");
 
@@ -598,6 +927,9 @@ namespace MotorsXySystem.Infrastructure.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<int?>("Quilometragem")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("Refrigeracao")
                         .HasColumnType("integer");
 
                     b.Property<string>("Renavam")
@@ -629,6 +961,8 @@ namespace MotorsXySystem.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("EmpresaId", "Tipo", "Status");
 
                     b.ToTable("Veiculos");
                 });
@@ -741,6 +1075,34 @@ namespace MotorsXySystem.Infrastructure.Migrations
                     b.Navigation("Perfil");
                 });
 
+            modelBuilder.Entity("MotorsXySystem.Domain.Entidades.Crm.Lead", b =>
+                {
+                    b.HasOne("MotorsXySystem.Domain.Entidades.Cadastros.Cliente", "Cliente")
+                        .WithMany()
+                        .HasForeignKey("ClienteId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("MotorsXySystem.Domain.Entidades.Veiculos.Veiculo", "VeiculoInteresse")
+                        .WithMany()
+                        .HasForeignKey("VeiculoInteresseId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Cliente");
+
+                    b.Navigation("VeiculoInteresse");
+                });
+
+            modelBuilder.Entity("MotorsXySystem.Domain.Entidades.Crm.LeadInteracao", b =>
+                {
+                    b.HasOne("MotorsXySystem.Domain.Entidades.Crm.Lead", "Lead")
+                        .WithMany("Interacoes")
+                        .HasForeignKey("LeadId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Lead");
+                });
+
             modelBuilder.Entity("MotorsXySystem.Domain.Entidades.Financeiro.ContaReceber", b =>
                 {
                     b.HasOne("MotorsXySystem.Domain.Entidades.Cadastros.Cliente", "Cliente")
@@ -839,6 +1201,11 @@ namespace MotorsXySystem.Infrastructure.Migrations
             modelBuilder.Entity("MotorsXySystem.Domain.Entidades.Acesso.Perfil", b =>
                 {
                     b.Navigation("Usuarios");
+                });
+
+            modelBuilder.Entity("MotorsXySystem.Domain.Entidades.Crm.Lead", b =>
+                {
+                    b.Navigation("Interacoes");
                 });
 
             modelBuilder.Entity("MotorsXySystem.Domain.Entidades.Negocio.Venda", b =>

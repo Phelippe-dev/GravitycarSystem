@@ -13,4 +13,20 @@ public class Empresa : EntidadeAuditavel
     public string? LogoUrl { get; set; }
     public string? TemaCorPrincipal { get; set; }
     public string? TemaCorSecundaria { get; set; }
+
+    /// <summary>Identificador público do tenant (subdomínio): {slug}.seudominio.com.br</summary>
+    public string? Slug { get; set; }
+    /// <summary>Chave para integrações servidor-a-servidor de leads (header X-Api-Key).</summary>
+    public string? LeadApiKey { get; set; }
+
+    // === Dados para documentos ===
+    public string? InscricaoEstadual { get; set; }
+    public string? Endereco { get; set; }
+    public string? Cidade { get; set; }
+    public string? Uf { get; set; }
+    public string? Cep { get; set; }
+    public string? Telefone { get; set; }
+    public string? Email { get; set; }
+    /// <summary>Termo de garantia padrão impresso nos recibos.</summary>
+    public string? TermoGarantiaPadrao { get; set; }
 }

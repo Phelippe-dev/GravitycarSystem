@@ -122,7 +122,7 @@ const AdminPortal: React.FC = () => {
       <header className="page-header" style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Building2 size={28} color="var(--color-blue-light)" /> Portal GravityCarAdmin
+            <Building2 size={28} color="var(--color-blue-light)" /> Portal MotorsXy Admin
           </h1>
           <p style={{ color: 'var(--color-gray-400)', marginTop: '8px' }}>
             Gestão Multi-Tenant das Concessionárias Clientes (Software House)
@@ -269,11 +269,11 @@ const AdminPortal: React.FC = () => {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '32px' }}>
                   <div className="form-group" style={{ gridColumn: 'span 2' }}>
                     <label className="form-label">Razão Social *</label>
-                    <input type="text" className="form-input" placeholder="Ex: Gravity Motors Concessionaria LTDA" value={novaEmpresa.razaoSocial} onChange={e => setNovaEmpresa({...novaEmpresa, razaoSocial: e.target.value})} />
+                    <input type="text" className="form-input" placeholder="Ex: MotorsXy Concessionaria LTDA" value={novaEmpresa.razaoSocial} onChange={e => setNovaEmpresa({...novaEmpresa, razaoSocial: e.target.value})} />
                   </div>
                   <div className="form-group">
                     <label className="form-label">Nome Fantasia</label>
-                    <input type="text" className="form-input" placeholder="Ex: Gravity Motors" value={novaEmpresa.nomeFantasia} onChange={e => setNovaEmpresa({...novaEmpresa, nomeFantasia: e.target.value})} />
+                    <input type="text" className="form-input" placeholder="Ex: MotorsXy Motors" value={novaEmpresa.nomeFantasia} onChange={e => setNovaEmpresa({...novaEmpresa, nomeFantasia: e.target.value})} />
                   </div>
                   <div className="form-group">
                     <label className="form-label">CNPJ *</label>

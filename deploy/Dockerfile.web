@@ -1,0 +1,39 @@
+# ==============================================================================
+# ESTÁGIO 1: BUILD DO FRONTEND (Node 20 Alpine)
+# ==============================================================================
+FROM node:20-alpine AS build
+WORKDIR /app
+
+# Copia dependências primeiro para cache do Docker
+COPY web/package*.json ./
+RUN npm ci
+
+# Copia código-fonte e compila bundle de produção
+COPY web/ ./
+
+# Permite injetar a URL da API durante o build se necessário
+ARG VITE_API_BASE_URL=/api
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+
+RUN npm run build
+
+# ==============================================================================
+# ESTÁGIO 2: NGINX SERVIDOR DE ALTA PERFORMANCE (Alpine)
+# ==============================================================================
+FROM nginx:1.27-alpine AS final
+
+# Remove configuração padrão
+RUN rm -rf /etc/nginx/conf.d/*
+
+# Copia configuração customizada com suporte a SPA, Gzip e Headers de Segurança
+COPY deploy/nginx.web.conf /etc/nginx/conf.d/default.conf
+
+# Copia arquivos compilados do estágio anterior
+COPY --from=build /app/dist /usr/share/nginx/html
+
+# Healthcheck do container web
+HEALTHCHECK --interval=20s --timeout=5s --start-period=5s --retries=3 \
+  CMD wget --quiet --tries=1 --spider http://localhost/ || exit 1
+
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]

@@ -180,7 +180,7 @@ const Relatorios: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `relatorio-vendas-gravitycar-${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `relatorio-vendas-motorsxy-${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -515,9 +515,9 @@ const Relatorios: React.FC = () => {
             {/* Cabeçalho do Relatório */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #0284c7', paddingBottom: '16px', marginBottom: '24px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <img src={logoImg} alt="Gravity Car System" style={{ height: '44px', objectFit: 'contain' }} />
+                <img src={logoImg} alt="MotorsXy System" style={{ height: '44px', objectFit: 'contain' }} />
                 <div>
-                  <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.5px' }}>GRAVITY CAR SYSTEM</div>
+                  <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.5px' }}>MOTORS XY SYSTEM</div>
                   <div style={{ fontSize: '0.78rem', color: '#64748b' }}>Relatório Gerencial de Rentabilidade & DRE Analítico</div>
                 </div>
               </div>
@@ -642,7 +642,7 @@ const Relatorios: React.FC = () => {
                 <div>
                   <div style={{ borderTop: '1px solid #0f172a', margin: '24px auto 6px auto', width: '75%' }}></div>
                   <div style={{ fontSize: '0.78rem', fontWeight: 700 }}>Gerência Financeira / Comercial</div>
-                  <div style={{ fontSize: '0.68rem', color: '#64748b' }}>Gravity Car System</div>
+                  <div style={{ fontSize: '0.68rem', color: '#64748b' }}>MotorsXy System</div>
                 </div>
                 <div>
                   <div style={{ borderTop: '1px solid #0f172a', margin: '24px auto 6px auto', width: '75%' }}></div>
@@ -654,7 +654,7 @@ const Relatorios: React.FC = () => {
 
             {/* Rodapé Comercial */}
             <div style={{ marginTop: '24px', textAlign: 'center', fontSize: '0.68rem', color: '#94a3b8', borderTop: '1px solid #f1f5f9', paddingTop: '8px' }}>
-              Documento gerado eletronicamente pelo Gravity Car System • Relatório de Auditoria e Rentabilidade Comercial
+              Documento gerado eletronicamente pelo MotorsXy System • Relatório de Auditoria e Rentabilidade Comercial
             </div>
           </div>
         </div>

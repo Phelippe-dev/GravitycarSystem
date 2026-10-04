@@ -27,8 +27,13 @@ public class Veiculo : EntidadeTenant
     public int? Quilometragem { get; set; }
     
     // === Específicos Motos ===
+    /// <summary>Cilindrada em cc.</summary>
     public int? Cilindrada { get; set; }
+    /// <summary>Estilo: Street, Trail, Custom, Scooter, etc.</summary>
     public CategoriaMoto? CategoriaMoto { get; set; }
+    public TipoPartida? Partida { get; set; }
+    public TipoRefrigeracao? Refrigeracao { get; set; }
+    /// <summary>Legado (texto livre). Use <see cref="Refrigeracao"/>.</summary>
     public string? TipoRefrigeracao { get; set; }
     public string? TipoFreio { get; set; }
     public bool? PossuiABS { get; set; }
@@ -44,6 +49,11 @@ public class Veiculo : EntidadeTenant
     public decimal? ValorCompra { get; set; }
     public decimal? ValorVenda { get; set; }
     public decimal? ValorFipe { get; set; }
+
+    // === Referência FIPE ===
+    public string? CodigoFipe { get; set; }
+    public string? MesReferenciaFipe { get; set; }
+    public DateTime? DataConsultaFipe { get; set; }
     
     // === Datas ===
     public DateTime? DataEntrada { get; set; }

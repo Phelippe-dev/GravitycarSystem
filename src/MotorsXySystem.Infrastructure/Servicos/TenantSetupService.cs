@@ -48,13 +48,17 @@ public class TenantSetupService : ITenantSetupService
             _context.Perfis.Add(perfilAdmin);
             await _context.SaveChangesAsync();
 
-            // 3. Criar Usuário Admin associado ao Perfil e à Empresa
+            // 3. Gerar código de liberação de 6 dígitos para o cliente
+            var codigoLiberacao = Random.Shared.Next(100000, 999999).ToString();
+
+            // Criar Usuário Admin associado ao Perfil e à Empresa
             var usuario = new Usuario
             {
                 EmpresaId = empresa.Id,
                 Nome = request.AdminNome,
                 Email = request.AdminEmail,
                 SenhaHash = BCrypt.Net.BCrypt.HashPassword(request.AdminSenha),
+                CodigoLiberacao = codigoLiberacao,
                 PerfilId = perfilAdmin.Id,
                 DataCriacao = DateTime.UtcNow,
                 Ativo = true
@@ -65,7 +69,7 @@ public class TenantSetupService : ITenantSetupService
 
             await transaction.CommitAsync();
 
-            return $"Setup concluído! Empresa '{empresa.NomeFantasia}' criada com sucesso. ID: {empresa.Id}";
+            return $"Setup concluído! Empresa '{empresa.NomeFantasia}' criada com sucesso. ID: {empresa.Id}. Código de Liberação do Cliente (6 dígitos): {codigoLiberacao}";
         }
         catch (Exception ex)
         {

@@ -20,6 +20,9 @@ import Cheques from './pages/Cheques';
 import AdminPortal from './pages/AdminPortal';
 import ConfiguracoesEmpresa from './pages/ConfiguracoesEmpresa';
 import FuncionariosPage from './pages/Funcionarios';
+import LeadsKanban from './pages/LeadsKanban';
+import RecibosDigitais from './pages/RecibosDigitais';
+import VerificarRecibo from './pages/VerificarRecibo';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import type { UserRole } from './contexts/AuthContext';
 
@@ -69,7 +72,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     if (novaSenha.length < 6) { setSenhaMsg({ tipo: 'erro', texto: 'A nova senha deve ter pelo menos 6 caracteres.' }); return; }
     setSenhaLoading(true); setSenhaMsg(null);
     try {
-      const token = localStorage.getItem('@GravityCar:token');
+      const token = localStorage.getItem('@MotorsXy:token') || localStorage.getItem('@GravityCar:token');
       const resp = await fetch(`${(await import('./api')).API_BASE_URL}/auth/change-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
@@ -100,10 +103,12 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
         <nav className="sidebar-nav">
           <Link to="/" className={`nav-item ${isActive('/') ? 'active' : ''}`}><LayoutDashboard size={20} />Dashboard</Link>
+          <Link to="/leads" className={`nav-item ${isActive('/leads') ? 'active' : ''}`}><Users size={20} />Leads / CRM</Link>
           <Link to="/cadastro/veiculos" className={`nav-item ${isActive('/cadastro/veiculos') ? 'active' : ''}`}><PlusCircle size={20} />Novo Veículo</Link>
           <Link to="/estoque" className={`nav-item ${isActive('/estoque') ? 'active' : ''}`}><Car size={20} />Estoque</Link>
           <Link to="/avaliacao" className={`nav-item ${isActive('/avaliacao') ? 'active' : ''}`}><FileText size={20} />Avaliação</Link>
           <Link to="/vendas" className={`nav-item ${isActive('/vendas') ? 'active' : ''}`}><DollarSign size={20} />Vendas</Link>
+          <Link to="/recibos" className={`nav-item ${isActive('/recibos') ? 'active' : ''}`}><FileText size={20} />Recibos</Link>
           <Link to="/clientes" className={`nav-item ${isActive('/clientes') ? 'active' : ''}`}><User size={20} />Clientes</Link>
 
           {/* Gerente + Admin + SuperAdmin */}
@@ -299,16 +304,19 @@ const App: React.FC = () => {
           <Route path="/login" element={<Login />} />
           <Route path="/esqueci-minha-senha" element={<ForgotPassword />} />
           <Route path="/redefinir-senha" element={<ResetPassword />} />
+          <Route path="/verificar/:hash" element={<VerificarRecibo />} />
           <Route path="*" element={
             <PrivateRoute>
               <Layout>
                 <Routes>
                   <Route path="/" element={<Dashboard />} />
+                  <Route path="/leads" element={<LeadsKanban />} />
                   <Route path="/cadastro/veiculos" element={<CadastroVeiculo />} />
                   <Route path="/cadastro/veiculos/:id" element={<CadastroVeiculo />} />
                   <Route path="/estoque" element={<Estoque />} />
                   <Route path="/avaliacao" element={<AvaliacaoVeiculo />} />
                   <Route path="/vendas" element={<Vendas />} />
+                  <Route path="/recibos" element={<RecibosDigitais />} />
                   <Route path="/financeiro/cheques" element={<Cheques />} />
                   <Route path="/clientes" element={<Clientes />} />
                   <Route path="/clientes/:id" element={<ClienteDetalhesPage />} />

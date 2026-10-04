@@ -76,6 +76,56 @@ const VeiculoDetalhesPage: React.FC = () => {
     }
   };
 
+  const getCategoriaMotoLabel = (cat?: number) => {
+    switch (cat) {
+      case 1: return 'Naked';
+      case 2: return 'Esportiva';
+      case 3: return 'Custom';
+      case 4: return 'Trail';
+      case 5: return 'Scooter';
+      case 6: return 'Touring';
+      case 7: return 'Cross / Off-Road';
+      case 8: return 'Cafe Racer';
+      case 9: return 'Scrambler';
+      case 10: return 'Street';
+      case 11: return 'Big Trail';
+      case 12: return 'Cub / Biz';
+      case 13: return 'Elétrica';
+      default: return 'Não especificado';
+    }
+  };
+
+  const getPartidaLabel = (partida?: number) => {
+    switch (partida) {
+      case 1: return 'Elétrica';
+      case 2: return 'Pedal';
+      case 3: return 'Elétrica e Pedal';
+      default: return 'Não informada';
+    }
+  };
+
+  const getRefrigeracaoLabel = (refr?: number) => {
+    switch (refr) {
+      case 1: return 'Ar';
+      case 2: return 'Óleo';
+      case 3: return 'Ar e Óleo';
+      case 4: return 'Líquida';
+      default: return 'Não informada';
+    }
+  };
+
+  const getTipoVeiculoLabel = (tipo?: number) => {
+    switch (tipo) {
+      case 2: return 'Motocicleta';
+      case 3: return 'Scooter';
+      case 4: return 'Quadriciclo';
+      case 5: return 'UTV';
+      case 6: return 'Caminhão';
+      case 7: return 'Utilitário';
+      default: return 'Carro de Passeio';
+    }
+  };
+
   const getStatusLabel = (status: number) => {
     switch (status) {
       case 1: return 'Em Avaliação';
@@ -98,8 +148,19 @@ const VeiculoDetalhesPage: React.FC = () => {
     if (!id) return;
     try {
       setLoading(true);
+      setError(null);
       const data = await getVeiculoDetalhes(id);
-      setVeiculo(data);
+      if (!data || !data.id) {
+        setError('Veículo não encontrado.');
+        return;
+      }
+      setVeiculo({
+        ...data,
+        fotos: data.fotos || [],
+        documentos: data.documentos || [],
+        custos: data.custos || [],
+        historico: data.historico || []
+      });
     } catch (err: any) {
       setError(err.message || 'Erro ao carregar detalhes do veículo');
     } finally {
@@ -245,6 +306,25 @@ const VeiculoDetalhesPage: React.FC = () => {
         </button>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
           <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+              <span style={{ 
+                background: veiculo.tipoVeiculo === 2 || veiculo.tipoVeiculo === 3 ? 'rgba(192, 38, 211, 0.2)' : veiculo.tipoVeiculo === 7 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(37, 99, 235, 0.2)',
+                color: veiculo.tipoVeiculo === 2 || veiculo.tipoVeiculo === 3 ? '#f472b6' : veiculo.tipoVeiculo === 7 ? '#34d399' : '#93c5fd',
+                border: `1px solid ${veiculo.tipoVeiculo === 2 || veiculo.tipoVeiculo === 3 ? 'rgba(192, 38, 211, 0.4)' : veiculo.tipoVeiculo === 7 ? 'rgba(16, 185, 129, 0.4)' : 'rgba(37, 99, 235, 0.4)'}`,
+                fontWeight: 700,
+                fontSize: '0.75rem',
+                padding: '3px 10px',
+                borderRadius: '6px',
+                textTransform: 'uppercase'
+              }}>
+                {getTipoVeiculoLabel(veiculo.tipoVeiculo)}
+              </span>
+              {veiculo.codigoFipe && (
+                <span style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#cbd5e1', fontSize: '0.75rem', padding: '3px 10px', borderRadius: '6px' }}>
+                  FIPE: <strong>{veiculo.codigoFipe}</strong>
+                </span>
+              )}
+            </div>
             <h1 className="page-title">{veiculo.marca} {veiculo.modelo}</h1>
             <p style={{ color: 'var(--color-gray-400)', fontSize: '1.1rem', marginTop: '4px' }}>
               Placa: {veiculo.placa} • {veiculo.anoFabricacao}/{veiculo.anoModelo}
@@ -624,6 +704,10 @@ const VeiculoDetalhesPage: React.FC = () => {
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px', fontSize: '0.85rem' }}>
               <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <span style={{ color: 'var(--color-gray-400)', fontSize: '0.72rem', display: 'block', textTransform: 'uppercase' }}>Tipo de Veículo</span>
+                <strong style={{ color: '#38bdf8', fontSize: '0.9rem' }}>{getTipoVeiculoLabel(veiculo.tipoVeiculo)}</strong>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
                 <span style={{ color: 'var(--color-gray-400)', fontSize: '0.72rem', display: 'block', textTransform: 'uppercase' }}>Versão</span>
                 <strong style={{ color: '#fff', fontSize: '0.9rem' }}>{veiculo.versao || 'Padrão'}</strong>
               </div>
@@ -647,6 +731,44 @@ const VeiculoDetalhesPage: React.FC = () => {
                 <span style={{ color: 'var(--color-gray-400)', fontSize: '0.72rem', display: 'block', textTransform: 'uppercase' }}>Renavam</span>
                 <strong style={{ color: '#fff', fontSize: '0.9rem' }}>{veiculo.renavam || 'Não informado'}</strong>
               </div>
+
+              {/* Especificações de Motos */}
+              {(veiculo.tipoVeiculo === 2 || veiculo.tipoVeiculo === 3 || !!veiculo.cilindrada) && (
+                <>
+                  <div style={{ background: 'rgba(192, 38, 211, 0.08)', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(192, 38, 211, 0.25)' }}>
+                    <span style={{ color: '#f472b6', fontSize: '0.72rem', display: 'block', textTransform: 'uppercase' }}>Cilindrada</span>
+                    <strong style={{ color: '#fbcfe8', fontSize: '0.9rem' }}>{veiculo.cilindrada ? `${veiculo.cilindrada} cc` : 'Não informada'}</strong>
+                  </div>
+                  <div style={{ background: 'rgba(192, 38, 211, 0.08)', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(192, 38, 211, 0.25)' }}>
+                    <span style={{ color: '#f472b6', fontSize: '0.72rem', display: 'block', textTransform: 'uppercase' }}>Estilo / Categoria</span>
+                    <strong style={{ color: '#fbcfe8', fontSize: '0.9rem' }}>{getCategoriaMotoLabel(veiculo.categoriaMoto)}</strong>
+                  </div>
+                  <div style={{ background: 'rgba(192, 38, 211, 0.08)', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(192, 38, 211, 0.25)' }}>
+                    <span style={{ color: '#f472b6', fontSize: '0.72rem', display: 'block', textTransform: 'uppercase' }}>Partida</span>
+                    <strong style={{ color: '#fbcfe8', fontSize: '0.9rem' }}>{getPartidaLabel(veiculo.partida)}</strong>
+                  </div>
+                  <div style={{ background: 'rgba(192, 38, 211, 0.08)', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(192, 38, 211, 0.25)' }}>
+                    <span style={{ color: '#f472b6', fontSize: '0.72rem', display: 'block', textTransform: 'uppercase' }}>Refrigeração</span>
+                    <strong style={{ color: '#fbcfe8', fontSize: '0.9rem' }}>{getRefrigeracaoLabel(veiculo.refrigeracao)}</strong>
+                  </div>
+                </>
+              )}
+
+              {/* Tabela FIPE */}
+              {veiculo.codigoFipe && (
+                <>
+                  <div style={{ background: 'rgba(14, 165, 233, 0.08)', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(14, 165, 233, 0.25)' }}>
+                    <span style={{ color: '#38bdf8', fontSize: '0.72rem', display: 'block', textTransform: 'uppercase' }}>Código FIPE</span>
+                    <strong style={{ color: '#e0f2fe', fontSize: '0.9rem' }}>{veiculo.codigoFipe}</strong>
+                  </div>
+                  <div style={{ background: 'rgba(14, 165, 233, 0.08)', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(14, 165, 233, 0.25)' }}>
+                    <span style={{ color: '#38bdf8', fontSize: '0.72rem', display: 'block', textTransform: 'uppercase' }}>Valor Tabela FIPE</span>
+                    <strong style={{ color: '#34d399', fontSize: '0.9rem' }}>
+                      {veiculo.valorFipe ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(veiculo.valorFipe) : 'Consultado'}
+                    </strong>
+                  </div>
+                </>
+              )}
             </div>
 
             <div style={{ marginTop: '16px', background: 'rgba(255,255,255,0.03)', padding: '14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
@@ -1079,9 +1201,9 @@ const VeiculoDetalhesPage: React.FC = () => {
             {/* Cabeçalho do Dossiê */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #0284c7', paddingBottom: '16px', marginBottom: '24px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <img src={logoImg} alt="Gravity Car System" style={{ height: '48px', objectFit: 'contain' }} />
+                <img src={logoImg} alt="MotorsXy System" style={{ height: '48px', objectFit: 'contain' }} />
                 <div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.5px' }}>GRAVITY CAR SYSTEM</div>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.5px' }}>MOTORS XY SYSTEM</div>
                   <div style={{ fontSize: '0.8rem', color: '#64748b' }}>Gestão Integrada de Frotas & Veículos</div>
                 </div>
               </div>
@@ -1110,6 +1232,18 @@ const VeiculoDetalhesPage: React.FC = () => {
                   <div><strong style={{ color: '#64748b' }}>Cor:</strong> {veiculo.cor || 'Não informada'}</div>
                   <div><strong style={{ color: '#64748b' }}>Combustível:</strong> {veiculo.combustivel || 'Flex'}</div>
                   <div><strong style={{ color: '#64748b' }}>Câmbio:</strong> {veiculo.cambio || 'Automático'}</div>
+                  <div><strong style={{ color: '#64748b' }}>Tipo:</strong> {getTipoVeiculoLabel(veiculo.tipoVeiculo)}</div>
+                  {veiculo.codigoFipe && (
+                    <div><strong style={{ color: '#64748b' }}>Cód. FIPE:</strong> {veiculo.codigoFipe}</div>
+                  )}
+                  {(veiculo.tipoVeiculo === 2 || veiculo.tipoVeiculo === 3 || !!veiculo.cilindrada) && (
+                    <>
+                      <div><strong style={{ color: '#64748b' }}>Cilindrada:</strong> {veiculo.cilindrada ? `${veiculo.cilindrada} cc` : 'Não informada'}</div>
+                      <div><strong style={{ color: '#64748b' }}>Estilo:</strong> {getCategoriaMotoLabel(veiculo.categoriaMoto)}</div>
+                      <div><strong style={{ color: '#64748b' }}>Partida:</strong> {getPartidaLabel(veiculo.partida)}</div>
+                      <div><strong style={{ color: '#64748b' }}>Refrigeração:</strong> {getRefrigeracaoLabel(veiculo.refrigeracao)}</div>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -1181,7 +1315,7 @@ const VeiculoDetalhesPage: React.FC = () => {
             {/* Documentos Anexados */}
             <div style={{ marginBottom: '20px' }}>
               <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a', marginBottom: '8px' }}>
-                Documentos Vinculados ({veiculo.documentos.length})
+                Documentos Vinculados ({(veiculo.documentos || []).length})
               </div>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', border: '1px solid #e2e8f0' }}>
                 <thead>
@@ -1192,7 +1326,7 @@ const VeiculoDetalhesPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {veiculo.documentos.map(doc => (
+                  {(veiculo.documentos || []).map(doc => (
                     <tr key={doc.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                       <td style={{ padding: '8px', fontWeight: 600 }}>{doc.tipoDocumento}</td>
                       <td style={{ padding: '8px', color: '#64748b' }}>{doc.nomeArquivo}</td>
@@ -1201,7 +1335,7 @@ const VeiculoDetalhesPage: React.FC = () => {
                       </td>
                     </tr>
                   ))}
-                  {veiculo.documentos.length === 0 && (
+                  {(!veiculo.documentos || veiculo.documentos.length === 0) && (
                     <tr>
                       <td colSpan={3} style={{ padding: '12px', textAlign: 'center', color: '#94a3b8' }}>Nenhum documento físico/digital arquivado.</td>
                     </tr>
@@ -1224,7 +1358,7 @@ const VeiculoDetalhesPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {veiculo.custos.map(custo => (
+                  {(veiculo.custos || []).map(custo => (
                     <tr key={custo.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                       <td style={{ padding: '8px' }}>{custo.descricao}</td>
                       <td style={{ padding: '8px', color: '#64748b' }}>{new Date(custo.dataCusto).toLocaleDateString('pt-BR')}</td>
@@ -1254,14 +1388,14 @@ const VeiculoDetalhesPage: React.FC = () => {
                 <div>
                   <div style={{ borderTop: '1px solid #0f172a', margin: '30px auto 8px auto', width: '80%' }}></div>
                   <div style={{ fontSize: '0.8rem', fontWeight: 700 }}>Gerência de Vendas / Pátio</div>
-                  <div style={{ fontSize: '0.7rem', color: '#64748b' }}>Gravity Car System</div>
+                  <div style={{ fontSize: '0.7rem', color: '#64748b' }}>MotorsXy System</div>
                 </div>
               </div>
             </div>
 
             {/* Rodapé da Ficha Técnica */}
             <div style={{ marginTop: '30px', textAlign: 'center', fontSize: '0.72rem', color: '#64748b', borderTop: '1px solid #e2e8f0', paddingTop: '12px', lineHeight: 1.5 }}>
-              <div><strong>GRAVITY CAR SYSTEM • FICHA TÉCNICA DO PRODUTO & ESPECIFICAÇÕES DE ESTOQUE</strong></div>
+              <div><strong>MOTORS XY SYSTEM • FICHA TÉCNICA DO PRODUTO & ESPECIFICAÇÕES DE ESTOQUE</strong></div>
               <div style={{ marginTop: '4px', color: '#94a3b8' }}>
                 Documento gerado para controle interno de pátio, ficha de apresentação comercial e especificação das características do veículo.
               </div>

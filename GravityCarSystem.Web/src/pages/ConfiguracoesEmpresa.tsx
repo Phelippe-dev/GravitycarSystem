@@ -167,11 +167,11 @@ const ConfiguracoesEmpresa: React.FC = () => {
         <div className="form-row">
           <div className="form-group" style={{ flex: 2 }}>
             <label className="form-label">Razão Social *</label>
-            <input type="text" name="razaoSocial" className="form-input" value={form.razaoSocial} onChange={handleChange} placeholder="Ex: Gravity Motors Concessionaria LTDA" />
+            <input type="text" name="razaoSocial" className="form-input" value={form.razaoSocial} onChange={handleChange} placeholder="Ex: MotorsXy Concessionaria LTDA" />
           </div>
           <div className="form-group" style={{ flex: 1 }}>
             <label className="form-label">Nome Fantasia</label>
-            <input type="text" name="nomeFantasia" className="form-input" value={form.nomeFantasia} onChange={handleChange} placeholder="Ex: Gravity Motors" />
+            <input type="text" name="nomeFantasia" className="form-input" value={form.nomeFantasia} onChange={handleChange} placeholder="Ex: MotorsXy Motors" />
           </div>
         </div>
         <div className="form-row">
@@ -215,7 +215,7 @@ const ConfiguracoesEmpresa: React.FC = () => {
           </div>
           <div className="form-group">
             <label className="form-label">Site</label>
-            <input type="text" name="site" className="form-input" value={form.site} onChange={handleChange} placeholder="www.gravitycar.com.br" />
+            <input type="text" name="site" className="form-input" value={form.site} onChange={handleChange} placeholder="www.motorsxy.com.br" />
           </div>
         </div>
       </Section>

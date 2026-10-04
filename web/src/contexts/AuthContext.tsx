@@ -61,11 +61,11 @@ function extractRoleFromJwt(decoded: any): UserRole {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
-    const [token, setToken] = useState<string | null>(localStorage.getItem('@GravityCar:token'));
+    const [token, setToken] = useState<string | null>(localStorage.getItem('@MotorsXy:token') || localStorage.getItem('@GravityCar:token'));
     const [saldo, setSaldo] = useState<SaldoCreditos>({ saldoConsultas: 0, consultasRealizadas: 0 });
 
     const [activeRole, setActiveRoleState] = useState<UserRole>(() => {
-        const saved = localStorage.getItem('@GravityCar:activeRole') as UserRole;
+        const saved = (localStorage.getItem('@MotorsXy:activeRole') || localStorage.getItem('@GravityCar:activeRole')) as UserRole;
         if (saved && ['SuperAdmin', 'Admin', 'Gerente', 'Vendedor'].includes(saved)) {
             return saved;
         }
@@ -88,13 +88,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (ROLE_HIERARCHY[newRole] > ROLE_HIERARCHY[realRole]) {
             return; // não pode escalar privilégio
         }
-        localStorage.setItem('@GravityCar:activeRole', newRole);
+        localStorage.setItem('@MotorsXy:activeRole', newRole);
+        localStorage.removeItem('@GravityCar:activeRole');
         setActiveRoleState(newRole);
         setUser(prev => prev ? { ...prev, role: newRole, cargo: getCargoLabel(newRole) } : null);
     };
 
     const refreshSaldo = useCallback(async () => {
-        const tk = localStorage.getItem('@GravityCar:token');
+        const tk = localStorage.getItem('@MotorsXy:token') || localStorage.getItem('@GravityCar:token');
         if (!tk) return;
         try {
             const res = await fetch(`${API_BASE_URL}/empresa/saldo`, {
@@ -108,20 +109,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, []);
 
     const login = (newToken: string, role?: string) => {
-        localStorage.setItem('@GravityCar:token', newToken);
+        localStorage.setItem('@MotorsXy:token', newToken);
+        localStorage.removeItem('@GravityCar:token');
         // Limpar activeRole salvo para usar a role real do novo login
+        localStorage.removeItem('@MotorsXy:activeRole');
         localStorage.removeItem('@GravityCar:activeRole');
         setToken(newToken);
 
         // Se a role veio da response do login, usar ela como activeRole inicial
         if (role && ['SuperAdmin', 'Admin', 'Gerente', 'Vendedor'].includes(role)) {
             setActiveRoleState(role as UserRole);
-            localStorage.setItem('@GravityCar:activeRole', role);
+            localStorage.setItem('@MotorsXy:activeRole', role);
         }
     };
 
     const logout = () => {
+        localStorage.removeItem('@MotorsXy:token');
         localStorage.removeItem('@GravityCar:token');
+        localStorage.removeItem('@MotorsXy:activeRole');
         localStorage.removeItem('@GravityCar:activeRole');
         setToken(null);
         setUser(null);
@@ -141,7 +146,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 const jwtRole = extractRoleFromJwt(decoded);
 
                 // Se não tem activeRole salvo, usar a role do JWT
-                const savedRole = localStorage.getItem('@GravityCar:activeRole') as UserRole;
+                const savedRole = (localStorage.getItem('@MotorsXy:activeRole') || localStorage.getItem('@GravityCar:activeRole')) as UserRole;
                 let effectiveRole = jwtRole;
                 if (savedRole && ['SuperAdmin', 'Admin', 'Gerente', 'Vendedor'].includes(savedRole)) {
                     // Só aceita a role salva se for menor ou igual à role real

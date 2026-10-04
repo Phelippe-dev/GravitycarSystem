@@ -1,0 +1,49 @@
+# ==============================================================================
+# ESTÁGIO 1: BUILD (.NET 8 SDK)
+# ==============================================================================
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+# 1. Copia arquivos de projeto para otimizar cache de restore
+COPY ["src/MotorsXySystem.Domain/MotorsXySystem.Domain.csproj", "MotorsXySystem.Domain/"]
+COPY ["src/MotorsXySystem.Application/MotorsXySystem.Application.csproj", "MotorsXySystem.Application/"]
+COPY ["src/MotorsXySystem.Infrastructure/MotorsXySystem.Infrastructure.csproj", "MotorsXySystem.Infrastructure/"]
+COPY ["src/MotorsXySystem.Integracoes/MotorsXySystem.Integracoes.csproj", "MotorsXySystem.Integracoes/"]
+COPY ["src/MotorsXySystem.API/MotorsXySystem.API.csproj", "MotorsXySystem.API/"]
+
+RUN dotnet restore "MotorsXySystem.API/MotorsXySystem.API.csproj"
+
+# 2. Copia todo o código-fonte e compila para produção
+COPY src/ .
+WORKDIR "/src/MotorsXySystem.API"
+RUN dotnet publish "MotorsXySystem.API.csproj" -c Release -o /app/publish \
+    --no-restore \
+    /p:UseAppHost=false
+
+# ==============================================================================
+# ESTÁGIO 2: RUNTIME (.NET 8 ASP.NET Core - Otimizado e Seguro)
+# ==============================================================================
+FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS final
+WORKDIR /app
+
+# Instala curl para healthchecks em orquestradores (Kubernetes, ECS, Docker Compose)
+# e fontes básicas para geração de PDF com QuestPDF
+RUN apk add --no-cache curl icu-libs fontconfig ttf-dejavu
+
+# Variáveis de ambiente de performance e globalização pt-BR
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false \
+    ASPNETCORE_URLS=http://+:5000 \
+    ASPNETCORE_ENVIRONMENT=Production
+
+# Cria usuário não-root por boas práticas de segurança em nuvem (Least Privilege)
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+USER appuser
+
+COPY --from=build /app/publish .
+
+# Healthcheck interno do container
+HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 \
+  CMD curl -f http://localhost:5000/health || exit 1
+
+EXPOSE 5000
+ENTRYPOINT ["dotnet", "MotorsXySystem.API.dll"]
