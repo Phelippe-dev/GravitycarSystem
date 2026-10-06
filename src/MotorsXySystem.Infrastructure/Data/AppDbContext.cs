@@ -11,8 +11,10 @@ using MotorsXySystem.Domain.Entidades.Cadastros;
 using MotorsXySystem.Domain.Entidades.Negocio;
 using MotorsXySystem.Domain.Entidades.Financeiro;
 using MotorsXySystem.Domain.Entidades.Acesso;
+using MotorsXySystem.Domain.Entidades.Auditoria;
 using MotorsXySystem.Domain.Entidades.Crm;
 using MotorsXySystem.Domain.Entidades.Documentos;
+using MotorsXySystem.Domain.Entidades.Fiscal;
 
 namespace MotorsXySystem.Infrastructure.Data;
 
@@ -38,6 +40,7 @@ public class AppDbContext : DbContext
 
     // Veiculos
     public DbSet<Veiculo> Veiculos => Set<Veiculo>();
+    public DbSet<VeiculoCusto> VeiculoCustos => Set<VeiculoCusto>();
     public DbSet<VeiculoAcessorio> VeiculoAcessorios => Set<VeiculoAcessorio>();
     public DbSet<VeiculoInspecao> VeiculoInspecoes => Set<VeiculoInspecao>();
 
@@ -52,6 +55,13 @@ public class AppDbContext : DbContext
     public DbSet<ContaReceber> ContasReceber => Set<ContaReceber>();
     public DbSet<ContaPagar> ContasPagar => Set<ContaPagar>();
     public DbSet<MovimentoFinanceiro> MovimentosFinanceiros => Set<MovimentoFinanceiro>();
+    public DbSet<Cheque> Cheques => Set<Cheque>();
+
+    // Fiscal
+    public DbSet<NotaFiscal> NotasFiscais => Set<NotaFiscal>();
+
+    // Auditoria
+    public DbSet<AuditoriaLog> AuditoriaLogs => Set<AuditoriaLog>();
 
     // CRM
     public DbSet<Lead> Leads => Set<Lead>();
@@ -68,6 +78,7 @@ public class AppDbContext : DbContext
         // QUERY FILTERS DINÂMICOS — Multi-Tenant (Isolamento de Dados via EF Core)
         // =====================================================================
         builder.Entity<Veiculo>().HasQueryFilter(e => _currentTenantService.ObterEmpresaId() == null || e.EmpresaId == _currentTenantService.ObterEmpresaId());
+        builder.Entity<VeiculoCusto>().HasQueryFilter(e => _currentTenantService.ObterEmpresaId() == null || e.EmpresaId == _currentTenantService.ObterEmpresaId());
         builder.Entity<VeiculoAcessorio>().HasQueryFilter(e => _currentTenantService.ObterEmpresaId() == null || e.EmpresaId == _currentTenantService.ObterEmpresaId());
         builder.Entity<VeiculoInspecao>().HasQueryFilter(e => _currentTenantService.ObterEmpresaId() == null || e.EmpresaId == _currentTenantService.ObterEmpresaId());
         
@@ -81,6 +92,10 @@ public class AppDbContext : DbContext
         builder.Entity<ContaReceber>().HasQueryFilter(e => _currentTenantService.ObterEmpresaId() == null || e.EmpresaId == _currentTenantService.ObterEmpresaId());
         builder.Entity<ContaPagar>().HasQueryFilter(e => _currentTenantService.ObterEmpresaId() == null || e.EmpresaId == _currentTenantService.ObterEmpresaId());
         builder.Entity<MovimentoFinanceiro>().HasQueryFilter(e => _currentTenantService.ObterEmpresaId() == null || e.EmpresaId == _currentTenantService.ObterEmpresaId());
+        builder.Entity<Cheque>().HasQueryFilter(e => _currentTenantService.ObterEmpresaId() == null || e.EmpresaId == _currentTenantService.ObterEmpresaId());
+
+        builder.Entity<NotaFiscal>().HasQueryFilter(e => _currentTenantService.ObterEmpresaId() == null || e.EmpresaId == _currentTenantService.ObterEmpresaId());
+        builder.Entity<AuditoriaLog>().HasQueryFilter(e => _currentTenantService.ObterEmpresaId() == null || e.EmpresaId == _currentTenantService.ObterEmpresaId());
 
         builder.Entity<Lead>().HasQueryFilter(e => _currentTenantService.ObterEmpresaId() == null || e.EmpresaId == _currentTenantService.ObterEmpresaId());
         builder.Entity<LeadInteracao>().HasQueryFilter(e => _currentTenantService.ObterEmpresaId() == null || e.EmpresaId == _currentTenantService.ObterEmpresaId());

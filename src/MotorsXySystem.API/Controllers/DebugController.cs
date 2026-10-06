@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MotorsXySystem.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +9,7 @@ namespace MotorsXySystem.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Roles = "SuperAdmin")]
 public class DebugController : ControllerBase
 {
     private readonly AppDbContext _context;

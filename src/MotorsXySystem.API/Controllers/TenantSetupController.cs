@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MotorsXySystem.Application.DTOs;
 using MotorsXySystem.Application.Interfaces;
@@ -7,6 +8,7 @@ namespace MotorsXySystem.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Roles = "SuperAdmin")]
 public class TenantSetupController : ControllerBase
 {
     private readonly ITenantSetupService _setupService;

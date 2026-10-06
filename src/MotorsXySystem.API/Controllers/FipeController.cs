@@ -55,10 +55,20 @@ public class FipeController : ControllerBase
             return BadRequest(new { Erro = "Parâmetros marcaId, modeloId e anoId são obrigatórios." });
 
         var tipoVeiculo = (TipoVeiculo)(tipo > 0 ? tipo : 1);
-        var preco = await _fipeService.ObterPrecoAsync(tipoVeiculo, marcaId, modeloId, anoId, ct);
-        if (preco == null) return NotFound(new { Erro = "Preço FIPE não encontrado para os parâmetros informados." });
-
-        return Ok(preco);
+        try
+        {
+            var preco = await _fipeService.ObterPrecoAsync(tipoVeiculo, marcaId, modeloId, anoId, ct);
+            if (preco == null) return NotFound(new { Erro = "Preço FIPE não encontrado para os parâmetros informados." });
+            return Ok(preco);
+        }
+        catch (System.Net.Http.HttpRequestException ex)
+        {
+            return StatusCode(503, new { Erro = "Serviço FIPE temporariamente indisponível.", Detalhes = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { Erro = "Erro ao consultar FIPE.", Detalhes = ex.Message });
+        }
     }
 
     [HttpGet("codigo/{codigoFipe}")]
@@ -72,9 +82,19 @@ public class FipeController : ControllerBase
             return BadRequest(new { Erro = "O parâmetro anoId é obrigatório." });
 
         var tipoVeiculo = (TipoVeiculo)(tipo > 0 ? tipo : 1);
-        var preco = await _fipeService.ObterPrecoPorCodigoAsync(tipoVeiculo, codigoFipe, anoId, ct);
-        if (preco == null) return NotFound(new { Erro = "Preço FIPE não encontrado." });
-
-        return Ok(preco);
+        try
+        {
+            var preco = await _fipeService.ObterPrecoPorCodigoAsync(tipoVeiculo, codigoFipe, anoId, ct);
+            if (preco == null) return NotFound(new { Erro = "Preço FIPE não encontrado." });
+            return Ok(preco);
+        }
+        catch (System.Net.Http.HttpRequestException ex)
+        {
+            return StatusCode(503, new { Erro = "Serviço FIPE temporariamente indisponível.", Detalhes = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { Erro = "Erro ao consultar FIPE.", Detalhes = ex.Message });
+        }
     }
 }

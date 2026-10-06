@@ -66,6 +66,11 @@ public class ClientesController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Criar([FromBody] ClienteDto dto)
     {
+        if (!ValidarCpfCnpj(dto.CpfCnpj))
+        {
+            return BadRequest(new { Erro = "CPF ou CNPJ inválido." });
+        }
+
         var cliente = new Cliente
         {
             Nome = dto.Nome,
@@ -86,6 +91,11 @@ public class ClientesController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> Atualizar(Guid id, [FromBody] ClienteDto dto)
     {
+        if (!string.IsNullOrWhiteSpace(dto.CpfCnpj) && !ValidarCpfCnpj(dto.CpfCnpj))
+        {
+            return BadRequest(new { Erro = "CPF ou CNPJ inválido." });
+        }
+
         var cliente = await _context.Clientes.FindAsync(id);
         if (cliente == null) return NotFound(new { Erro = "Cliente não encontrado." });
 
@@ -99,6 +109,53 @@ public class ClientesController : ControllerBase
         await _context.SaveChangesAsync();
 
         return Ok(new { Mensagem = "Cliente atualizado com sucesso!" });
+    }
+
+    private static bool ValidarCpfCnpj(string? documento)
+    {
+        if (string.IsNullOrWhiteSpace(documento)) return false;
+        var digits = new string(documento.Where(char.IsDigit).ToArray());
+        if (digits.Length == 11) return ValidarCpf(digits);
+        if (digits.Length == 14) return ValidarCnpj(digits);
+        return false;
+    }
+
+    private static bool ValidarCpf(string cpf)
+    {
+        if (cpf.Distinct().Count() == 1) return false;
+        int[] mult1 = { 10, 9, 8, 7, 6, 5, 4, 3, 2 };
+        int[] mult2 = { 11, 10, 9, 8, 7, 6, 5, 4, 3, 2 };
+
+        int soma = 0;
+        for (int i = 0; i < 9; i++) soma += (cpf[i] - '0') * mult1[i];
+        int resto = soma % 11;
+        int dig1 = resto < 2 ? 0 : 11 - resto;
+        if (cpf[9] - '0' != dig1) return false;
+
+        soma = 0;
+        for (int i = 0; i < 10; i++) soma += (cpf[i] - '0') * mult2[i];
+        resto = soma % 11;
+        int dig2 = resto < 2 ? 0 : 11 - resto;
+        return cpf[10] - '0' == dig2;
+    }
+
+    private static bool ValidarCnpj(string cnpj)
+    {
+        if (cnpj.Distinct().Count() == 1) return false;
+        int[] mult1 = { 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2 };
+        int[] mult2 = { 6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2 };
+
+        int soma = 0;
+        for (int i = 0; i < 12; i++) soma += (cnpj[i] - '0') * mult1[i];
+        int resto = soma % 11;
+        int dig1 = resto < 2 ? 0 : 11 - resto;
+        if (cnpj[12] - '0' != dig1) return false;
+
+        soma = 0;
+        for (int i = 0; i < 13; i++) soma += (cnpj[i] - '0') * mult2[i];
+        resto = soma % 11;
+        int dig2 = resto < 2 ? 0 : 11 - resto;
+        return cnpj[13] - '0' == dig2;
     }
 
     [HttpDelete("{id}")]

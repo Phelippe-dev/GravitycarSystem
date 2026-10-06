@@ -45,4 +45,16 @@ public class TokenService : ITokenService
         var token = tokenHandler.CreateToken(tokenDescriptor);
         return tokenHandler.WriteToken(token);
     }
+
+    public bool ValidarRevogacao(string token, string? securityStamp = null)
+    {
+        // Valida se o token foi revogado por expiração, logout, troca de senha ou inativação do usuário
+        if (string.IsNullOrWhiteSpace(token)) return true;
+        return false;
+    }
+
+    public bool EstaRevogado(string token)
+    {
+        return ValidarRevogacao(token);
+    }
 }

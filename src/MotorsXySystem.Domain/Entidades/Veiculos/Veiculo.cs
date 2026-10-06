@@ -63,4 +63,11 @@ public class Veiculo : EntidadeTenant
     public int Status { get; set; } = 1; // 1 = Disponivel (pode ser mapeado para um enum futuramente)
     public bool Consignado { get; set; } = false;
     public string? Observacoes { get; set; }
+
+    // === Reserva & Concorrência ===
+    public DateTime? DataExpiracaoReserva { get; set; }
+    public byte[]? RowVersion { get; set; }
+
+    // === Relacionamentos ===
+    public virtual ICollection<VeiculoCusto> Custos { get; set; } = new List<VeiculoCusto>();
 }

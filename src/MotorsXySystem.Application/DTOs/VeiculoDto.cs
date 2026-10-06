@@ -62,9 +62,11 @@ public class VeiculoDocumentoDto
 public class VeiculoCustoDto
 {
     public Guid Id { get; set; }
+    public string TipoCusto { get; set; } = "Geral";
     public string Descricao { get; set; } = string.Empty;
     public decimal Valor { get; set; }
-    public DateTime DataCusto { get; set; }
+    public DateTime DataCusto { get; set; } = DateTime.UtcNow;
+    public string? Responsavel { get; set; }
 }
 
 public class VeiculoHistoricoDto

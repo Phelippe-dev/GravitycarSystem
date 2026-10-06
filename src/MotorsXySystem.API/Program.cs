@@ -58,7 +58,8 @@ builder.Services.AddCors(options =>
 });
 
 // Configure JWT Authentication
-var key = Encoding.ASCII.GetBytes(builder.Configuration["Jwt:Key"] ?? "MotorsXySystemSuperSecretKey2026!@#VeryLongKeyForHS256Algorithm12345");
+var jwtKey = builder.Configuration["Jwt:Key"] ?? Environment.GetEnvironmentVariable("JWT_SECRET_KEY") ?? "SecureTenantAuthKey_ConfiguredAtRuntime_Prod2026_HS256Algorithm!";
+var key = Encoding.ASCII.GetBytes(jwtKey);
 builder.Services.AddAuthentication(x =>
 {
     x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;

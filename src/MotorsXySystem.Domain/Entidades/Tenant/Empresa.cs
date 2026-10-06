@@ -29,4 +29,7 @@ public class Empresa : EntidadeAuditavel
     public string? Email { get; set; }
     /// <summary>Termo de garantia padrão impresso nos recibos.</summary>
     public string? TermoGarantiaPadrao { get; set; }
+
+    /// <summary>Saldo de créditos de consultas veiculares.</summary>
+    public int SaldoConsultas { get; set; } = 250;
 }

@@ -17,5 +17,10 @@ public class Usuario : EntidadeTenant
     public string? CodigoLiberacao { get; set; }
     public DateTime? DataExpiracaoCodigoLiberacao { get; set; }
     
+    // Proteção contra Brute Force e Revogação de Sessão
+    public int TentativasLoginFalhas { get; set; } = 0;
+    public DateTime? BloqueadoAte { get; set; }
+    public string SecurityStamp { get; set; } = Guid.NewGuid().ToString("N");
+    
     public virtual Perfil Perfil { get; set; } = null!;
 }

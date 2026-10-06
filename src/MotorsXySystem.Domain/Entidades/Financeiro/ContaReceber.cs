@@ -21,6 +21,10 @@ public class ContaReceber : EntidadeTenant
     public StatusConta Status { get; set; } = StatusConta.Aberta;
     public TipoPagamento? TipoPagamento { get; set; }
     
+    /// <summary>Tarifa/taxa bancária deduzida pela financeira na conciliação.</summary>
+    public decimal? ValorTarifa { get; set; }
+    public decimal? ValorDescontoTaxa { get; set; }
+    
     public virtual Cliente Cliente { get; set; } = null!;
     public virtual Venda? Venda { get; set; }
 }
